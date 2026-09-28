@@ -1,0 +1,51 @@
+<!--{
+  "slug": "luz/precio-luz-hoy.html",
+  "tool": "luzhoy",
+  "appName": "Precio de la luz hoy (PVPC)",
+  "faqSchema": true,
+  "title": "Precio de la luz hoy por horas: ¿a qué hora es más barata?",
+  "description": "Precio de la luz hoy y mañana hora a hora (PVPC) con datos de Red Eléctrica: la hora más barata, la más cara y la mejor franja para la lavadora. Cada día."
+}-->
+<section class="hero">
+  <h1>Precio de la luz hoy por horas</h1>
+  <p class="lead">¿A qué hora es más barata la luz hoy? Estos son los precios de la tarifa regulada (PVPC) para hoy y, desde las 20:30 aproximadamente, también para mañana. Datos oficiales de Red Eléctrica, actualizados cada día.</p>
+</section>
+
+{{tool}}
+
+<article class="content">
+  <h2>¿Me afecta el precio por horas?</h2>
+  <p><strong>Solo si tienes la tarifa regulada (PVPC)</strong> o una tarifa «indexada» al mercado. Si tienes una tarifa de mercado libre con precio fijo, pagas lo mismo a cualquier hora (y si es de 3 periodos, lo que cambia es el tramo punta/llano/valle, no el precio de cada hora). ¿No sabes cuál tienes? Mira en tu factura si pone «PVPC» o «precio voluntario para el pequeño consumidor».</p>
+  <p>¿Te compensa la regulada o una de mercado libre? <a href="{{root}}luz/">Compáralo con tu consumo real</a> o lee <a href="{{root}}luz/pvpc-o-mercado-libre.html">PVPC o mercado libre: cuál me conviene</a>.</p>
+
+  <h2>Cómo aprovechar las horas baratas</h2>
+  <ul>
+    <li><strong>Programa la lavadora y el lavavajillas</strong> en la mejor franja de 2–3 horas: casi todos tienen inicio diferido.</li>
+    <li><strong>El termo eléctrico</strong>, con un enchufe programable, puede calentar solo en las horas baratas.</li>
+    <li><strong>Carga el coche eléctrico</strong> de madrugada o en las horas centrales si son las más baratas.</li>
+    <li><strong>Evita la punta</strong> para el horno, la secadora o la plancha cuando puedas.</li>
+  </ul>
+
+  {{ad:content}}
+
+  <h2>¿Por qué cambia tanto el precio de una hora a otra?</h2>
+  <p>El PVPC sigue el mercado mayorista, donde el precio de cada hora depende de cuánta electricidad se necesita y de qué centrales la producen. En las horas de sol, la energía solar abarata mucho la luz; al anochecer, cuando la demanda sube y el sol desaparece, suele encarecerse. Además, el precio incluye los peajes y cargos, que son más altos en punta (10–14 h y 18–22 h los laborables) y casi nulos en valle (noches y fines de semana).</p>
+
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿Estos precios incluyen impuestos?</summary>
+    <div><p>No. Son el precio de la energía del PVPC en €/kWh, con peajes y cargos pero sin impuesto eléctrico ni IVA, igual que los publica Red Eléctrica. En tu factura, además, se suman la potencia contratada y el alquiler del contador.</p></div>
+  </details>
+  <details>
+    <summary>¿A qué hora se conocen los precios de mañana?</summary>
+    <div><p>Red Eléctrica los publica cada tarde, en torno a las 20:15. Esta página se actualiza poco después.</p></div>
+  </details>
+  <details>
+    <summary>¿De dónde salen los datos?</summary>
+    <div><p>De la API pública de datos de Red Eléctrica (serie PVPC, sistema peninsular). Baleares y Canarias tienen el mismo precio del PVPC; Ceuta y Melilla tienen horarios desplazados una hora.</p></div>
+  </details>
+  <details>
+    <summary>¿Cuánto ahorro si pongo la lavadora en la hora más barata?</summary>
+    <div><p>Una lavadora gasta en torno a 1 kWh por lavado. Si la diferencia entre la hora más cara y la más barata del día es de 0,10 €/kWh, ahorras unos 10 céntimos por lavado; con varios electrodomésticos y todo el año se nota. Calcula el tuyo en <a href="{{root}}luz/cuanto-gasta-electrodomestico.html">cuánto gasta cada electrodoméstico</a>.</p></div>
+  </details>
+</article>

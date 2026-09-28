@@ -7,6 +7,8 @@ import vm from "node:vm";
 import { STRINGS, AUDIO_LANGUAGES } from "./assets/js/i18n.js";
 import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
 import { STRINGS as LUZ_STRINGS } from "./assets/js/luz/i18n.js";
+import { dayStats } from "./assets/js/luz/pvpc.js";
+import { madridDate } from "./assets/js/luz/hoy.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
@@ -43,7 +45,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
   en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
 };
 
@@ -61,7 +63,11 @@ const CARDS = [
   },
   {
     tool: "luz", icon: "M13 2 4 14h6l-1 8 9-12h-6l1-8Z",
-    es: { title: "¿Qué tarifa de luz me conviene?", text: "Sube el CSV de consumo de tu distribuidora y compara ofertas con tu consumo real." },
+    es: { title: "¿Qué tarifa de luz me conviene?", text: "Compara la tarifa regulada y las más contratadas con tu consumo real, en un clic." },
+  },
+  {
+    tool: "luzhoy", icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 5v4.6l3.2 3.2-1.4 1.4L11 12.4V7h2Z",
+    es: { title: "Precio de la luz hoy", text: "La hora más barata de hoy y de mañana, con los datos oficiales de cada hora." },
   },
 ];
 
@@ -87,6 +93,8 @@ function readPages() {
 const TOOLS = {
   transcribe: { partial: "tool.html", strings: STRINGS, script: "assets/js/app.js", category: "MultimediaApplication" },
   captions: { partial: "captions.html", strings: CAPTIONS_STRINGS, script: "assets/js/captions/app.js", category: "MultimediaApplication" },
+  gasto: { partial: "gasto.html", strings: LUZ_STRINGS, script: "assets/js/luz/gasto.js", category: "UtilitiesApplication" },
+  luzhoy: { partial: "luz-hoy.html", strings: LUZ_STRINGS, script: "assets/js/luz/hoy.js", category: "UtilitiesApplication" },
   luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
@@ -99,10 +107,37 @@ function languageOptions(lang, autoLabel) {
     .join("\n        ");
 }
 
+// Resumen estático de los precios del PVPC de hoy (el día en que se genera la web), para buscadores y para
+// quien no tenga JavaScript. En el navegador se sustituye por los datos más recientes y los gráficos.
+function pvpcSnapshot() {
+  const f = join(ROOT, "data", "pvpc.json");
+  if (!existsSync(f)) return "";
+  const pvpc = JSON.parse(readFileSync(f, "utf8"));
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const eur = (p) => p.toFixed(3).replace(".", ",") + " €/kWh";
+  return [["Hoy", 0], ["Mañana", 1]].map(([label, off]) => {
+    const st = dayStats(pvpc, madridDate(off));
+    if (!st) return "";
+    const date = new Date(st.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+    return `<section class="day card"><h2>${label}: ${date}</h2><p>La hora más barata es de ${hh(st.min.h)} a ${hh(st.min.h + 1)} (${eur(st.min.p)}) y la más cara de ${hh(st.max.h)} a ${hh(st.max.h + 1)} (${eur(st.max.p)}). Precio medio: ${eur(st.mean)}.${st.best3 ? ` La mejor franja de 3 horas seguidas empieza a las ${hh(st.best3.start)}.` : ""}</p></section>`;
+  }).join("\n");
+}
+
+// Frase con las medias del PVPC del último año (se genera en el build con data/pvpc.json).
+function pvpcAverages() {
+  const f = join(ROOT, "data", "pvpc.json");
+  if (!existsSync(f)) return "Los precios medios del último año aparecerán aquí en cuanto se publiquen los datos de Red Eléctrica.";
+  const { avg365: a, from, to } = JSON.parse(readFileSync(f, "utf8"));
+  const e = (p) => p.toFixed(3).replace(".", ",");
+  const d = (iso) => iso.split("-").reverse().join("/");
+  return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
+}
+
 function toolHtml(tool, lang, mode) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
+    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
     .replace(/\{\{mode\}\}/g, esc(mode || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
       if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
@@ -167,7 +202,8 @@ function layout(page, pagesBySlug) {
     const current = L[key] === here || L[key] === page.slug;
     return `<a href="${href(L[key])}"${current ? ' aria-current="page"' : section ? ' aria-current="true"' : ""}>${label}</a>`;
   };
-  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && L[c.tool] && pagesBySlug.has(L[c.tool] + "index.html"))
+  const exists = (k) => L[k] && (pagesBySlug.has(L[k]) || pagesBySlug.has(L[k] + "index.html"));
+  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && exists(c.tool))
     .map((c) => `<a class="tool-card" href="${href(L[c.tool])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${c.icon}"/></svg><strong>${esc(c[lang].title)}</strong><span>${esc(c[lang].text)}</span></a>`).join("\n");
 
   let body = page.body
@@ -175,6 +211,7 @@ function layout(page, pagesBySlug) {
     .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
+    .replace("{{pvpcAverages}}", () => pvpcAverages())
     .replace(/\{\{root\}\}/g, root);
 
   const hreflang = alt

@@ -372,3 +372,12 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .preview-col .export-row { margin-top: 12px; }
 .preview-col .export-row #export-btn { flex: 1 1 100%; }
 .preview-col .status { margin-top: 10px; }
+.hoy .day { margin-top: 16px; }
+.hoy .day h2 { margin-top: 0; text-transform: none; }
+.hoy .kpis { margin-bottom: 12px; }
+.gasto-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.gasto-form label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: var(--muted); }
+.gasto-form label.wide { grid-column: 1 / -1; }
+.gasto-form input { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
+.gasto-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+@media (max-width: 480px) { .gasto-result { grid-template-columns: 1fr; } }

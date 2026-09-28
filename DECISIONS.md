@@ -198,3 +198,12 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     restante; botón Cancelar; aviso si el navegador no pudo conservar el audio.
 62. **Safari/iPhone:** no se ha podido probar en un Safari real. Se detecta la falta de `VideoEncoder` (iOS < 16.4,
     navegadores antiguos) y se avisa con alternativa (descargar el SRT); probado simulándolo en Chromium.
+63. **«Precio de la luz hoy»** (la búsqueda diaria de más volumen del tema): se genera en el build un resumen
+    estático de hoy y mañana (para buscadores y sin JavaScript) y en el navegador se pinta con los datos más
+    recientes (gráfico de 24 horas, 3 horas más baratas, mejor franja de 3 h, tabla). Hora de España con
+    `Intl` (Europe/Madrid) sea cual sea la zona del visitante. Se avisa de que solo afecta a PVPC/indexadas.
+64. **Calculadora de electrodomésticos**: potencias y horas típicas marcadas como orientativas (en nevera y termo
+    se usa una potencia media real); precio por defecto = media real del PVPC del último año si hay datos.
+65. **«PVPC o mercado libre»**: tabla de diferencias + medias reales del PVPC del último año escritas en el build
+    + el comparador incrustado. La página «descargar CSV por distribuidora» no se ha dividido en una por
+    distribuidora: no hay pasos verificables de cada web; se documentan los formatos reales en la guía existente.

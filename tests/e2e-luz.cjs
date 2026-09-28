@@ -141,11 +141,51 @@ function makeCsv() {
     await ctx.close();
   }
 
+  // 8b. Precio de la luz hoy
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    await page.goto(srv.base + "/luz/precio-luz-hoy.html");
+    await page.waitForSelector("#hoy .day .chart-svg");
+    const days = await page.locator("#hoy .day").count();
+    check(days === 2, "Precio de hoy: muestra hoy y mañana (" + days + " días)");
+    check((await page.locator("#hoy .day").first().locator(".bar").count()) === 24, "24 barras horarias");
+    check((await page.locator("#hoy .day").first().locator("path.seg-P3").count()) === 3, "Las 3 horas más baratas destacadas");
+    check(/Hora más barata/.test(await page.textContent("#hoy")) && /€\/kWh/.test(await page.textContent("#hoy")), "Resumen con la hora más barata y precios");
+    check(/Datos de Red Eléctrica actualizados/.test(await page.textContent("#hoy-updated")), "Indica la fecha de actualización de los datos");
+    check(errs.length === 0, "Sin errores en la página de precio de hoy");
+    await page.screenshot({ path: path.join(OUT, "luz-hoy.png"), fullPage: false });
+    await ctx.close();
+    const { ctx: c2 } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    const p2 = await c2.newPage();
+    await p2.goto(srv.base + "/luz/precio-luz-hoy.html");
+    await p2.waitForSelector(".hoy-empty:not([hidden])");
+    check(true, "Sin datos del PVPC muestra un aviso en lugar de romperse");
+    await c2.close();
+  }
+
+  // 8c. Calculadora de electrodomésticos
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, withPvpc);
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/cuanto-gasta-electrodomestico.html");
+    await page.waitForFunction(() => document.querySelectorAll("#g-result .kpi").length === 3);
+    check(/medio del PVPC/.test(await page.textContent("#g-p-src")), "El precio por defecto es la media real del PVPC");
+    await page.selectOption("#g-app", { label: "Radiador o estufa eléctrica" });
+    await page.fill("#g-p", "0.15");
+    const day = await page.textContent("#g-result .kpi:first-child");
+    // 1,5 kW × 4 h = 6 kWh × 0,15 € × impuestos (1,0511 × 1,21) ≈ 1,14 €
+    check(/6 kWh/.test(day) && /1,14/.test(day), "Radiador 1.500 W × 4 h = 6 kWh ≈ 1,14 € al día con impuestos: " + day.replace(/\s+/g, " "));
+    await ctx.close();
+  }
+
   // 9. Móvil y modo oscuro
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, withPvpc);
     const page = await ctx.newPage();
-    for (const p of ["/luz/", "/luz/descargar-consumo-datadis.html", "/luz/potencia-contratada.html"]) {
+    for (const p of ["/luz/", "/luz/descargar-consumo-datadis.html", "/luz/potencia-contratada.html", "/luz/pvpc-o-mercado-libre.html"]) {
       await page.goto(srv.base + p);
       await page.click("#example-btn");
       await page.waitForSelector("#headline:not([hidden]) .headline-name");

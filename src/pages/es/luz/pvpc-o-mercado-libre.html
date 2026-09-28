@@ -1,0 +1,62 @@
+<!--{
+  "slug": "luz/pvpc-o-mercado-libre.html",
+  "tool": "luz",
+  "appName": "Comparador PVPC y mercado libre",
+  "faqSchema": true,
+  "title": "PVPC o mercado libre: ¿qué tarifa de luz me conviene?",
+  "description": "Diferencias entre la tarifa regulada PVPC y el mercado libre, cuándo conviene cada una y comparación con tu consumo real y los precios del último año. Gratis."
+}-->
+<section class="hero">
+  <h1>PVPC o mercado libre: ¿cuál me conviene?</h1>
+  <p class="lead">La tarifa regulada cambia de precio cada hora; las de mercado libre suelen tener un precio fijo durante un año. Cuál te sale más barata depende de cuánto y cuándo consumes, y de cómo se muevan los precios. Aquí tienes las diferencias y una forma de comprobarlo con tu consumo real.</p>
+</section>
+
+<article class="content">
+  <h2>Diferencias principales</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><span class="sr-only">Característica</span></th><th>PVPC (regulada)</th><th>Mercado libre</th></tr></thead>
+      <tbody>
+        <tr><td>Precio de la energía</td><td>Cambia cada hora con el mercado mayorista</td><td>Normalmente fijo 12 meses (o por periodos)</td></tr>
+        <tr><td>Quién la ofrece</td><td>Solo las comercializadoras de referencia</td><td>Cualquier comercializadora</td></tr>
+        <tr><td>Permanencia y servicios extra</td><td>No</td><td>Depende de la oferta (revísalo)</td></tr>
+        <tr><td>Bono social</td><td>Sí, es obligatorio estar en PVPC</td><td>No</td></tr>
+        <tr><td>Riesgo</td><td>Sube si sube el mercado (y baja si baja)</td><td>Precio estable; al renovar puede subir</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Qué ha pasado con el PVPC en el último año</h2>
+  <p>{{pvpcAverages}}</p>
+  <p>Consulta el precio de cada hora en <a href="{{root}}luz/precio-luz-hoy.html">el precio de la luz hoy</a>.</p>
+
+  <h2>Cuándo suele convenir cada una</h2>
+  <ul>
+    <li><strong>PVPC</strong>: si puedes concentrar el consumo en horas baratas (noche, fines de semana y, a menudo, las horas centrales del día con mucho sol), si tienes derecho al bono social, o en épocas de precios mayoristas bajos.</li>
+    <li><strong>Mercado libre a precio fijo</strong>: si prefieres saber lo que vas a pagar, consumes mucho en horas punta o no quieres estar pendiente de los horarios.</li>
+    <li><strong>Mercado libre por periodos</strong>: si consumes mucho de noche y en fin de semana y quieres precio fijo en cada tramo.</li>
+  </ul>
+
+  {{ad:content}}
+
+  <h2>Compruébalo con tu consumo real</h2>
+  <p>Sube el CSV de consumo de tu distribuidora (o usa el cálculo rápido) y te diremos cuánto habrías pagado con el PVPC, usando los precios reales de cada hora, y con las tarifas de mercado libre más contratadas.</p>
+</article>
+
+{{tool}}
+
+<article class="content">
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿Puedo volver al PVPC si me paso al mercado libre?</summary>
+    <div><p>Sí, siempre que tu potencia contratada sea de hasta 10 kW. Solo tienes que pedirlo a una comercializadora de referencia. Revisa antes si tu contrato de mercado libre tiene permanencia.</p></div>
+  </details>
+  <details>
+    <summary>¿Qué es una tarifa indexada?</summary>
+    <div><p>Es una tarifa de mercado libre cuyo precio sigue el mercado mayorista hora a hora, como el PVPC, más un margen de la comercializadora. Se parece al PVPC en comportamiento.</p></div>
+  </details>
+  <details>
+    <summary>¿Los precios de las tarifas de mercado libre están actualizados?</summary>
+    <div><p>Se verifican a mano en fuentes públicas y la fecha aparece junto a la tabla. Cambian a menudo: confirma siempre el precio en la web de la comercializadora antes de contratar.</p></div>
+  </details>
+</article>
