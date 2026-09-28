@@ -1,25 +1,35 @@
-# Transcribe Libre
+# Herramientas Libres
 
-Herramienta web **gratuita** para pasar audio y vídeo a texto y generar subtítulos (SRT/VTT).
-Funciona **100 % en el navegador** con Whisper (Transformers.js + WebGPU/WebAssembly): el audio nunca se sube a
-ningún servidor. Web estática para GitHub Pages, sin costes, monetizable con Google AdSense.
+Web de **herramientas gratuitas que funcionan 100 % en el navegador** (sin servidor, sin subir archivos), alojada
+en GitHub Pages y monetizable con Google AdSense:
 
-- Por qué esta herramienta: [`RESEARCH.md`](RESEARCH.md) (19 ideas evaluadas y puntuadas).
-- Decisiones técnicas y de producto: [`DECISIONS.md`](DECISIONS.md).
+| Herramienta | URL | Qué hace |
+|---|---|---|
+| Transcribe Libre | `/pasar-audio-a-texto/` (+ `/en/audio-to-text/`) | Audio/vídeo → texto, SRT y VTT con Whisper |
+| Subtítulos animados | `/subtitulos-animados/` (+ `/en/animated-captions/`) | Subtítulos karaoke grabados en el vídeo (MP4) |
+| ¿Qué tarifa de luz me conviene? | `/luz/` | Analiza el CSV de consumo y compara ofertas |
+
+La portada (`/`) agrupa las herramientas bajo la marca común.
+
+- Investigación: [`RESEARCH.md`](RESEARCH.md) (primera herramienta) y [`RESEARCH-2.md`](RESEARCH-2.md) (las dos nuevas).
+- Decisiones: [`DECISIONS.md`](DECISIONS.md). Estado y siguientes pasos: [`PROGRESS.md`](PROGRESS.md).
 
 ## Estructura
 
 ```
 site.config.json        Nombre, URL y datos del titular (para las páginas legales)
 assets/js/config.js     Configuración de AdSense (desactivado por defecto)
-assets/js/app.js        Interfaz de la herramienta
-assets/js/worker.js     IA en un Web Worker (carga Whisper y transcribe por fragmentos)
+assets/js/app.js        Interfaz del transcriptor
+assets/js/worker.js     IA en un Web Worker (Whisper; por frases o palabra a palabra), compartido
+assets/js/captions/     Subtítulos animados: core.js (tiempos, estilos, dibujo), app.js (UI y exportación), i18n.js
+assets/js/luz/          Tarifa de luz: core.js (periodos 2.0TD, CSV, facturas; RULES con impuestos), app.js, i18n.js
+assets/fonts/           Fuentes OFL para los subtítulos
 assets/js/format.js     Exportación TXT / SRT / VTT
 assets/js/i18n.js       Textos de la herramienta en español e inglés
 assets/js/ads.js        Rellena los huecos de anuncios si están activados
 assets/css/style.css    Estilos (claro/oscuro automático, móvil primero)
 src/pages/es|en/*.html  Contenido de cada página (título y descripción SEO en la cabecera JSON)
-src/partials/tool.html  HTML de la herramienta
+src/partials/*.html     HTML de cada herramienta (tool.html, captions.html, luz.html)
 build.mjs               Genera _site/ (plantilla, SEO, hreflang, sitemap, robots, ads.txt)
 tests/                  Comprobaciones estáticas y prueba end-to-end
 .github/workflows/      Publicación automática en GitHub Pages
@@ -41,7 +51,14 @@ Pruebas:
 
 ```bash
 node tests/check-site.mjs          # SEO, enlaces rotos, rutas "/..." absolutas, JSON-LD, exportación
-npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium, servido bajo basePath
+node tests/unit-captions.mjs       # lógica de los subtítulos animados
+node tests/unit-luz.mjs            # periodos 2.0TD, lectura de CSV y cálculo de facturas
+npm i --no-save playwright mediabunny@1.60.0 axe-core
+bash tests/run-all.sh              # todo seguido; se detiene en el primer fallo
+node tests/e2e.cjs                 # transcriptor en Chromium, servido bajo basePath
+node tests/e2e-captions.cjs        # subtítulos animados: genera, exporta y revisa un vídeo real
+node tests/e2e-luz.cjs             # analizador de consumo eléctrico
+node tests/e2e-a11y.cjs            # accesibilidad (axe-core) de todas las páginas, claro y oscuro
 ```
 
 ## Publicar en GitHub Pages
@@ -119,7 +136,8 @@ tráfico orgánico e indexación en Search Console, y no pulses tus propios anun
 
 ## Cambiar textos, nombre o añadir páginas
 
-- **Nombre de la web:** `siteName` en `site.config.json` (y el texto de `assets/img/og.png` si quieres).
+- **Nombre de la web:** `siteName` en `site.config.json` (y el texto de `assets/img/og.jpg` si quieres).
+- **Impuestos de la luz:** `RULES` en `assets/js/luz/core.js` (revisar cada año; la fecha se muestra en la página).
 - **Textos de la herramienta:** `assets/js/i18n.js` (mismas claves en `es` y `en`; la prueba lo comprueba).
 - **Nueva página:** crea `src/pages/es/mi-pagina.html` con una cabecera como esta y vuelve a ejecutar el build:
   ```html
@@ -128,6 +146,7 @@ tráfico orgánico e indexación en Search Console, y no pulses tus propios anun
   {{tool}}          ← opcional: inserta la herramienta
   {{ad:content}}    ← opcional: hueco de anuncio
   ```
+  `"tool"` puede ser `true` (transcriptor), `"captions"` o `"luz"`.
   Usa `"alt": "en/otra.html"` para enlazar la versión en otro idioma (hreflang) y `"faqSchema": true` para generar
   datos estructurados de preguntas frecuentes a partir de los `<details>`.
 

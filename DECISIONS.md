@@ -98,3 +98,118 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 30. **`basePath` = `/Gamee/`**, igual que el nombre del repositorio (GitHub Pages distingue mayúsculas), en lugar
     de `/game/`, para que canonical, hreflang y sitemap coincidan con la URL real de GitHub Pages sin renombrar el
     repositorio.
+
+## Sesión 2 (28/09/2026): nuevas herramientas
+
+31. **La PR #1 ya estaba fusionada**, así que la rama `claude/charming-edison-uxkvjw` se ha reiniciado desde `main`
+    y el trabajo nuevo va en una PR nueva (la única de esta sesión).
+32. **Herramientas elegidas** (ver `RESEARCH-2.md`): subtítulos karaoke grabados en el vídeo (4,55) y analizador de
+    consumo eléctrico con comparador de tarifas a partir del CSV (4,05). Se descarta "limpiar la voz" porque con
+    modelos autocontenidos (RNNoise) el resultado sería peor que alternativas gratis existentes, y DeepFilterNet
+    solo está empaquetado con el modelo en el CDN de un tercero.
+33. **Subtítulos animados: arquitectura.** Mismo worker de Whisper que Transcribe Libre (nuevo modo por palabra con
+    `onnx-community/whisper-base_timestamped`, el único multilingüe con marcas por palabra confirmado). Si el modelo
+    no devuelve tiempos por palabra, el worker vuelve al modo por frases y la página reparte el tiempo entre las
+    palabras según su longitud (y lo avisa). El vídeo se crea con **Mediabunny 1.60 (MPL-2.0)** desde jsDelivr:
+    descodifica, dibujamos cada fotograma + subtítulos en un canvas y lo vuelve a codificar con WebCodecs.
+34. **Formato de salida:** MP4 con el primer códec que el navegador pueda codificar (H.264 → HEVC → VP9 → AV1) y,
+    si ninguno, WebM. En Chrome normal sale H.264; en el Chromium de las pruebas sale VP9+Opus dentro de MP4 (probado).
+    Vídeos de más de 1920 px se reducen a 1080p para exportar rápido. La rotación se aplica a los fotogramas.
+35. **Fuentes propias (OFL) servidas desde el sitio** (Montserrat 900, Anton, Bangers, ~60 KB): así el vídeo final
+    se ve igual en todos los dispositivos y no dependemos de Google Fonts (sin terceros extra en privacidad).
+36. **Nombres de plataformas en el contenido.** Se nombran de forma descriptiva (Reels, TikTok, Shorts) porque es
+    lo que la gente busca y tú lo pediste en la fase 4; sin logos ni aspecto de afiliación, con aviso en el aviso
+    legal y en la página de plataformas. Sustituye a la decisión 3 para el texto (no para logos).
+37. **SRT importado:** sus líneas se respetan tal cual (no se reparten en grupos de N palabras) hasta que el usuario
+    mueve el control «Palabras por línea». En la página «incrustar» el estilo por defecto es «Clásico».
+38. **En móvil también se usa por defecto el modo palabra a palabra** (≈80 MB): el efecto karaoke es el valor
+    principal y los vídeos cortos se procesan rápido; el usuario puede elegir «Rápida».
+39. **Pruebas nuevas:** `tests/unit-captions.mjs` (Node, sin dependencias, también en el workflow) y
+    `tests/e2e-captions.cjs`, que genera un vídeo real en Chromium, simula solo el reconocimiento de voz, exporta
+    con Mediabunny real y comprueba en los fotogramas del MP4 resultante que los subtítulos están grabados.
+40. **Tarifa de luz: solo en español.** La tarifa 2.0TD, los ficheros de las distribuidoras y los impuestos son de
+    España; una versión inglesa apenas tendría búsquedas. Queda en la lista de mejoras (público extranjero en España).
+41. **Periodos 2.0TD sin tabla anual de festivos:** solo cuentan como valle los festivos nacionales de fecha fija
+    (Circular 3/2020 CNMC), así que la regla no caduca. Impuestos (impuesto eléctrico 5,11 %, IVA 21 %, alquiler de
+    contador típico) en `assets/js/luz/core.js` → `RULES`, con fecha de revisión visible en la página.
+42. **Precios de las ofertas los pone el usuario** (sin IVA), con dos ofertas de ejemplo claramente marcadas. No se
+    usan precios de ninguna compañía (ni marcas) ni el PVPC horario en la v1: exigiría datos externos que cambian a
+    diario. Las ofertas y la potencia se guardan en `localStorage` para volver a comparar (uso recurrente).
+43. **Lector de CSV tolerante:** detecta separador, columnas por nombre (fecha, hora, consumo; ignora
+    «método de obtención»), fechas DD/MM/AAAA o AAAA-MM-DD, hora 1–24 o HH:MM (fin de intervalo), datos
+    cuartohorarios (se suman por hora) y valores en Wh. El CUPS se muestra enmascarado.
+44. **Potencia: consejo prudente.** El CSV horario solo da la media de cada hora, no el pico real; se muestra la
+    hora de más consumo y cuánto ahorra cada kW, remitiendo al maxímetro de la distribuidora para decidir.
+45. **Gráficos a mano en SVG/HTML** con la paleta categórica validada (3 series, modo claro y oscuro) y rampa
+    secuencial azul para el mapa de calor; leyenda, tooltip y tabla de datos para accesibilidad.
+46. **Marca común «Herramientas Libres»** (descriptiva, sin parecido con marcas existentes, coherente con
+    «Transcribe Libre», que se mantiene como nombre del transcriptor). `siteName` en `site.config.json`.
+47. **La raíz `/` pasa a ser la portada que agrupa las herramientas**; el transcriptor se mueve a
+    `/pasar-audio-a-texto/` (y `/en/audio-to-text/`). Las demás URLs existentes (FAQ, notas de voz, subtítulos SRT,
+    legales) no cambian, así que no hay enlaces rotos; la raíz sigue existiendo. GitHub Pages no permite
+    redirecciones 301, por eso se evitó mover más páginas.
+48. **Menú:** herramientas en la cabecera (en móvil, fila desplazable debajo de la marca) y el idioma aparte; las
+    FAQ y los legales, en el pie. Al final de cada herramienta, bloque automático «Más herramientas gratis».
+49. **SEO de Transcribe Libre por casos de uso:** la página de notas de voz se reorienta a «audios de WhatsApp»
+    (lo que la gente busca) con pasos para Android, iPhone y ordenador; nuevas páginas de clases, entrevistas y
+    reuniones con contenido propio (flujo de trabajo, plantilla de acta, privacidad). «Subtítulos para TikTok» ya
+    está cubierto por la guía de Reels/TikTok/Shorts de la herramienta de subtítulos. Solo en español (donde está
+    la demanda); las versiones inglesas quedan en la lista de mejoras.
+50. **Accesibilidad:** auditoría axe-core de las 26 páginas en claro y oscuro (incluida la vista de resultados de la
+    luz) → 0 problemas; queda como prueba permanente (`tests/e2e-a11y.cjs`).
+51. **Rendimiento:** cada página pesa ≤60 KB sin comprimir; las librerías pesadas (IA, vídeo) y las fuentes solo se
+    cargan al usarlas. La imagen para redes pasa de PNG 281 KB a JPEG 33 KB.
+
+## Sesión 3 (28/09/2026): luz en 1 clic, subtítulos y SEO
+
+52. **PVPC descargado en el build, no desde el navegador.** La API de REE (apidatos.ree.es) es pública y sin
+    token, pero no se pudo comprobar su CORS desde este entorno (red bloqueada). Descargarla en GitHub Actions
+    funciona siempre: `scripts/fetch-pvpc.mjs` baja 13 meses de precios horarios (mes a mes, 3 reintentos) y los
+    guarda en `data/pvpc.json` (no se versiona). El workflow se ejecuta también cada día a las 19:35 UTC, después de
+    que REE publique los precios de mañana. Si REE falla, se reutiliza el JSON ya publicado; si tampoco hay, la web
+    funciona sin PVPC y lo avisa. Solo se ejecuta a diario cuando el workflow está en `main` (tras fusionar).
+53. **PVPC calculado hora a hora** con el CSV (las horas sin precio se valoran con la media de su periodo); en el
+    cálculo rápido, con la media del último año por periodo. Potencia del PVPC 2026: peajes y cargos (P1 27,704413
+    y P2 0,725423 €/kW·año) + margen de comercialización 3,113 €/kW·año en P1, según resultados de búsqueda de
+    varias fuentes (la web de REE/CNMC/BOE no era accesible desde aquí). Queda en `data/ofertas.json` → `pvpcPower`.
+54. **Catálogo de tarifas (`data/ofertas.json`)**: 6 tarifas muy contratadas con precio y potencia **verificados en
+    fuentes públicas el 28/09/2026** (cada una con su enlace oficial y de dónde salió el dato; si las fuentes no
+    coincidían se anota). No llegué a 8–10: para Repsol, Plenitude, Som Energia y otras no encontré a la vez precio
+    de energía y de potencia fiables, y la regla es no inventar datos. Nombres de comercializadoras como texto
+    descriptivo, sin logos ni afiliación; se indica «compruébalo antes de contratar».
+55. **Resultado principal**: tarjeta grande «Tu mejor opción» con coste anual y, si eliges tu tarifa actual (se
+    recuerda), «Ahorras ~X € al año frente a …». Si no la eliges, se compara con la media. Enlace a la web oficial
+    de la ganadora. Tus propias tarifas pasan a «Ajustes» (plegado) y los antiguos ejemplos se descartan.
+56. **Cálculo rápido sin CSV**: kWh al mes + potencia + % en valle; el resto se reparte 47/53 entre punta y llano
+    (reparto típico de un hogar, orientativo). Se ocultan los gráficos horarios porque no hay datos reales.
+57. **Formatos reales de CSV** en `tests/fixtures/`: CNMC (i-DE), e-distribución (`AE_kWh;AS_KWh;…;REAL/ESTIMADO`,
+    documentado en SFL/Nergiza) y la descarga de Datadis (comillas, fecha AAAA/MM/DD, hora HH:MM). Del formato de UFD
+    no encontré documentación fiable: se asume el formato común de la CNMC.
+58. **Subtítulos para creadores:** selector «Para: TikTok / Reels / Shorts / Otro» que coloca el texto y estrecha
+    las líneas dentro de la zona segura (valores aproximados en `PLATFORMS`, con margen) y la sombrea en la vista
+    previa (nunca en el vídeo). Vídeos horizontales → opción de recorte centrado a 9:16 (sin IA de seguimiento de
+    cara: queda como mejora). Tres estilos nuevos (Marcador, Progresivo, Neón) → 8 en total.
+59. **Palabras clave:** automáticas (una por línea como mucho: números y palabras largas que no sean vacías) y a mano
+    escribiendo `*palabra*` en el editor; se pintan en un tercer color configurable. **Emojis automáticos**
+    desactivados por defecto (pueden resultar cargantes): diccionario de raíces ES/EN → un emoji por línea.
+60. **Menos pasos:** la generación empieza sola al elegir el vídeo (salvo en «incrustar SRT»), y el botón de
+    descarga está justo debajo de la vista previa. De subir a descargar: 2 clics.
+61. **Exportación más rápida y honesta:** vídeos de más de 30 fps se exportan a 30 fps; progreso con tiempo
+    restante; botón Cancelar; aviso si el navegador no pudo conservar el audio.
+62. **Safari/iPhone:** no se ha podido probar en un Safari real. Se detecta la falta de `VideoEncoder` (iOS < 16.4,
+    navegadores antiguos) y se avisa con alternativa (descargar el SRT); probado simulándolo en Chromium.
+63. **«Precio de la luz hoy»** (la búsqueda diaria de más volumen del tema): se genera en el build un resumen
+    estático de hoy y mañana (para buscadores y sin JavaScript) y en el navegador se pinta con los datos más
+    recientes (gráfico de 24 horas, 3 horas más baratas, mejor franja de 3 h, tabla). Hora de España con
+    `Intl` (Europe/Madrid) sea cual sea la zona del visitante. Se avisa de que solo afecta a PVPC/indexadas.
+64. **Calculadora de electrodomésticos**: potencias y horas típicas marcadas como orientativas (en nevera y termo
+    se usa una potencia media real); precio por defecto = media real del PVPC del último año si hay datos.
+65. **«PVPC o mercado libre»**: tabla de diferencias + medias reales del PVPC del último año escritas en el build
+    + el comparador incrustado. La página «descargar CSV por distribuidora» no se ha dividido en una por
+    distribuidora: no hay pasos verificables de cada web; se documentan los formatos reales en la guía existente.
+66. **Páginas de subtítulos por búsqueda:** TikTok, Reels y Shorts (cada una con la plataforma y su zona segura ya
+    elegidas y consejos propios de esa app: botones laterales en TikTok, recorte de la miniatura en Reels, pasar de
+    vídeo largo horizontal a Short), «subtítulos en inglés para un vídeo en español» (nueva opción de traducir el
+    audio al inglés con Whisper) y «videopodcasts y entrevistas» (estilo clásico preseleccionado). No se crea una
+    página aparte para «subtítulos automáticos gratis sin marca de agua»: es la búsqueda principal de la portada
+    de la herramienta y otra página competiría con ella.

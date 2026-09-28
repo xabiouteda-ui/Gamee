@@ -5,6 +5,10 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { STRINGS, AUDIO_LANGUAGES } from "./assets/js/i18n.js";
+import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
+import { STRINGS as LUZ_STRINGS } from "./assets/js/luz/i18n.js";
+import { dayStats } from "./assets/js/luz/pvpc.js";
+import { madridDate } from "./assets/js/luz/hoy.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
@@ -25,23 +29,47 @@ const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 const UI = {
   es: {
-    home: "Transcribir", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
-    footerNote: "Herramienta gratuita financiada con publicidad. El audio se procesa en tu dispositivo.",
+    footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
+    related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
-    home: "Transcribe", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
+    home: "Home", transcribe: "Audio to text", captions: "Captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
     contact: "Contact", skip: "Skip to content", tagline: "Free and private audio and video transcription",
-    footerNote: "Free tool supported by ads. Audio is processed on your device.",
+    footerNote: "Free tools supported by ads. Your files are processed on your device.",
+    related: "More free tools",
     otherLang: "Español", otherLangLabel: "Leer en español",
   },
 };
 
 const LINKS = {
-  es: { home: "", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
-  en: { home: "en/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
+  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
 };
+
+// Tarjetas de herramientas (portada y enlaces cruzados al final de cada herramienta).
+const CARDS = [
+  {
+    tool: "transcribe", icon: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21a1 1 0 1 1-2 0v-2.07A7 7 0 0 1 5 12Z",
+    es: { title: "Pasar audio a texto", text: "Transcribe notas de voz, clases, entrevistas y vídeos. Descarga TXT, SRT o VTT." },
+    en: { title: "Audio to text", text: "Transcribe voice notes, lectures, interviews and videos. Download TXT, SRT or VTT." },
+  },
+  {
+    tool: "captions", icon: "M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm2 9h5v2H6v-2Zm7 0h5v2h-5v-2ZM6 10h9v2H6v-2Z",
+    es: { title: "Subtítulos animados", text: "Subtítulos tipo karaoke grabados en tu vídeo para Reels, TikTok y Shorts. Sin marca de agua." },
+    en: { title: "Animated captions", text: "Karaoke-style captions burned into your video for short-form platforms. No watermark." },
+  },
+  {
+    tool: "luz", icon: "M13 2 4 14h6l-1 8 9-12h-6l1-8Z",
+    es: { title: "¿Qué tarifa de luz me conviene?", text: "Compara la tarifa regulada y las más contratadas con tu consumo real, en un clic." },
+  },
+  {
+    tool: "luzhoy", icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 5v4.6l3.2 3.2-1.4 1.4L11 12.4V7h2Z",
+    es: { title: "Precio de la luz hoy", text: "La hora más barata de hoy y de mañana, con los datos oficiales de cada hora." },
+  },
+];
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -49,7 +77,7 @@ function readPages() {
   const pages = [];
   for (const lang of ["es", "en"]) {
     const dir = join(ROOT, "src/pages", lang);
-    for (const f of readdirSync(dir).filter((f) => f.endsWith(".html")).sort()) {
+    for (const f of readdirSync(dir, { recursive: true }).filter((f) => f.endsWith(".html")).sort()) {
       const raw = readFileSync(join(dir, f), "utf8");
       const m = raw.match(/^<!--\s*(\{[\s\S]*?\})\s*-->\s*/);
       if (!m) throw new Error(`Falta la cabecera JSON en ${lang}/${f}`);
@@ -60,17 +88,61 @@ function readPages() {
   return pages;
 }
 
-function toolHtml(lang) {
-  const t = STRINGS[lang];
+// Herramientas del sitio: plantilla HTML, textos y script de cada una.
+// En la cabecera JSON de una página, "tool": true equivale a "transcribe".
+const TOOLS = {
+  transcribe: { partial: "tool.html", strings: STRINGS, script: "assets/js/app.js", category: "MultimediaApplication" },
+  captions: { partial: "captions.html", strings: CAPTIONS_STRINGS, script: "assets/js/captions/app.js", category: "MultimediaApplication" },
+  gasto: { partial: "gasto.html", strings: LUZ_STRINGS, script: "assets/js/luz/gasto.js", category: "UtilitiesApplication" },
+  luzhoy: { partial: "luz-hoy.html", strings: LUZ_STRINGS, script: "assets/js/luz/hoy.js", category: "UtilitiesApplication" },
+  luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
+};
+const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
+
+function languageOptions(lang, autoLabel) {
   const langIdx = lang === "es" ? 1 : 2;
   const langs = [...AUDIO_LANGUAGES].sort((a, b) => (a[0] === lang ? -1 : b[0] === lang ? 1 : 0));
-  const options = [`<option value="auto">${esc(t.autoDetect)}</option>`]
+  return [`<option value="auto">${esc(autoLabel)}</option>`]
     .concat(langs.map(([code, ...names]) => `<option value="${code}"${code === lang ? " selected" : ""}>${esc(names[langIdx - 1])}</option>`))
     .join("\n        ");
-  return readFileSync(join(ROOT, "src/partials/tool.html"), "utf8")
-    .replace("{{languageOptions}}", options)
+}
+
+// Resumen estático de los precios del PVPC de hoy (el día en que se genera la web), para buscadores y para
+// quien no tenga JavaScript. En el navegador se sustituye por los datos más recientes y los gráficos.
+function pvpcSnapshot() {
+  const f = join(ROOT, "data", "pvpc.json");
+  if (!existsSync(f)) return "";
+  const pvpc = JSON.parse(readFileSync(f, "utf8"));
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const eur = (p) => p.toFixed(3).replace(".", ",") + " €/kWh";
+  return [["Hoy", 0], ["Mañana", 1]].map(([label, off]) => {
+    const st = dayStats(pvpc, madridDate(off));
+    if (!st) return "";
+    const date = new Date(st.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+    return `<section class="day card"><h2>${label}: ${date}</h2><p>La hora más barata es de ${hh(st.min.h)} a ${hh(st.min.h + 1)} (${eur(st.min.p)}) y la más cara de ${hh(st.max.h)} a ${hh(st.max.h + 1)} (${eur(st.max.p)}). Precio medio: ${eur(st.mean)}.${st.best3 ? ` La mejor franja de 3 horas seguidas empieza a las ${hh(st.best3.start)}.` : ""}</p></section>`;
+  }).join("\n");
+}
+
+// Frase con las medias del PVPC del último año (se genera en el build con data/pvpc.json).
+function pvpcAverages() {
+  const f = join(ROOT, "data", "pvpc.json");
+  if (!existsSync(f)) return "Los precios medios del último año aparecerán aquí en cuanto se publiquen los datos de Red Eléctrica.";
+  const { avg365: a, from, to } = JSON.parse(readFileSync(f, "utf8"));
+  const e = (p) => p.toFixed(3).replace(".", ",");
+  const d = (iso) => iso.split("-").reverse().join("/");
+  return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
+}
+
+function toolHtml(tool, lang, page) {
+  const t = TOOLS[tool].strings[lang];
+  return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
+    .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
+    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
+    .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
+    .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
+    .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
-      if (!(k in t)) throw new Error(`Texto sin traducir: ${k}`);
+      if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
       return esc(t[k]);
     });
 }
@@ -94,10 +166,10 @@ function appSchema(page, url) {
   return {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: site.siteName,
+    name: page.appName || site.siteName,
     url,
     description: page.description,
-    applicationCategory: "MultimediaApplication",
+    applicationCategory: TOOLS[toolOf(page)].category,
     operatingSystem: "Any (web browser)",
     browserRequirements: "Requires JavaScript and WebAssembly",
     inLanguage: page.lang,
@@ -120,19 +192,29 @@ function layout(page, pagesBySlug) {
   const L = LINKS[lang];
 
   const schemas = [];
-  if (page.tool) schemas.push(appSchema(page, url));
+  const tool = toolOf(page);
+  if (tool) schemas.push(appSchema(page, url));
   if (page.faqSchema) { const s = faqSchema(page.body); if (s) schemas.push(s); }
   if (page.slug.endsWith("index.html") || page.slug === "index.html") {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
 
+  const here = page.slug.replace(/index\.html$/, "");
+  const nav = (key, label, section = false) => {
+    const current = L[key] === here || L[key] === page.slug;
+    return `<a href="${href(L[key])}"${current ? ' aria-current="page"' : section ? ' aria-current="true"' : ""}>${label}</a>`;
+  };
+  const exists = (k) => L[k] && (pagesBySlug.has(L[k]) || pagesBySlug.has(L[k] + "index.html"));
+  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && exists(c.tool))
+    .map((c) => `<a class="tool-card" href="${href(L[c.tool])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${c.icon}"/></svg><strong>${esc(c[lang].title)}</strong><span>${esc(c[lang].text)}</span></a>`).join("\n");
+
   let body = page.body
-    .replace("{{tool}}", page.tool ? toolHtml(lang) : "")
+    .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page) : ""))
     .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
+    .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
+    .replace("{{pvpcAverages}}", () => pvpcAverages())
     .replace(/\{\{root\}\}/g, root);
-
-  const nav = (key, label) => `<a href="${href(L[key])}"${L[key] === page.slug.replace(/index\.html$/, "") || L[key] === page.slug ? ' aria-current="page"' : ""}>${label}</a>`;
 
   const hreflang = alt
     ? `<link rel="alternate" hreflang="${lang}" href="${url}">
@@ -156,7 +238,7 @@ ${hreflang}
 <meta property="og:title" content="${esc(page.title)}">
 <meta property="og:description" content="${esc(page.description)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${siteUrl}/assets/img/og.png">
+<meta property="og:image" content="${siteUrl}/assets/img/og.jpg">
 <meta property="og:locale" content="${lang === "es" ? "es_ES" : "en_US"}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
@@ -170,15 +252,15 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
   <div class="wrap header-inner">
     <a class="brand" href="${href(L.home)}">${LOGO}<span>${esc(site.siteName)}</span></a>
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
-      ${nav("home", ui.home)}
-      ${nav("faq", ui.faq)}
-      ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
+      ${["transcribe", "captions", "luz"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
     </nav>
+    ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>
 </header>
 <div class="wrap"><div class="ad-slot" data-slot="top"></div></div>
 <main id="main" class="wrap">
 ${body.trim()}
+${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
 <div class="wrap"><div class="ad-slot" data-slot="bottom"></div></div>
 <footer class="site-footer">
@@ -194,7 +276,7 @@ ${body.trim()}
 </footer>
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
-${page.tool ? `<script type="module" src="${root}assets/js/app.js"></script>` : ""}
+${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
 </body>
 </html>
 `;
@@ -204,6 +286,8 @@ function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   cpSync(join(ROOT, "assets"), join(OUT, "assets"), { recursive: true });
+  // Datos de las herramientas (tarifas de luz a mano; data/pvpc.json lo genera scripts/fetch-pvpc.mjs en Actions).
+  if (existsSync(join(ROOT, "data"))) cpSync(join(ROOT, "data"), join(OUT, "data"), { recursive: true, filter: (src) => !/\/\./.test(src.slice(ROOT.length)) });
   writeFileSync(join(OUT, ".nojekyll"), "");
 
   const pages = readPages();

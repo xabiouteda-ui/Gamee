@@ -1,0 +1,92 @@
+<!--{
+  "slug": "luz/index.html",
+  "tool": "luz",
+  "appName": "Comparador de tarifas de luz con tu consumo",
+  "faqSchema": true,
+  "title": "¿Qué tarifa de luz me conviene? Calcúlalo con tu consumo real",
+  "description": "Sube el CSV de consumo de tu distribuidora y descubre qué tarifa de luz te sale más barata, a qué horas consumes y cuánto puedes ahorrar. Gratis y sin enviar tus datos."
+}-->
+<section class="hero">
+  <h1>¿Qué tarifa de luz me conviene? Calcúlalo con tu consumo real</h1>
+  <p class="lead">Los comparadores te preguntan cuánto gastas «más o menos». Aquí usas tu consumo real, hora a hora: sube el fichero de tu distribuidora y en un segundo verás qué tarifa te sale más barata entre la regulada (PVPC, con sus precios reales de cada hora) y las de mercado libre más contratadas, con impuestos incluidos. ¿Sin fichero? Usa el cálculo rápido.</p>
+  <ul class="badges">
+    <li>Con tu consumo real</li>
+    <li>PVPC real + tarifas más contratadas</li>
+    <li>Sin registro ni comisiones</li>
+    <li>Tus datos no salen de tu dispositivo</li>
+  </ul>
+</section>
+
+{{tool}}
+
+<article class="content">
+  <h2>Cómo funciona</h2>
+  <ol class="steps">
+    <li><strong>Descarga tu consumo</strong><br>En la web de tu distribuidora o en la plataforma común de las distribuidoras, en formato CSV. <a href="{{root}}luz/descargar-consumo-datadis.html">Guía paso a paso</a>.</li>
+    <li><strong>Súbelo aquí</strong><br>Se lee en tu navegador: ni el fichero ni tu CUPS se envían a ningún sitio.</li>
+    <li><strong>Mira tu resultado</strong><br>Te decimos la tarifa más barata para tu consumo y cuánto ahorras frente a la tuya. Puedes añadir cualquier otra oferta que te hayan hecho.</li>
+  </ol>
+
+  <h2>Por qué comparar con tu consumo real</h2>
+  <p>Con la tarifa 2.0TD, el precio de la luz depende de <strong>cuándo</strong> consumes. En las ofertas por periodos, la energía en punta (de 10 a 14 h y de 18 a 22 h los laborables) cuesta bastante más que en valle (de 0 a 8 h y todo el fin de semana). Una tarifa de 3 periodos es una ganga para quien pone la lavadora de noche y teletrabaja poco, y una mala idea para quien cocina, trabaja y enciende la calefacción justo en horas punta. Con tu fichero de consumo se acaban las suposiciones.</p>
+
+  <h2>Los periodos de la tarifa 2.0TD</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Periodo</th><th>Lunes a viernes</th><th>Fines de semana y festivos nacionales</th></tr></thead>
+      <tbody>
+        <tr><td><i class="sw sw-P1"></i>Punta (P1)</td><td>10–14 h y 18–22 h</td><td>—</td></tr>
+        <tr><td><i class="sw sw-P2"></i>Llano (P2)</td><td>8–10 h, 14–18 h y 22–24 h</td><td>—</td></tr>
+        <tr><td><i class="sw sw-P3"></i>Valle (P3)</td><td>0–8 h</td><td>Todo el día</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Horario peninsular, de Baleares y de Canarias. Los festivos que cuentan como valle son los nacionales de fecha fija (1 y 6 de enero, 1 de mayo, 15 de agosto, 12 de octubre, 1 de noviembre y 6, 8 y 25 de diciembre).</p>
+
+  {{ad:content}}
+
+  <h2>Qué más te dice la herramienta</h2>
+  <ul class="features">
+    <li><strong>Tu reparto punta / llano / valle</strong>El dato clave para saber si te conviene una tarifa por periodos.</li>
+    <li><strong>Mapa de calor por horas</strong>Ves de un vistazo a qué horas y qué días gastas más.</li>
+    <li><strong>Cuánto ahorras moviendo consumo</strong>Mueve el control y mira cuánto ahorrarías pasando parte del consumo a valle.</li>
+    <li><strong>Tu consumo «fantasma»</strong>Lo que gastan los aparatos siempre enchufados, en vatios y en euros al año.</li>
+    <li><strong>Pista sobre la potencia</strong>Tu hora de más consumo y cuánto ahorra bajar 1 kW. <a href="{{root}}luz/potencia-contratada.html">Cómo elegir la potencia</a>.</li>
+    <li><strong>Tus ofertas guardadas</strong>Los precios que escribes se guardan en tu navegador para la próxima vez que compares.</li>
+  </ul>
+
+  <h2>Guías y calculadoras</h2>
+  <ul>
+    <li><a href="{{root}}luz/precio-luz-hoy.html">Precio de la luz hoy por horas</a>: la hora más barata de hoy y de mañana.</li>
+    <li><a href="{{root}}luz/pvpc-o-mercado-libre.html">PVPC o mercado libre</a>: diferencias y cuándo conviene cada una.</li>
+    <li><a href="{{root}}luz/cuanto-gasta-electrodomestico.html">¿Cuánto gasta un electrodoméstico?</a>: calculadora en euros.</li>
+    <li><a href="{{root}}luz/potencia-contratada.html">¿Qué potencia contratar?</a></li>
+    <li><a href="{{root}}luz/descargar-consumo-datadis.html">Cómo descargar tu consumo en CSV</a>.</li>
+  </ul>
+
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿De dónde saco el fichero CSV de consumo?</summary>
+    <div><p>De la web de tu distribuidora (la empresa que gestiona la red de tu zona, que aparece en tu factura) o de la plataforma común de las distribuidoras, con tu DNI. Tienes los pasos en <a href="{{root}}luz/descargar-consumo-datadis.html">cómo descargar tu consumo</a>. Solo hace falta tener contador inteligente, que es lo habitual.</p></div>
+  </details>
+  <details>
+    <summary>¿Qué precios pongo en las ofertas?</summary>
+    <div><p>Los que aparecen en tu factura o en la oferta: precio de la energía en €/kWh (uno si es precio fijo, tres si es por periodos) y precio de la potencia en €/kW y día (a veces lo dan en €/kW y año: divídelo entre 365). Siempre sin IVA ni impuesto eléctrico, que los añadimos nosotros.</p></div>
+  </details>
+  <details>
+    <summary>¿Incluye el impuesto eléctrico y el IVA?</summary>
+    <div><p>Sí: impuesto especial sobre la electricidad, alquiler de un contador doméstico típico e IVA general. No incluye servicios adicionales que tengas contratados (mantenimiento, seguros), salvo que los metas como «cuota fija».</p></div>
+  </details>
+  <details>
+    <summary>¿Sirve para la tarifa regulada (PVPC)?</summary>
+    <div><p>La tarifa regulada cambia de precio cada hora, así que no tiene un precio fijo que escribir. De momento puedes usar su precio medio reciente como si fuera una oferta por periodos. Estamos trabajando en compararla directamente.</p></div>
+  </details>
+  <details>
+    <summary>¿Es seguro subir mi fichero?</summary>
+    <div><p>El fichero no se sube: se lee dentro de tu navegador y los cálculos se hacen en tu dispositivo. Ni tu CUPS ni tu consumo llegan a nosotros ni a nadie. Tampoco cobramos comisiones de ninguna compañía.</p></div>
+  </details>
+  <details>
+    <summary>¿Y si tengo placas solares?</summary>
+    <div><p>El cálculo usa la energía que tomas de la red (la columna de consumo). La compensación de excedentes todavía no está incluida.</p></div>
+  </details>
+</article>

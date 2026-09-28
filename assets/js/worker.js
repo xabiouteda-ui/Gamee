@@ -7,6 +7,8 @@ const MODELS = {
   tiny: "onnx-community/whisper-tiny",
   base: "onnx-community/whisper-base",
   small: "onnx-community/whisper-small",
+  // Exportado con atenciones cruzadas: permite marcas de tiempo por palabra (subtítulos karaoke).
+  "base-words": "onnx-community/whisper-base_timestamped",
 };
 
 const SAMPLE_RATE = 16000;
@@ -126,7 +128,24 @@ async function detectLanguage(audio) {
   return null;
 }
 
-async function transcribe({ audio, language, task, fallbackLanguage }) {
+async function transcribeWords(chunk, language, task, offset, chunkEnd) {
+  const out = await transcriber(chunk, { language, task, return_timestamps: "word" });
+  const words = (out.chunks || [])
+    .map((c) => {
+      const s = offset + (c.timestamp?.[0] ?? 0);
+      const e = c.timestamp?.[1] == null ? Math.min(s + 0.4, chunkEnd) : offset + c.timestamp[1];
+      return { text: (c.text || "").trim(), start: s, end: Math.min(Math.max(e, s + 0.05), chunkEnd) };
+    })
+    .filter((w) => w.text);
+  if (!words.length) return [];
+  for (let i = 1; i < words.length; i++) {
+    if (words[i].start < words[i - 1].start) throw new Error("marcas de tiempo desordenadas");
+  }
+  return [{ start: words[0].start, end: words.at(-1).end, text: words.map((w) => w.text).join(" "), words }];
+}
+
+async function transcribe({ audio, language, task, fallbackLanguage, words = false }) {
+  let wordMode = words;
   cancelled = false;
   let lang = language;
   if (lang === "auto") {
@@ -143,7 +162,18 @@ async function transcribe({ audio, language, task, fallbackLanguage }) {
     const chunkEnd = to / SAMPLE_RATE;
     const chunk = audio.subarray(from, to);
     let segments = [];
-    if (rms(chunk, 0, chunk.length) > SILENCE_RMS && chunk.length > SAMPLE_RATE * 0.3) {
+    const speech = rms(chunk, 0, chunk.length) > SILENCE_RMS && chunk.length > SAMPLE_RATE * 0.3;
+    if (speech && wordMode) {
+      try {
+        segments = await transcribeWords(chunk, lang, task, offset, chunkEnd);
+      } catch (e) {
+        // Si el modelo no da marcas por palabra, seguimos por frases (la página reparte el tiempo entre palabras).
+        console.warn("Sin marcas de tiempo por palabra", e);
+        wordMode = false;
+        post({ type: "wordsUnavailable" });
+      }
+    }
+    if (speech && !wordMode) {
       const out = await transcriber(chunk, {
         language: lang,
         task,

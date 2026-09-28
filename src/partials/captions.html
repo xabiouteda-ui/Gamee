@@ -1,0 +1,115 @@
+<section class="tool card" id="tool" aria-label="{{t.generate}}" data-mode="{{mode}}" data-platform="{{platform}}" data-preset="{{preset}}">
+  <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-hint">
+    <svg class="drop-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.4l4 2.7a1 1 0 0 0 1.5-.8V7.5a1 1 0 0 0-1.5-.8L17 9.4V7a2 2 0 0 0-2-2H4Zm2 8h7v1.5H6V13Zm0-3h4v1.5H6V10Z"/></svg>
+    <strong>{{t.dropTitle}}</strong>
+    <span id="drop-hint" class="muted">{{t.dropHint}}</span>
+    <input type="file" id="file-input" accept="video/*,.mp4,.mov,.webm,.mkv,.m4v" hidden>
+  </div>
+
+  <div class="file-box" id="file-box" hidden>
+    <div class="file-head">
+      <span class="file-name" id="file-name"></span>
+      <button type="button" class="btn-link" id="change-btn">{{t.changeFile}}</button>
+    </div>
+  </div>
+
+  <div class="options" id="options">
+    <label>{{t.language}}
+      <select id="opt-language">
+        {{languageOptions}}
+      </select>
+    </label>
+    <label>{{t.quality}}
+      <select id="opt-quality">
+        <option value="base-words" selected>{{t.qWords}}</option>
+        <option value="tiny">{{t.qTiny}}</option>
+        <option value="small">{{t.qSmall}}</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="opt-translate"> {{t.translateEn}}</label>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-primary" id="start-btn" disabled>{{t.generate}}</button>
+    <button type="button" class="btn btn-ghost" id="cancel-btn" hidden>{{t.cancel}}</button>
+  </div>
+  <p class="subs-row">
+    <button type="button" class="btn-link" id="subs-btn" disabled>{{t.haveSubs}}</button>
+    <input type="file" id="subs-input" accept=".srt,.vtt,text/vtt,application/x-subrip" hidden>
+  </p>
+  <p class="privacy-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7Z"/></svg>{{t.privacyNote}}</p>
+
+  <div class="status" id="status" hidden aria-live="polite">
+    <p id="status-text"></p>
+    <progress id="bar" max="100"></progress>
+    <p class="device muted" id="device" hidden></p>
+  </div>
+</section>
+
+<div class="ad-slot" data-slot="result"></div>
+
+<section class="card studio" id="studio" hidden aria-labelledby="studio-title">
+  <div class="studio-grid">
+    <div class="preview-col">
+      <div class="stage" id="stage">
+        <video id="video" playsinline controls preload="metadata"></video>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+      </div>
+      <p class="warn" id="encoder-warn" hidden>{{t.noEncoderEarly}}</p>
+      <div class="export-row">
+        <button type="button" class="btn btn-primary" id="export-btn">{{t.export}}</button>
+        <button type="button" class="btn btn-ghost" id="export-cancel" hidden>{{t.cancel}}</button>
+        <button type="button" class="btn btn-ghost" id="srt-btn">{{t.exportSrt}}</button>
+        <a class="btn btn-ghost" id="download-link" hidden download>{{t.downloadAgain}}</a>
+      </div>
+      <div class="status" id="export-status" hidden aria-live="polite">
+        <p id="export-text"></p>
+        <progress id="export-bar" max="100" value="0"></progress>
+      </div>
+    </div>
+    <div class="controls-col">
+      <div class="platforms" role="group" aria-label="{{t.platformLabel}}">
+        <span class="platforms-label">{{t.platformLabel}}</span>
+        <button type="button" class="chip" data-platform="tiktok" aria-pressed="false">TikTok</button>
+        <button type="button" class="chip" data-platform="reels" aria-pressed="false">Reels</button>
+        <button type="button" class="chip" data-platform="shorts" aria-pressed="false">Shorts</button>
+        <button type="button" class="chip" data-platform="" aria-pressed="true">{{t.platformOther}}</button>
+      </div>
+      <label class="check small" id="crop-row" hidden><input type="checkbox" id="st-crop"> {{t.crop916}}</label>
+      <label class="check small" id="safe-row" hidden><input type="checkbox" id="st-safe" checked> {{t.showSafe}}</label>
+      <h2 id="studio-title">{{t.step2}}</h2>
+      <div class="presets" id="presets">
+        <button type="button" class="preset" data-preset="karaoke" aria-pressed="true"><span class="pv pv-karaoke">AB<b>C</b></span>{{t.presetKaraoke}}</button>
+        <button type="button" class="preset" data-preset="pop" aria-pressed="false"><span class="pv pv-pop">ABC</span>{{t.presetPop}}</button>
+        <button type="button" class="preset" data-preset="marker" aria-pressed="false"><span class="pv pv-marker">A<b>B</b>C</span>{{t.presetMarker}}</button>
+        <button type="button" class="preset" data-preset="progressive" aria-pressed="false"><span class="pv pv-progressive"><b>AB</b>C</span>{{t.presetProgressive}}</button>
+        <button type="button" class="preset" data-preset="neon" aria-pressed="false"><span class="pv pv-neon">A<b>B</b>C</span>{{t.presetNeon}}</button>
+        <button type="button" class="preset" data-preset="box" aria-pressed="false"><span class="pv pv-box">A<b>B</b>C</span>{{t.presetBox}}</button>
+        <button type="button" class="preset" data-preset="bubble" aria-pressed="false"><span class="pv pv-bubble">A<b>B</b>C</span>{{t.presetBubble}}</button>
+        <button type="button" class="preset" data-preset="classic" aria-pressed="false"><span class="pv pv-classic">Abc</span>{{t.presetClassic}}</button>
+      </div>
+      <div class="style-grid">
+        <label>{{t.font}}
+          <select id="st-font">
+            <option value="montserrat">Montserrat</option>
+            <option value="anton">Anton</option>
+            <option value="bangers">Bangers</option>
+            <option value="sans">Sans</option>
+          </select>
+        </label>
+        <label class="color">{{t.textColor}} <input type="color" id="st-color" value="#ffffff"></label>
+        <label class="color">{{t.highlightColor}} <input type="color" id="st-highlight" value="#ffe600"></label>
+        <label>{{t.size}} <input type="range" id="st-size" min="0.03" max="0.16" step="0.005" value="0.075"></label>
+        <label>{{t.position}} <input type="range" id="st-pos" min="0.1" max="0.92" step="0.01" value="0.7"></label>
+        <label><span>{{t.wordsPerLine}}: <b class="range-value" id="st-words-val">3</b></span><input type="range" id="st-words" min="1" max="8" step="1" value="3"></label>
+        <label class="color">{{t.keyColor}} <input type="color" id="st-key" value="#4ade80"></label>
+        <label class="check"><input type="checkbox" id="st-upper" checked> {{t.uppercase}}</label>
+        <label class="check"><input type="checkbox" id="st-keys" checked> {{t.autoKeys}}</label>
+        <label class="check"><input type="checkbox" id="st-emojis"> {{t.autoEmojis}}</label>
+      </div>
+      <h2>{{t.step3}}</h2>
+      <p class="muted small">{{t.step3Hint}} {{t.keyHint}}</p>
+      <div class="lines" id="lines"></div>
+    </div>
+  </div>
+</section>
