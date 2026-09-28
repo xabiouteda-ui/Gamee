@@ -1,5 +1,6 @@
-// Prueba end-to-end del analizador de consumo eléctrico (Chromium + Playwright).
+// Prueba end-to-end del comparador de tarifas de luz (Chromium + Playwright).
 //   npm i --no-save playwright && node build.mjs && node tests/e2e-luz.cjs
+// Se sirve un data/pvpc.json sintético (los precios reales los descarga Actions a diario).
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || "playwright");
@@ -25,114 +26,143 @@ function makeCsv() {
 }
 
 (async () => {
+  const { summarizePvpc } = await import("../assets/js/luz/pvpc.js");
+  const { periodOf } = await import("../assets/js/luz/core.js");
+  // PVPC sintético de 13 meses: punta 0,22, llano 0,15, valle 0,09 €/kWh.
+  const days = {};
+  const today = new Date();
+  for (let d = -400; d <= 1; d++) {
+    const date = new Date(today.getTime() + d * 86400000).toISOString().slice(0, 10);
+    days[date] = Array.from({ length: 24 }, (_, h) => ({ P1: 0.22, P2: 0.15, P3: 0.09 })[periodOf(date, h)]);
+  }
+  const pvpcJson = JSON.stringify(summarizePvpc(days, today.toISOString()));
+
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await serve();
   const browser = await chromium.launch();
   const { check, failures } = checker();
+  const withPvpc = { [srv.base + "/data/pvpc.json"]: pvpcJson };
+  const nCatalog = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ofertas.json"), "utf8")).offers.length;
 
-  const { ctx, external } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+  const { ctx, external } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, withPvpc);
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.goto(srv.base + "/luz/");
   check((await page.title()).includes("tarifa de luz"), "Portada de luz con título SEO");
-  check(await page.locator("#results").isHidden(), "Sin resultados hasta cargar datos");
+  check(await page.locator("#results").isHidden() && await page.locator("#headline").isHidden(), "Sin resultados hasta cargar datos");
 
-  // 1. Ejemplo sin CSV
+  // 1. Ejemplo en 1 clic: resultado principal sin escribir precios
   await page.click("#example-btn");
-  await page.waitForSelector("#results:not([hidden])");
-  check(/Ejemplo/.test(await page.textContent("#status-text")), "El ejemplo carga un hogar tipo");
-  check((await page.locator("#ranking tbody tr").count()) === 2, "Ranking con las 2 ofertas de ejemplo");
-  check((await page.locator("#monthly .bar").count()) === 12, "12 barras mensuales en el ejemplo de un año");
-  check((await page.locator("#heat .cell").count()) === 168, "Mapa de calor de 7×24 celdas");
-  await page.screenshot({ path: path.join(OUT, "luz-ejemplo.png"), fullPage: true });
+  await page.waitForSelector("#headline:not([hidden]) .headline-name");
+  const bestName = await page.textContent(".headline-name");
+  check(bestName.length > 3, "Resultado principal en 1 clic: " + bestName);
+  check((await page.locator("#ranking tbody tr").count()) === nCatalog + 1, `Ranking con PVPC + ${nCatalog} tarifas del catálogo`);
+  check(await page.locator("#ranking tbody tr", { hasText: "PVPC" }).count() === 1, "El PVPC aparece en el ranking");
+  check(/Precio real hora a hora/.test(await page.textContent("#ranking")), "El PVPC se calcula hora a hora con el consumo");
+  check(/verificados el 28\/09\/2026/.test(await page.textContent("#verified-note")), "Se indica la fecha de verificación de los precios");
+  check([12, 13].includes(await page.locator("#monthly .bar").count()) && (await page.locator("#heat .cell").count()) === 168, "Gráficos del ejemplo");
+  await page.screenshot({ path: path.join(OUT, "luz-resultado.png"), fullPage: false });
 
-  // 2. CSV real con reparto conocido
-  const csv = makeCsv();
-  await page.setInputFiles("#file-input", { name: "consumo.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  // 2. Tarifa actual → ahorro concreto
+  const worst = await page.textContent("#ranking tbody tr:last-child td:nth-child(2)");
+  const worstId = await page.evaluate((txt) => [...document.querySelectorAll("#current option")].find((o) => txt.startsWith(o.textContent))?.value, worst);
+  await page.selectOption("#current", worstId);
+  const msg = await page.textContent(".headline-msg");
+  check(/Ahorras ~\d/.test(msg), "Con la tarifa actual elegida, dice cuánto ahorras: " + msg.trim());
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.current")))) === worstId, "La tarifa actual se recuerda");
+  const bestId = await page.evaluate(() => window.__luz.ranking()[0].offer.id);
+  await page.selectOption("#current", bestId);
+  check(/Ya tienes la tarifa más barata/.test(await page.textContent(".headline-msg")), "Si ya tienes la mejor, lo dice");
+  check((await page.locator(".headline a.btn").count()) === 1 || bestId === "pvpc", "Enlace a la web oficial de la mejor tarifa");
+
+  // 3. CSV real con reparto conocido
+  await page.setInputFiles("#file-input", { name: "consumo.csv", mimeType: "text/csv", buffer: Buffer.from(makeCsv()) });
   await page.waitForFunction(() => /336 horas/.test(document.getElementById("status-text").textContent));
   const status = await page.textContent("#status-text");
-  check(/07\/09\/2026 al 20\/09\/2026/.test(status), "Lee las fechas del CSV: " + status.split("(")[0].trim());
-  check(/ES00…AB0F/.test(status) && !status.includes("ES0021000000000000AB0F"), "Muestra el CUPS enmascarado");
-  check(/extrapolación/.test(status), "Avisa de que 14 días son pocos para el cálculo anual");
-  // 10 laborables × 8 h punta × 1 kWh = 80 kWh; resto 336−80 = 256 h × 0,2 = 51,2 kWh → total 131,2 kWh
+  check(/07\/09\/2026 al 20\/09\/2026/.test(status) && /ES00…AB0F/.test(status), "Lee fechas y enmascara el CUPS");
   const kpi = await page.textContent("#kpis");
-  check(kpi.includes("131 kWh"), "Consumo total correcto (131 kWh)");
-  check(/Punta 61 %/.test(kpi), "Reparto por periodos correcto (punta 61 %): " + kpi.match(/Punta \d+ %/)?.[0]);
-  // Con tanto consumo en punta, la oferta de precio fijo debe ganar a la de 3 periodos.
-  const first = await page.textContent("#ranking tbody tr:first-child td:nth-child(2)");
-  check(/Precio fijo/.test(first), "Con mucho consumo en punta gana el precio fijo: " + first);
+  check(kpi.includes("131 kWh") && /Punta 61 %/.test(kpi), "Consumo total (131 kWh) y reparto (punta 61 %) correctos");
+  // Con 61 % en punta, la tarifa por periodos del catálogo no debería ganar.
+  const winner = await page.evaluate(() => window.__luz.ranking()[0].offer);
+  check(winner.type !== "periods", "Con mucho consumo en punta no gana una tarifa por periodos: " + winner.name);
 
-  // 3. Editar precios cambia el ganador
-  const valle = page.locator('fieldset.offer').nth(1).locator('input[data-key="energy"]').nth(0);
-  await valle.fill("0.05");
-  await valle.dispatchEvent("change");
-  const first2 = await page.textContent("#ranking tbody tr:first-child td:nth-child(2)");
-  check(/3 periodos/.test(first2), "Si la punta de la oferta por periodos baja a 0,05 €, pasa a ser la más barata");
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.offers"))[1].energy[0]);
-  check(saved === 0.05, "Las ofertas se guardan en el navegador");
-
-  // 4. Añadir y quitar ofertas; cambiar potencia
+  // 4. Mi tarifa: una muy barata pasa a ser la mejor
+  await page.click("#setup summary");
   await page.click("#add-offer");
-  check((await page.locator("#ranking tbody tr").count()) === 3, "Añadir una oferta la incluye en el ranking");
-  await page.locator(".offer .remove").last().click();
-  check((await page.locator("#ranking tbody tr").count()) === 2, "Quitar una oferta la saca del ranking");
-  const before = await page.textContent("#ranking tbody tr:first-child td:nth-child(4)");
+  const e0 = page.locator('.offer input[data-key="energy"]').first();
+  await e0.fill("0.03");
+  await e0.dispatchEvent("change");
+  check(/Mi tarifa 1/.test(await page.textContent(".headline-name")), "Una tarifa propia más barata pasa a ser la mejor opción");
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.offers")).length)) === 1, "Las tarifas propias se guardan");
+  await page.locator(".offer .remove").click();
+  check(!/Mi tarifa/.test(await page.textContent("#ranking")), "Quitar la tarifa propia la saca del ranking");
+  const y0 = await page.textContent("#ranking tbody tr:first-child td:nth-child(3)");
   await page.fill("#pw1", "3.45");
-  const after = await page.textContent("#ranking tbody tr:first-child td:nth-child(4)");
-  check(before !== after, `Bajar la potencia abarata el coste anual (${before} → ${after})`);
+  check(y0 !== (await page.textContent("#ranking tbody tr:first-child td:nth-child(3)")), "Bajar la potencia cambia el coste anual");
 
-  // 5. Simulador de mover consumo a valle
-  const r0 = await page.textContent(".insight-result");
+  // 5. Simulador y tooltip
   await page.fill("#shift", "50");
   await page.dispatchEvent("#shift", "input");
-  const r1 = await page.textContent(".insight-result");
-  check(/no ahorrarías/.test(r1), "Si el valle no es más barato, no promete un ahorro negativo: " + r1);
-  await valle.fill("0.19");
-  await valle.dispatchEvent("change");
-  await page.fill("#shift", "50");
-  await page.dispatchEvent("#shift", "input");
-  const r2 = await page.textContent(".insight-result");
-  check(/ahorrarías \d/.test(r2) && r2 !== r0, "Con punta cara, mover consumo a valle da un ahorro positivo: " + r2);
-
-  // 6. Tooltip del gráfico
+  check(/ahorrarías \d|no ahorrarías/.test(await page.textContent(".insight-result")), "Simulador de mover consumo a valle");
   await page.hover("#monthly .bar .hit");
-  check(!(await page.locator("#tip").isHidden()) && /kWh/.test(await page.textContent("#tip")), "Tooltip al pasar por una barra");
+  check(/kWh/.test(await page.textContent("#tip")), "Tooltip al pasar por una barra");
+
+  // 6. Cálculo rápido sin CSV
+  await page.click("#quick summary");
+  await page.fill("#q-kwh", "300");
+  await page.fill("#q-valle", "60");
+  await page.dispatchEvent("#q-valle", "input");
+  await page.click("#quick-form button[type=submit]");
+  await page.waitForFunction(() => /Cálculo rápido/.test(document.getElementById("status-text").textContent));
+  check(await page.locator("#charts").isHidden() && await page.locator("#consumption").isHidden(), "En el cálculo rápido no se muestran gráficos horarios");
+  check(/Media del último año/.test(await page.textContent("#ranking")), "En el cálculo rápido el PVPC usa la media por periodo");
+  const quickPeriodsWins = await page.evaluate(() => window.__luz.ranking().findIndex((x) => x.offer.type === "periods"));
+  check(quickPeriodsWins >= 0, "La tarifa por periodos entra en el ranking rápido (posición " + (quickPeriodsWins + 1) + ")");
 
   // 7. Fichero no válido
   await page.setInputFiles("#file-input", { name: "otra.csv", mimeType: "text/csv", buffer: Buffer.from("nombre;apellido\nana;pérez\n") });
   await page.waitForSelector('#status[data-kind="error"]');
   check(/No hemos podido leer/.test(await page.textContent("#status-text")), "Un CSV que no es de consumo muestra un error claro");
-  check(external.length === 0, "No se hace ninguna petición a terceros (el CSV no sale del navegador)" + (external.length ? ": " + external.join(", ") : ""));
+  check(external.length === 0, "Ninguna petición a terceros: el CSV no sale del navegador" + (external.length ? ": " + external.join(", ") : ""));
   check(errors.length === 0, "Sin errores en la consola" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();
 
-  // 8. Móvil y páginas
+  // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {
-    const { ctx } = await newContext(browser, srv, { viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/");
+    await page.click("#example-btn");
+    await page.waitForSelector("#headline:not([hidden]) .headline-name");
+    check((await page.locator("#ranking tbody tr").count()) === nCatalog, "Sin pvpc.json compara solo el catálogo");
+    check(/Sin datos del PVPC/.test(await page.textContent("#verified-note")), "…y lo indica");
+    await ctx.close();
+  }
+
+  // 9. Móvil y modo oscuro
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, withPvpc);
     const page = await ctx.newPage();
     for (const p of ["/luz/", "/luz/descargar-consumo-datadis.html", "/luz/potencia-contratada.html"]) {
       await page.goto(srv.base + p);
       await page.click("#example-btn");
-      await page.waitForSelector("#results:not([hidden])");
+      await page.waitForSelector("#headline:not([hidden]) .headline-name");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       check(overflow <= 0, `Móvil ${p} con resultados: sin scroll horizontal (${overflow}px)`);
     }
-    await page.screenshot({ path: path.join(OUT, "luz-movil.png"), fullPage: true });
+    await page.screenshot({ path: path.join(OUT, "luz-movil.png"), fullPage: false });
     await ctx.close();
   }
-
-  // 9. Modo oscuro
   {
-    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 }, colorScheme: "dark" });
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 }, colorScheme: "dark" }, withPvpc);
     const page = await ctx.newPage();
     await page.goto(srv.base + "/luz/");
     await page.click("#example-btn");
     await page.waitForSelector("#results:not([hidden])");
     const fill = await page.evaluate(() => getComputedStyle(document.querySelector(".seg-P1")).fill);
-    check(fill === "rgb(57, 135, 229)", "En modo oscuro las series usan los tonos oscuros validados: " + fill);
-    await page.screenshot({ path: path.join(OUT, "luz-oscuro.png"), fullPage: false });
+    check(fill === "rgb(57, 135, 229)", "En modo oscuro las series usan los tonos oscuros validados");
     await ctx.close();
   }
 

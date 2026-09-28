@@ -74,3 +74,74 @@ assert.deepEqual(sh, { P1: 80, P2: 50, P3: 30 });
 assert.ok(powerSavingPerYear(DEFAULT_OFFERS[0], 1) > 60 && powerSavingPerYear(DEFAULT_OFFERS[0], 1) < 90);
 
 console.log("✓ Pruebas unitarias de la herramienta de luz correctas.");
+
+// ---------- Formatos reales de distribuidoras (tests/fixtures) ----------
+import { readFileSync } from "node:fs";
+import { parseREE, summarizePvpc, pvpcEnergy, dayStats } from "../assets/js/luz/pvpc.js";
+import { quickSummary, billFromEnergy } from "../assets/js/luz/core.js";
+const fx = (f) => readFileSync(new URL(`./fixtures/${f}`, import.meta.url), "utf8");
+for (const f of ["consumo-cnmc-ide.csv", "consumo-edistribucion.csv", "consumo-datadis.csv"]) {
+  const r = parseConsumptionCSV(fx(f));
+  assert.deepEqual(r.rows.map((x) => [x.date, x.hour, x.kwh]), [
+    ["2026-09-07", 0, 0.215], ["2026-09-07", 1, 0.198], ["2026-09-07", 10, 1.032], ["2026-09-07", 18, 0.876], ["2026-09-07", 23, 0.301],
+  ], f + ": lee consumo (no vertido) y horas");
+  assert.ok(r.cups.startsWith("ES00") && r.cups.includes("…"), f + ": CUPS enmascarado");
+}
+
+// ---------- PVPC (respuesta con la forma de apidatos.ree.es) ----------
+const ree = {
+  data: { type: "Precios mercado peninsular en tiempo real" },
+  included: [
+    { type: "Precio mercado spot (€/MWh)", attributes: { title: "Precio mercado spot (€/MWh)", values: [{ value: 50, datetime: "2026-09-28T00:00:00.000+02:00" }] } },
+    { type: "PVPC (€/MWh)", attributes: { title: "PVPC (€/MWh)", values: [
+      { value: 100, percentage: 1, datetime: "2026-09-28T00:00:00.000+02:00" },
+      { value: 120, percentage: 1, datetime: "2026-09-28T00:15:00.000+02:00" }, // cuartohorario → media
+      { value: 250, percentage: 1, datetime: "2026-09-28T19:00:00.000+02:00" },
+    ] } },
+  ],
+};
+const days = parseREE(ree);
+assert.equal(days["2026-09-28"][0], 0.11, "media de los valores de la hora, en €/kWh");
+assert.equal(days["2026-09-28"][19], 0.25);
+assert.equal(days["2026-09-28"][5], null);
+assert.throws(() => parseREE({ included: [] }));
+
+// Un año de PVPC sintético: punta 0,20, llano 0,14, valle 0,08 €/kWh.
+const synth = {};
+for (let d = 0; d < 400; d++) {
+  const date = new Date(Date.UTC(2025, 7, 25) + d * 86400000).toISOString().slice(0, 10);
+  synth[date] = Array.from({ length: 24 }, (_, h) => ({ P1: 0.2, P2: 0.14, P3: 0.08 })[periodOf(date, h)]);
+}
+const pv = summarizePvpc(synth, "2026-09-28T19:30:00Z");
+assert.deepEqual(pv.avg365, { P1: 0.2, P2: 0.14, P3: 0.08 });
+assert.equal(pv.from, "2025-08-25");
+const rowsPv = [{ date: "2026-09-28", hour: 12, kwh: 2 }, { date: "2026-09-28", hour: 3, kwh: 1 }, { date: "2030-01-01", hour: 3, kwh: 1 }];
+const e = pvpcEnergy(rowsPv, pv);
+assert.ok(Math.abs(e.energy - (2 * 0.2 + 0.08 + 0.08)) < 1e-9, "hora sin precio → media de su periodo");
+assert.ok(Math.abs(e.coverage - 2 / 3) < 1e-9);
+const ds = dayStats(pv, "2026-09-28");
+assert.equal(ds.min.p, 0.08);
+assert.deepEqual(ds.cheapest, [0, 1, 2]);
+assert.equal(ds.best3.start, 0);
+assert.equal(dayStats(pv, "1999-01-01"), null);
+
+// Cálculo rápido y factura desde energía.
+const q = quickSummary(250, 0.4);
+assert.equal(q.kwh, 3000);
+assert.ok(Math.abs(q.byPeriod.P3 - 1200) < 1e-9 && Math.abs(q.byPeriod.P1 + q.byPeriod.P2 - 1800) < 1e-9);
+const b1 = billFor({ P1: 10, P2: 10, P3: 10 }, 30, { type: "fixed", energy: [0.1], power: [0.1, 0.1] }, { p1: 4, p2: 4 });
+const b2 = billFromEnergy(3, 30, { power: [0.1, 0.1] }, { p1: 4, p2: 4 });
+assert.ok(Math.abs(b1.total - b2.total) < 1e-9);
+
+// Catálogo de tarifas: estructura válida y fuentes.
+const cat = JSON.parse(readFileSync(new URL("../data/ofertas.json", import.meta.url), "utf8"));
+assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(cat.verified));
+assert.equal(cat.pvpcPower.power.length, 2);
+for (const o of cat.offers) {
+  assert.ok(o.id && o.company && o.name, "tarifa con nombre");
+  assert.ok(o.type === "fixed" ? o.energy.length === 1 : o.energy.length === 3, o.id + ": precios de energía");
+  assert.ok(o.energy.every((x) => x > 0.02 && x < 0.5), o.id + ": €/kWh razonables");
+  assert.ok(o.power.length === 2 && o.power.every((x) => x >= 0 && x < 0.3), o.id + ": €/kW·día razonables");
+  assert.ok(/^https:\/\//.test(o.official) && o.verifiedFrom, o.id + ": fuente");
+}
+console.log("✓ Formatos reales de CSV, PVPC y catálogo de tarifas correctos.");

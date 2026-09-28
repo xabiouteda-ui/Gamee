@@ -1,22 +1,25 @@
 import { STRINGS } from "./i18n.js";
-import { RULES, PERIODS, parseConsumptionCSV, summarize, rankOffers, billFor, shift, powerSavingPerYear, baseLoadCostPerYear, sampleRows, DEFAULT_OFFERS, CsvError } from "./core.js";
+import { RULES, PERIODS, parseConsumptionCSV, summarize, rankOffers, billFor, billFromEnergy, shift, powerSavingPerYear, baseLoadCostPerYear, sampleRows, quickSummary, CsvError } from "./core.js";
+import { pvpcEnergy } from "./pvpc.js";
 
 const T = STRINGS.es;
 const $ = (id) => document.getElementById(id);
 const fmt = (s, vars = {}) => s.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : ""));
-const eur = (n) => n.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: n >= 100 ? 0 : 2 });
+const eur = (n) => n.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: Math.abs(n) >= 100 ? 0 : 2 });
 const num = (n, d = 0) => n.toLocaleString("es-ES", { maximumFractionDigits: d, minimumFractionDigits: d });
-const dateES = (iso) => iso.split("-").reverse().join("/");
+const dateES = (iso) => iso.slice(0, 10).split("-").reverse().join("/");
 const MONTHS = T.monthsShort.split(",");
 const WD = T.weekdays.split(",");
 const WDL = T.weekdaysLong.split(",");
 const SVGNS = "http://www.w3.org/2000/svg";
+const DATA = (f) => new URL(`../../../data/${f}`, import.meta.url);
 
 const els = {
   drop: $("drop"), fileInput: $("file-input"), example: $("example-btn"), status: $("status"), statusText: $("status-text"),
-  results: $("results"), kpis: $("kpis"), ranking: $("ranking"), offers: $("offers"), pw1: $("pw1"), pw2: $("pw2"),
-  addOffer: $("add-offer"), resetOffers: $("reset-offers"), insights: $("insights"), monthly: $("monthly"),
-  heat: $("heat"), rulesNote: $("rules-note"), tip: $("tip"),
+  quickForm: $("quick-form"), qKwh: $("q-kwh"), qPower: $("q-power"), qValle: $("q-valle"), qValleOut: $("q-valle-out"),
+  headline: $("headline"), results: $("results"), kpis: $("kpis"), ranking: $("ranking"), verified: $("verified-note"),
+  offers: $("offers"), pw1: $("pw1"), pw2: $("pw2"), addOffer: $("add-offer"), insights: $("insights"),
+  consumption: $("consumption"), charts: $("charts"), monthly: $("monthly"), heat: $("heat"), rulesNote: $("rules-note"), tip: $("tip"),
 };
 
 const store = {
@@ -24,16 +27,29 @@ const store = {
   set(k, v) { try { localStorage.setItem("tl.luz." + k, JSON.stringify(v)); } catch {} },
 };
 
+// Tarifas propias guardadas (las de ejemplo de la versión anterior se descartan).
+function loadMine() {
+  const o = store.get("offers");
+  if (!Array.isArray(o)) return [];
+  return o.filter((x) => x && Array.isArray(x.energy) && Array.isArray(x.power) && !/\(ejemplo\)$/.test(x.name || ""));
+}
+
 const state = {
-  summary: null,
-  offers: validOffers(store.get("offers")) || structuredClone(DEFAULT_OFFERS),
+  rows: null, summary: null, catalog: null, pvpc: null,
+  mine: loadMine(),
   contract: store.get("contract") || { p1: 4.6, p2: 4.6 },
+  current: store.get("current") || "unknown",
   shiftPct: 20,
 };
 
-function validOffers(o) {
-  return Array.isArray(o) && o.length && o.every((x) => x && Array.isArray(x.energy) && Array.isArray(x.power)) ? o : null;
-}
+// Datos publicados con la web: tarifas de mercado libre (a mano) y PVPC (Actions, a diario).
+const dataReady = Promise.all([
+  fetch(DATA("ofertas.json")).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  fetch(DATA("pvpc.json")).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+]).then(([catalog, pvpc]) => {
+  state.catalog = catalog;
+  state.pvpc = pvpc && pvpc.days && pvpc.avg365 ? pvpc : null;
+});
 
 function setStatus(lines, kind = "") {
   els.status.hidden = false;
@@ -62,24 +78,63 @@ async function loadFile(file) {
   if (parsed.unitWh) msgs.push(T.unitWh);
   if (s.nDays < 300) msgs.push(fmt(T.shortPeriod, { n: s.nDays }));
   setStatus(msgs, "ok");
-  show(s);
+  show(parsed.rows, s);
 }
 
 function loadExample() {
-  const s = summarize(sampleRows(365));
+  const rows = sampleRows(365, new Date(Date.now() - 366 * 86400000).toISOString().slice(0, 10));
   setStatus([T.loadedExample], "ok");
-  show(s);
+  show(rows, summarize(rows));
 }
 
-function show(summary) {
+function loadQuick(e) {
+  e.preventDefault();
+  const kwh = Number(els.qKwh.value), kw = Number(els.qPower.value), pct = Number(els.qValle.value);
+  if (!(kwh > 0) || !(kw > 0)) return;
+  state.contract = { p1: kw, p2: kw };
+  store.set("contract", state.contract);
+  setStatus([fmt(T.quickLoaded, { kwh: num(kwh), pct })], "ok");
+  show(null, quickSummary(kwh, pct / 100));
+}
+
+async function show(rows, summary) {
+  await dataReady;
+  state.rows = rows;
   state.summary = summary;
   els.results.hidden = false;
+  els.headline.hidden = false;
   renderOffers();
   renderAll();
-  els.results.scrollIntoView({ behavior: "smooth", block: "start" });
+  els.headline.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ---------- ofertas ----------
+// ---------- tarifas ----------
+
+function allOffers() {
+  const list = [];
+  if (state.pvpc && state.catalog?.pvpcPower) {
+    list.push({ id: "pvpc", name: T.pvpcName, kind: "pvpc", power: state.catalog.pvpcPower.power });
+  }
+  for (const o of state.catalog?.offers || []) {
+    list.push({ ...o, name: `${o.company} · ${o.name}`, energy: o.type === "fixed" ? [o.energy[0], o.energy[0], o.energy[0]] : o.energy });
+  }
+  state.mine.forEach((o, i) => list.push({ ...o, id: "mine-" + i, custom: true }));
+  return list;
+}
+
+function costOf(offer) {
+  const s = state.summary;
+  if (offer.kind === "pvpc") {
+    const pv = state.pvpc;
+    const energy = state.rows ? pvpcEnergy(state.rows, pv).energy : PERIODS.reduce((a, p) => a + s.byPeriod[p] * (pv.avg365[p] ?? 0), 0);
+    return billFromEnergy(energy, s.nDays, offer, state.contract);
+  }
+  return billFor(s.byPeriod, s.nDays, offer, state.contract);
+}
+
+function ranking() {
+  return allOffers().map((o) => ({ offer: o, ...costOf(o) })).sort((a, b) => a.total - b.total);
+}
 
 function field(label, value, attrs, key, i, idx) {
   const l = document.createElement("label");
@@ -99,7 +154,7 @@ function renderOffers() {
   els.pw2.value = state.contract.p2;
   const frag = document.createDocumentFragment();
   const price = { type: "number", min: "0", max: "2", step: "0.0001", inputMode: "decimal" };
-  state.offers.forEach((o, i) => {
+  state.mine.forEach((o, i) => {
     const card = document.createElement("fieldset");
     card.className = "offer";
     const legend = document.createElement("legend");
@@ -119,31 +174,32 @@ function renderOffers() {
     card.appendChild(field(T.powerPriceP1, o.power[0], price, "power", i, 0));
     card.appendChild(field(T.powerPriceP2, o.power[1], price, "power", i, 1));
     card.appendChild(field(T.fee, o.fee || 0, { type: "number", min: "0", max: "100", step: "0.01", inputMode: "decimal" }, "fee", i));
-    if (state.offers.length > 1) {
-      const rm = document.createElement("button");
-      rm.type = "button";
-      rm.className = "btn-link remove";
-      rm.dataset.remove = i;
-      rm.textContent = T.remove;
-      card.appendChild(rm);
-    }
+    const rm = document.createElement("button");
+    rm.type = "button";
+    rm.className = "btn-link remove";
+    rm.dataset.remove = i;
+    rm.textContent = T.remove;
+    card.appendChild(rm);
     frag.appendChild(card);
   });
   els.offers.replaceChildren(frag);
 }
 
+function saveMine() { store.set("offers", state.mine); }
+
 function onOfferInput(e) {
   const t = e.target;
   const i = Number(t.dataset.i);
-  const o = state.offers[i];
+  const o = state.mine[i];
   if (!o || !t.dataset.key) return;
   const key = t.dataset.key;
   if (key === "name") {
-    o.name = t.value.trim() || fmt(T.newOffer, { n: i + 1 });
+    o.name = t.value.trim() || `${T.myOffer} ${i + 1}`;
     t.closest("fieldset").querySelector("legend").textContent = o.name;
   } else if (key === "type") {
     o.type = t.value;
     if (o.type === "periods" && o.energy.every((x) => x === o.energy[0])) o.energy = [o.energy[0] * 1.45, o.energy[0] * 0.96, o.energy[0] * 0.66].map((x) => Math.round(x * 10000) / 10000);
+    if (o.type === "fixed") o.energy = [o.energy[0], o.energy[0], o.energy[0]];
     renderOffers();
   } else {
     const v = Number(String(t.value).replace(",", "."));
@@ -152,7 +208,7 @@ function onOfferInput(e) {
     else if (key === "energy" && o.type === "fixed") o.energy = [v, v, v];
     else o[key][Number(t.dataset.idx)] = v;
   }
-  store.set("offers", state.offers);
+  saveMine();
   renderAll();
 }
 
@@ -161,12 +217,110 @@ function onOfferInput(e) {
 function renderAll() {
   const s = state.summary;
   if (!s) return;
-  renderKpis(s);
-  renderRanking(s);
-  renderInsights(s);
-  renderMonthly(s);
-  renderHeat(s);
+  const r = ranking();
+  renderHeadline(r);
+  renderRanking(r);
+  els.consumption.hidden = !!s.quick;
+  els.charts.hidden = !state.rows;
+  if (!s.quick) renderKpis(s);
+  renderInsights(s, r);
+  if (state.rows) { renderMonthly(s); renderHeat(s); }
+  const cat = state.catalog;
+  els.verified.textContent = state.pvpc || cat
+    ? fmt(T.verifiedNote, { date: cat ? dateES(cat.verified) : "—", pvpcDate: state.pvpc ? dateES(state.pvpc.updated) : "—" }) + (state.pvpc ? "" : " " + T.pvpcNone)
+    : "";
   els.rulesNote.textContent = fmt(T.rulesNote, { date: RULES.reviewed.split("-").reverse().join("/") });
+}
+
+function renderHeadline(r) {
+  const best = r[0];
+  const h = els.headline;
+  h.replaceChildren();
+  if (!best) return;
+  const label = document.createElement("p");
+  label.className = "headline-label";
+  label.textContent = T.headlineBest;
+  const name = document.createElement("p");
+  name.className = "headline-name";
+  name.textContent = best.offer.name;
+  const cost = document.createElement("p");
+  cost.className = "headline-cost";
+  cost.textContent = fmt(T.headlinePerYear, { eur: eur(best.perYear) });
+  const msg = document.createElement("p");
+  msg.className = "headline-msg";
+  const cur = r.find((x) => x.offer.id === state.current);
+  if (cur && cur.offer.id === best.offer.id) msg.textContent = T.headlineAlready;
+  else if (cur) {
+    msg.innerHTML = "";
+    const strong = document.createElement("strong");
+    strong.textContent = fmt(T.headlineSave, { eur: eur(cur.perYear - best.perYear), current: cur.offer.name });
+    msg.appendChild(strong);
+  } else {
+    const avg = r.reduce((a, x) => a + x.perYear, 0) / r.length;
+    msg.textContent = fmt(T.headlineUnknown, { eur: eur(avg - best.perYear), n: r.length });
+  }
+  const sel = document.createElement("select");
+  sel.id = "current";
+  const lab = document.createElement("label");
+  lab.className = "current-label";
+  lab.htmlFor = "current";
+  lab.textContent = T.currentLabel;
+  sel.add(new Option(T.currentUnknown, "unknown"));
+  for (const x of allOffers()) sel.add(new Option(x.name, x.id, false, x.id === state.current));
+  if (!cur) sel.value = "unknown";
+  sel.onchange = () => { state.current = sel.value; store.set("current", state.current); renderAll(); };
+  const pick = document.createElement("div");
+  pick.className = "current-pick";
+  pick.append(lab, sel);
+  h.append(label, name, cost, msg, pick);
+  if (best.offer.official) {
+    const a = document.createElement("a");
+    a.className = "btn btn-primary";
+    a.href = best.offer.official;
+    a.target = "_blank";
+    a.rel = "noopener nofollow";
+    a.textContent = T.goOfficial;
+    h.appendChild(a);
+  }
+}
+
+function renderRanking(r) {
+  const best = r[0];
+  const t = els.ranking;
+  t.innerHTML = "";
+  const head = t.createTHead().insertRow();
+  for (const h of ["#", T.colOffer, T.colYear, T.colMonth, T.colDiff]) {
+    const th = document.createElement("th");
+    th.textContent = h;
+    th.scope = "col";
+    head.appendChild(th);
+  }
+  const body = t.createTBody();
+  r.forEach((x, k) => {
+    const tr = body.insertRow();
+    if (k === 0) tr.className = "best";
+    if (x.offer.id === state.current) tr.classList.add("current");
+    tr.insertCell().textContent = String(k + 1);
+    const nameCell = tr.insertCell();
+    nameCell.append(x.offer.name);
+    const sub = document.createElement("span");
+    sub.className = "offer-sub";
+    if (x.offer.kind === "pvpc") sub.textContent = state.rows ? T.pvpcBadge : T.pvpcApprox;
+    else if (x.offer.official) {
+      const a = document.createElement("a");
+      a.href = x.offer.official;
+      a.target = "_blank";
+      a.rel = "noopener nofollow";
+      a.textContent = T.official;
+      sub.append(x.offer.type === "periods" ? `${T.typePeriods} · ` : `${T.typeFixed} · `, a);
+    } else if (x.offer.custom) sub.textContent = T.myOffer;
+    nameCell.appendChild(sub);
+    for (const [v, cls] of [[eur(x.perYear), "num"], [eur(x.perMonth), "num"], [k === 0 ? T.best : `+${eur(x.perYear - best.perYear)}`, "num"]]) {
+      const td = tr.insertCell();
+      td.textContent = v;
+      td.className = cls;
+    }
+  });
 }
 
 function kpi(label, value, sub) {
@@ -197,38 +351,11 @@ function renderKpis(s) {
   );
 }
 
-function renderRanking(s) {
-  const r = rankOffers(s, state.offers, state.contract);
-  const best = r[0];
-  const t = els.ranking;
-  t.innerHTML = "";
-  const head = t.createTHead().insertRow();
-  for (const h of ["#", T.colOffer, T.colPeriod, T.colYear, T.colMonth, T.colDiff]) {
-    const th = document.createElement("th");
-    th.textContent = h;
-    th.scope = "col";
-    head.appendChild(th);
-  }
-  const body = t.createTBody();
-  r.forEach((x, k) => {
-    const tr = body.insertRow();
-    if (k === 0) tr.className = "best";
-    const cells = [String(k + 1), x.offer.name, eur(x.total), eur(x.perYear), eur(x.perMonth), k === 0 ? T.best : `+${eur(x.perYear - best.perYear)} ${T.perYear}`];
-    cells.forEach((c, j) => {
-      const td = tr.insertCell();
-      td.textContent = c;
-      if (j >= 2) td.className = "num";
-    });
-  });
-}
-
-function renderInsights(s) {
-  const offers = state.offers;
-  const periodsOffer = offers.find((o) => o.type === "periods");
+function renderInsights(s, r) {
   const list = document.createElement("ul");
   list.className = "insight-list";
-
-  // 1. Mover consumo a valle
+  // 1. Mover consumo a valle, con la tarifa por periodos más barata de la lista.
+  const periodsOffer = r.find((x) => x.offer.type === "periods")?.offer;
   const li1 = document.createElement("li");
   const label = document.createElement("label");
   label.htmlFor = "shift";
@@ -253,24 +380,23 @@ function renderInsights(s) {
   range.addEventListener("input", updateShift);
   updateShift();
   li1.append(label, range, res);
-
-  // 2. Consumo base
-  const li2 = document.createElement("li");
-  li2.textContent = fmt(T.baseResult, { w: num(s.baseW), eur: eur(baseLoadCostPerYear(s.baseW, offers[0])) });
-
-  // 3. Potencia
-  const li3 = document.createElement("li");
-  const cheapest = rankOffers(s, offers, state.contract)[0].offer;
-  li3.append(fmt(T.powerResult, {
-    date: dateES(s.maxHour.date), hour: `${String(s.maxHour.hour).padStart(2, "0")}:00`, kwh: num(s.maxHour.kwh, 2),
-    kw: num(s.maxHour.kwh, 1), contract: num(state.contract.p1, 2), eur: eur(powerSavingPerYear(cheapest, 1)),
-  }));
-  const note = document.createElement("span");
-  note.className = "muted small block";
-  note.textContent = T.powerNote;
-  li3.appendChild(note);
-
-  list.append(li1, li2, li3);
+  list.appendChild(li1);
+  const bestOffer = r[0].offer;
+  const flat = bestOffer.kind === "pvpc" ? { type: "periods", energy: PERIODS.map((p) => state.pvpc.avg365[p] ?? 0) } : bestOffer;
+  if (!s.quick) {
+    const li2 = document.createElement("li");
+    li2.textContent = fmt(T.baseResult, { w: num(s.baseW), eur: eur(baseLoadCostPerYear(s.baseW, flat)) });
+    const li3 = document.createElement("li");
+    li3.append(fmt(T.powerResult, {
+      date: dateES(s.maxHour.date), hour: `${String(s.maxHour.hour).padStart(2, "0")}:00`, kwh: num(s.maxHour.kwh, 2),
+      kw: num(s.maxHour.kwh, 1), contract: num(state.contract.p1, 2), eur: eur(powerSavingPerYear(bestOffer, 1)),
+    }));
+    const note = document.createElement("span");
+    note.className = "muted small block";
+    note.textContent = T.powerNote;
+    li3.appendChild(note);
+    list.append(li2, li3);
+  }
   els.insights.replaceChildren(list);
 }
 
@@ -420,30 +546,26 @@ function init() {
   for (const ev of ["dragleave", "drop"]) els.drop.addEventListener(ev, (e) => { e.preventDefault(); els.drop.classList.remove("over"); });
   els.drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
   els.example.onclick = loadExample;
+  els.quickForm.addEventListener("submit", loadQuick);
+  els.qValle.addEventListener("input", () => { els.qValleOut.textContent = `${els.qValle.value} %`; });
+  if (state.contract?.p1) els.qPower.value = state.contract.p1;
 
   els.offers.addEventListener("change", onOfferInput);
   els.offers.addEventListener("input", (e) => { if (e.target.type === "number") onOfferInput(e); });
   els.offers.addEventListener("click", (e) => {
     const i = e.target.dataset?.remove;
     if (i == null) return;
-    state.offers.splice(Number(i), 1);
-    store.set("offers", state.offers);
+    state.mine.splice(Number(i), 1);
+    saveMine();
     renderOffers();
     renderAll();
   });
   els.addOffer.onclick = () => {
-    const last = state.offers.at(-1) || DEFAULT_OFFERS[0];
-    state.offers.push({ ...structuredClone(last), name: fmt(T.newOffer, { n: state.offers.length + 1 }) });
-    store.set("offers", state.offers);
+    state.mine.push({ name: `${T.myOffer} ${state.mine.length + 1}`, type: "fixed", energy: [0.13, 0.13, 0.13], power: [0.09, 0.09], fee: 0 });
+    saveMine();
     renderOffers();
     renderAll();
     els.offers.lastElementChild?.querySelector("input")?.focus();
-  };
-  els.resetOffers.onclick = () => {
-    state.offers = structuredClone(DEFAULT_OFFERS);
-    store.set("offers", state.offers);
-    renderOffers();
-    renderAll();
   };
   for (const [el, k] of [[els.pw1, "p1"], [els.pw2, "p2"]]) {
     el.addEventListener("input", () => {
@@ -459,4 +581,4 @@ function init() {
 }
 
 init();
-window.__luz = { state };
+window.__luz = { state, ranking, dataReady };

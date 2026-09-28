@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Cada día, después de que Red Eléctrica publique los precios del PVPC de mañana (~20:15 hora peninsular),
+  # se vuelve a publicar la web con data/pvpc.json actualizado. (Los cron solo se ejecutan en la rama principal.)
+  schedule:
+    - cron: "35 19 * * *"
 
 permissions:
   contents: read
@@ -30,6 +34,12 @@ jobs:
 
       # La URL pública sale de site.config.json (siteOrigin + basePath). Para cambiarla sin tocar el código,
       # define las variables SITE_ORIGIN y/o BASE_PATH en Settings → Secrets and variables → Actions → Variables.
+      # Precios horarios del PVPC (API pública de REE). Si falla, reutiliza los ya publicados; nunca rompe el build.
+      - name: Descargar precios del PVPC
+        run: node scripts/fetch-pvpc.mjs
+        env:
+          PVPC_FALLBACK_URL: ${{ steps.pages.outputs.base_url }}/data/pvpc.json
+
       - name: Generar la web
         run: node build.mjs
         env:

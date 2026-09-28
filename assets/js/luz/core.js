@@ -159,6 +159,11 @@ export function summarize(rows) {
 export function billFor(byPeriod, days, offer, contract) {
   const e = offer.type === "fixed" ? [offer.energy[0], offer.energy[0], offer.energy[0]] : offer.energy;
   const energy = byPeriod.P1 * e[0] + byPeriod.P2 * e[1] + byPeriod.P3 * e[2];
+  return billFromEnergy(energy, days, offer, contract);
+}
+
+// Añade potencia, cuota, impuesto eléctrico, contador e IVA a un coste de energía ya calculado.
+export function billFromEnergy(energy, days, offer, contract) {
   const power = (contract.p1 * offer.power[0] + contract.p2 * offer.power[1]) * days;
   const fee = (offer.fee || 0) * (days * 12 / 365);
   const tax = (energy + power) * RULES.electricityTax;
@@ -189,6 +194,15 @@ export function powerSavingPerYear(offer, kw) {
 export function baseLoadCostPerYear(baseW, offer) {
   const avg = offer.type === "fixed" ? offer.energy[0] : (offer.energy[0] * 8 + offer.energy[1] * 8 + offer.energy[2] * 8) / 24 * (5 / 7) + offer.energy[2] * (2 / 7);
   return (baseW / 1000) * 24 * 365 * avg * (1 + RULES.electricityTax) * (1 + RULES.vat);
+}
+
+// Resumen aproximado sin CSV: consumo mensual y % en valle (noches y fines de semana).
+// El resto se reparte entre punta y llano como en un hogar medio (≈47 % / 53 %).
+export function quickSummary(kwhMonth, valleShare) {
+  const year = Math.max(0, kwhMonth) * 12;
+  const v = Math.min(0.95, Math.max(0.05, valleShare));
+  const rest = year * (1 - v);
+  return { quick: true, kwh: year, nDays: 365, byPeriod: { P1: rest * 0.47, P2: rest * 0.53, P3: year * v } };
 }
 
 // Perfil de ejemplo (para probar la herramienta sin CSV): un hogar tipo de ~2.800 kWh/año.

@@ -1,6 +1,32 @@
-# Progreso (sesión autónoma del 28/09/2026)
+# Progreso
 
-Resumen rápido para revisar desde el móvil. Se actualiza al final de cada fase.
+Resumen para revisar desde el móvil. Lo más reciente, arriba.
+
+## Sesión 3 (28/09/2026, en curso) – luz en 1 clic, subtítulos para creadores, SEO
+
+| Tarea | Estado |
+|---|---|
+| 1. Luz: resultado en 1 clic con PVPC real y tarifas del mercado | ✅ |
+| 2. Subtítulos: presets para Shorts/Reels/TikTok, palabras clave, emojis, móvil, Safari | ⏳ |
+| 3. SEO: páginas por búsqueda concreta | ⏳ |
+
+**1. Luz ✅**
+- Subes el CSV (o pulsas «ejemplo», o usas el **cálculo rápido** con kWh/mes + potencia + % en valle) y sale
+  **«Tu mejor opción: X»** con su coste anual y, si eliges tu tarifa actual, **«Ahorras ~Y € al año»**.
+- Compara el **PVPC con sus precios reales de cada hora** + **6 tarifas de mercado libre** muy contratadas
+  (`data/ofertas.json`, editable a mano, cada una con enlace oficial y fecha de verificación 28/09/2026).
+- El PVPC lo descarga GitHub Actions **cada día** de la API pública de Red Eléctrica (`scripts/fetch-pvpc.mjs`);
+  si falla, se reutiliza el último publicado y la web sigue funcionando.
+- Probado con formatos reales de CSV (i-DE/CNMC, e-distribución, Datadis) y end-to-end.
+
+**Qué tienes que hacer tú (nuevo)**
+- Tras fusionar, en *Actions* lanza «Publicar en GitHub Pages» a mano una vez y comprueba en el log el paso
+  «Descargar precios del PVPC» (debe decir cuántos días descargó). Desde este entorno no pude llegar a REE.
+- Revisa `data/ofertas.json` de vez en cuando (precios de mercado libre cambian; la fecha está en el fichero).
+
+---
+
+## Sesión 2 (28/09/2026)
 
 | Fase | Estado |
 |---|---|

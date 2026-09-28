@@ -159,3 +159,29 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     luz) → 0 problemas; queda como prueba permanente (`tests/e2e-a11y.cjs`).
 51. **Rendimiento:** cada página pesa ≤60 KB sin comprimir; las librerías pesadas (IA, vídeo) y las fuentes solo se
     cargan al usarlas. La imagen para redes pasa de PNG 281 KB a JPEG 33 KB.
+
+## Sesión 3 (28/09/2026): luz en 1 clic, subtítulos y SEO
+
+52. **PVPC descargado en el build, no desde el navegador.** La API de REE (apidatos.ree.es) es pública y sin
+    token, pero no se pudo comprobar su CORS desde este entorno (red bloqueada). Descargarla en GitHub Actions
+    funciona siempre: `scripts/fetch-pvpc.mjs` baja 13 meses de precios horarios (mes a mes, 3 reintentos) y los
+    guarda en `data/pvpc.json` (no se versiona). El workflow se ejecuta también cada día a las 19:35 UTC, después de
+    que REE publique los precios de mañana. Si REE falla, se reutiliza el JSON ya publicado; si tampoco hay, la web
+    funciona sin PVPC y lo avisa. Solo se ejecuta a diario cuando el workflow está en `main` (tras fusionar).
+53. **PVPC calculado hora a hora** con el CSV (las horas sin precio se valoran con la media de su periodo); en el
+    cálculo rápido, con la media del último año por periodo. Potencia del PVPC 2026: peajes y cargos (P1 27,704413
+    y P2 0,725423 €/kW·año) + margen de comercialización 3,113 €/kW·año en P1, según resultados de búsqueda de
+    varias fuentes (la web de REE/CNMC/BOE no era accesible desde aquí). Queda en `data/ofertas.json` → `pvpcPower`.
+54. **Catálogo de tarifas (`data/ofertas.json`)**: 6 tarifas muy contratadas con precio y potencia **verificados en
+    fuentes públicas el 28/09/2026** (cada una con su enlace oficial y de dónde salió el dato; si las fuentes no
+    coincidían se anota). No llegué a 8–10: para Repsol, Plenitude, Som Energia y otras no encontré a la vez precio
+    de energía y de potencia fiables, y la regla es no inventar datos. Nombres de comercializadoras como texto
+    descriptivo, sin logos ni afiliación; se indica «compruébalo antes de contratar».
+55. **Resultado principal**: tarjeta grande «Tu mejor opción» con coste anual y, si eliges tu tarifa actual (se
+    recuerda), «Ahorras ~X € al año frente a …». Si no la eliges, se compara con la media. Enlace a la web oficial
+    de la ganadora. Tus propias tarifas pasan a «Ajustes» (plegado) y los antiguos ejemplos se descartan.
+56. **Cálculo rápido sin CSV**: kWh al mes + potencia + % en valle; el resto se reparte 47/53 entre punta y llano
+    (reparto típico de un hogar, orientativo). Se ocultan los gráficos horarios porque no hay datos reales.
+57. **Formatos reales de CSV** en `tests/fixtures/`: CNMC (i-DE), e-distribución (`AE_kWh;AS_KWh;…;REAL/ESTIMADO`,
+    documentado en SFL/Nergiza) y la descarga de Datadis (comillas, fecha AAAA/MM/DD, hora HH:MM). Del formato de UFD
+    no encontré documentación fiable: se asume el formato común de la CNMC.

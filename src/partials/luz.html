@@ -6,48 +6,70 @@
     <input type="file" id="file-input" accept=".csv,.txt,text/csv,text/plain" hidden>
   </div>
   <p class="subs-row">
-    <button type="button" class="btn-link" id="example-btn">{{t.tryExample}}</button> ·
-    <a href="{{root}}luz/descargar-consumo-datadis.html">{{t.howToGet}}</a>
+    <a href="{{root}}luz/descargar-consumo-datadis.html">{{t.howToGet}}</a> ·
+    <button type="button" class="btn-link" id="example-btn">{{t.tryExample}}</button>
   </p>
+
+  <details class="quick" id="quick">
+    <summary>{{t.quickTitle}}</summary>
+    <form id="quick-form" class="quick-form">
+      <label>{{t.quickKwh}}
+        <input type="number" id="q-kwh" min="20" max="3000" step="1" value="250" inputmode="numeric" required>
+        <span class="muted small">{{t.quickKwhHint}}</span>
+      </label>
+      <label>{{t.quickPower}}
+        <input type="number" id="q-power" min="1" max="15" step="0.05" value="4.6" inputmode="decimal" required>
+      </label>
+      <label class="wide">{{t.quickValle}}: <output id="q-valle-out" for="q-valle">40 %</output>
+        <input type="range" id="q-valle" min="10" max="80" step="5" value="40">
+      </label>
+      <button type="submit" class="btn btn-primary">{{t.quickGo}}</button>
+    </form>
+  </details>
+
   <p class="privacy-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7Z"/></svg>{{t.privacyNote}}</p>
   <div class="status" id="status" hidden aria-live="polite"><p id="status-text"></p></div>
 </section>
 
+<section class="card headline" id="headline" hidden aria-live="polite"></section>
+
 <div class="ad-slot" data-slot="result"></div>
 
-<section class="card luz-results" id="results" hidden aria-labelledby="results-title">
-  <h2 id="results-title">{{t.resultsTitle}}</h2>
-  <div class="kpis" id="kpis"></div>
-
-  <h2>{{t.rankingTitle}}</h2>
+<section class="card luz-results" id="results" hidden aria-labelledby="ranking-title">
+  <h2 id="ranking-title">{{t.rankingTitle}}</h2>
   <p class="muted small">{{t.rankingHint}}</p>
   <div class="table-wrap"><table class="ranking" id="ranking"></table></div>
+  <p class="muted small" id="verified-note"></p>
 
-  <details class="setup" id="setup" open>
-    <summary>{{t.contractTitle}}</summary>
+  <details class="setup" id="setup">
+    <summary>{{t.settingsTitle}}</summary>
     <div>
-      <p class="muted small">{{t.contractHint}}</p>
       <div class="contract">
         <label>{{t.powerP1}} <input type="number" id="pw1" min="0.5" max="15" step="0.05" value="4.6" inputmode="decimal"></label>
         <label>{{t.powerP2}} <input type="number" id="pw2" min="0.5" max="15" step="0.05" value="4.6" inputmode="decimal"></label>
       </div>
+      <h3>{{t.mineTitle}}</h3>
+      <p class="muted small">{{t.mineHint}}</p>
       <div class="offers" id="offers"></div>
-      <p class="actions">
-        <button type="button" class="btn btn-ghost" id="add-offer">{{t.addOffer}}</button>
-        <button type="button" class="btn-link" id="reset-offers">{{t.resetOffers}}</button>
-      </p>
+      <p class="actions"><button type="button" class="btn btn-ghost" id="add-offer">{{t.addMine}}</button></p>
     </div>
   </details>
+
+  <div id="consumption">
+    <h2>{{t.resultsTitle}}</h2>
+    <div class="kpis" id="kpis"></div>
+  </div>
 
   <h2>{{t.savingsTitle}}</h2>
   <div class="insights" id="insights"></div>
 
-  <h2>{{t.monthlyTitle}}</h2>
-  <div class="chart" id="monthly"></div>
-
-  <h2>{{t.heatTitle}}</h2>
-  <p class="muted small">{{t.heatHint}}</p>
-  <div class="heat-wrap" id="heat"></div>
+  <div id="charts">
+    <h2>{{t.monthlyTitle}}</h2>
+    <div class="chart" id="monthly"></div>
+    <h2>{{t.heatTitle}}</h2>
+    <p class="muted small">{{t.heatHint}}</p>
+    <div class="heat-wrap" id="heat"></div>
+  </div>
   <p class="muted small" id="rules-note"></p>
 </section>
 <div class="viz-tip" id="tip" role="tooltip" hidden></div>

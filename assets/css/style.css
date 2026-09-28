@@ -333,3 +333,27 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
   .header-inner > .lang { order: 2; margin-left: auto; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Luz: resultado principal y cálculo rápido */
+.headline { margin-top: 20px; border: 2px solid var(--accent); text-align: center; }
+.headline p { margin: 0 auto; }
+.headline-label { font-size: .9rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-2); }
+.headline-name { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 800; line-height: 1.2; margin: 4px auto 2px !important; }
+.headline-cost { color: var(--muted); font-variant-numeric: tabular-nums; }
+.headline-msg { margin: 14px auto !important; font-size: 1.08rem; max-width: 52ch; }
+.headline-msg strong { color: var(--ok); }
+.current-pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 0 0 16px; }
+.current-pick select { width: auto; max-width: 100%; min-height: 40px; }
+.current-label { font-weight: 600; font-size: .92rem; }
+.ranking tr.current td { box-shadow: inset 3px 0 0 var(--accent); }
+.offer-sub { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; }
+.quick { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; }
+.quick summary { padding: 12px 0; font-weight: 600; cursor: pointer; }
+.quick-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding-bottom: 14px; align-items: end; }
+.quick-form label { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: var(--muted); }
+.quick-form label.wide, .quick-form button { grid-column: 1 / -1; }
+.quick-form input[type="number"] { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
+.quick-form input[type="range"] { accent-color: var(--accent); }
+.quick-form output { color: var(--text); }
+@media (max-width: 480px) { .quick-form { grid-template-columns: 1fr; } }
+.luz-results h3 { font-size: 1rem; margin: 18px 0 4px; }
