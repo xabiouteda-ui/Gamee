@@ -5,6 +5,9 @@ import { readFileSync } from "node:fs";
 import { pickAffiliates } from "../assets/js/afiliados.js";
 import { solarEstimate, suggestSize, productionPerKwp } from "../assets/js/luz/solar.js";
 import { sampleRows, periodOf, RULES } from "../assets/js/luz/core.js";
+import { parseKey, verifyKey } from "../assets/js/pro.js";
+import { newKeyPair, issueKey } from "../scripts/pro-keys.mjs";
+import { toDOCX, crc32 } from "../assets/js/docx.js";
 
 let n = 0;
 const test = async (name, fn) => { await fn(); n++; console.log("✓ " + name); };
@@ -69,6 +72,59 @@ await test("Placas: el autoconsumo no supera ni la producción ni el consumo; el
   assert.ok(huge.savingYear <= maxSaving + 0.01);
   const s = suggestSize(rows, o);
   assert.ok(s.kwp >= 1.5 && s.kwp <= 8 && Number.isFinite(s.payback));
+});
+
+await test("Pro: desactivado por defecto y sin clave pública ni enlace de pago", () => {
+  const pro = JSON.parse(readFileSync(new URL("../data/pro.json", import.meta.url), "utf8"));
+  assert.equal(pro.enabled, false);
+  assert.equal(pro.publicKey, null);
+  assert.equal(pro.checkoutUrl, "");
+  assert.equal(pro.price, "", "el precio lo decide el titular: no se inventa");
+  assert.ok(readFileSync(new URL("../.gitignore", import.meta.url), "utf8").includes("pro-private-key.json"));
+});
+
+await test("Pro: una clave firmada se valida; alterada, con otra clave o mal formada, no", async () => {
+  const { publicJwk, privateJwk } = await newKeyPair();
+  const other = await newKeyPair();
+  const key = await issueKey(privateJwk, "pedido-1", "2026-09-28");
+  assert.match(key, /^HL1\.[\w-]+\.[\w-]+$/);
+  assert.deepEqual(parseKey(key).data, { v: 1, id: "pedido-1", d: "2026-09-28" });
+  assert.equal(await verifyKey(key, publicJwk), true);
+  assert.equal(await verifyKey("  " + key + "\n", publicJwk), true, "se toleran espacios al pegar");
+  assert.equal(await verifyKey(key, other.publicJwk), false);
+  const [, data, sig] = key.split(".");
+  const forged = "HL1." + Buffer.from(JSON.stringify({ v: 1, id: "pirata", d: "2026-09-28" })).toString("base64url") + "." + sig;
+  assert.equal(await verifyKey(forged, publicJwk), false);
+  assert.equal(await verifyKey(`HL1.${data}.${sig.slice(0, -2)}AA`, publicJwk), false);
+  for (const bad of ["", "hola", "HL1.x", "HL2." + data + "." + sig]) assert.equal(await verifyKey(bad, publicJwk), false, bad);
+  assert.equal(await verifyKey(key, null), false);
+  assert.ok(!JSON.stringify(parseKey(key).data).includes("@"), "la clave no lleva datos personales");
+});
+
+await test("Word: ZIP válido (firmas y CRC) con el texto escapado", () => {
+  assert.equal(crc32(new TextEncoder().encode("123456789")), 0xcbf43926);
+  const out = toDOCX([{ time: "0:05", text: "Hola <mundo> & «ñandú»" }, { text: "Adiós." }], { title: "Acta" });
+  const dv = new DataView(out.buffer);
+  assert.equal(dv.getUint32(0, true), 0x04034b50);
+  const end = out.length - 22;
+  assert.equal(dv.getUint32(end, true), 0x06054b50);
+  assert.equal(dv.getUint16(end + 10, true), 3);
+  // Recorre las entradas locales y comprueba el CRC de cada una.
+  const names = [];
+  let o = 0;
+  const dec = new TextDecoder();
+  let doc = "";
+  while (dv.getUint32(o, true) === 0x04034b50) {
+    const size = dv.getUint32(o + 18, true), nl = dv.getUint16(o + 26, true);
+    const name = dec.decode(out.subarray(o + 30, o + 30 + nl));
+    const data = out.subarray(o + 30 + nl, o + 30 + nl + size);
+    assert.equal(crc32(data), dv.getUint32(o + 14, true), name);
+    names.push(name);
+    if (name === "word/document.xml") doc = dec.decode(data);
+    o += 30 + nl + size;
+  }
+  assert.deepEqual(names, ["[Content_Types].xml", "_rels/.rels", "word/document.xml"]);
+  assert.ok(doc.includes("Hola &lt;mundo&gt; &amp; «ñandú»") && doc.includes("[0:05] ") && doc.includes(">Acta<"));
 });
 
 console.log(`\n${n} pruebas de monetización correctas.`);

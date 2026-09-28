@@ -2,3 +2,4 @@ _site/
 node_modules/
 test-results/
 data/pvpc.json
+pro-private-key.json

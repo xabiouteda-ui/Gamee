@@ -1,10 +1,12 @@
 import { STRINGS } from "./i18n.js";
 import { showAffiliates } from "../afiliados.js";
+import { proStatus } from "../pro.js";
 import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, drawCredit, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
 
 // Librería de vídeo (MPL-2.0): lee el vídeo, nos deja dibujar sobre cada fotograma y lo vuelve a codificar.
 const MEDIABUNNY_URL = "https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/dist/bundles/mediabunny.min.mjs";
 const MAX_SIDE = 1920; // los vídeos más grandes se reducen a 1080p para exportar rápido
+const MAX_SIDE_PRO = 3840; // Pro: resolución original hasta 4K
 
 const LANG = document.documentElement.lang.startsWith("en") ? "en" : "es";
 const T = STRINGS[LANG];
@@ -29,6 +31,7 @@ const state = {
   file: null, running: false, phase: null, worker: null, segments: [], lines: [],
   style: { ...PRESETS.karaoke }, preset: "karaoke", exporting: null, wordsExact: true,
   platform: "", crop: false, safe: true, autoKeys: true, autoEmojis: false, credit: true,
+  pro: false, max4k: false, waiter: null,
 };
 
 const store = {
@@ -178,18 +181,21 @@ function onWorkerMessage({ data: m }) {
       break;
     case "done":
       finish();
-      if (!state.segments.length) { setStatus(T.noSpeech, "warn"); break; }
+      if (!state.segments.length) { setStatus(T.noSpeech, "warn"); settle(false); break; }
       setBar(100);
       setStatus(state.wordsExact ? T.done : T.done + " " + T.wordsFallback, "ok");
       openStudio(segmentsToWords(state.segments));
+      settle(true);
       break;
     case "cancelled":
       finish();
       setStatus(T.cancelled, "warn");
+      settle(false);
       break;
     case "error":
       finish();
       setStatus(m.stage === "load" ? `${T.engineError} (${m.message})` : fmt(T.error, { msg: m.message }), "error");
+      settle(false);
       break;
   }
 }
@@ -401,7 +407,7 @@ function syncControls() {
   els.credit.checked = state.credit;
   els.safe.checked = state.safe;
   for (const b of document.querySelectorAll(".chip[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
-  for (const b of els.presets.querySelectorAll(".preset")) b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
+  for (const b of document.querySelectorAll(".preset[data-preset]")) b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
 }
 
 function applyPreset(name, save = true) {
@@ -433,7 +439,7 @@ async function exportVideo() {
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new Error("sin pista de vídeo");
     const f = frame(track.displayWidth, track.displayHeight);
-    const k = Math.min(1, MAX_SIDE / Math.max(f.W, f.H));
+    const k = Math.min(1, (state.pro && state.max4k ? MAX_SIDE_PRO : MAX_SIDE) / Math.max(f.W, f.H));
     const W = Math.round((f.W * k) / 2) * 2;
     const H = Math.round((f.H * k) / 2) * 2;
     // Los vídeos a 50/60 fps se exportan a 30 fps: la mitad de trabajo y se ven igual en redes sociales.
@@ -498,6 +504,7 @@ async function exportVideo() {
     setExport(fmt(T.exported, { size: bytes(blob.size) }) + (noAudio ? " " + T.noAudio : ""), noAudio ? "warn" : "ok", 100);
     els.downloadLink.click();
     showAffiliates($("afiliados"), "subtitulos", LANG, new URL("../../../data/afiliados.json", import.meta.url));
+    return true;
   } catch (e) {
     console.error(e);
     if (e?.name === "ConversionCanceledError") setExport(T.cancelled, "warn");
@@ -540,6 +547,7 @@ function init() {
   state.autoKeys = store.get("autoKeys") !== "0";
   state.autoEmojis = store.get("autoEmojis") === "1";
   state.credit = store.get("credit") !== "0";
+  initPro();
   const p = store.get("preset");
   // Cada página puede preseleccionar plataforma, estilo o traducción (p. ej. «subtítulos para TikTok»).
   const d = els.tool.dataset;
@@ -547,7 +555,7 @@ function init() {
   if (d.mode === "translate") els.translate.checked = true;
   if (d.mode === "burn") applyPreset("classic", false);
   else if (PRESETS[d.preset]) applyPreset(d.preset, false);
-  else if (p && PRESETS[p]) applyPreset(p, false);
+  else if (p && PRESETS[p] && !PRESETS[p].pro) applyPreset(p, false);
   if (PLATFORMS[state.platform] && state.preset !== "classic") state.style.pos = PLATFORMS[state.platform].pos;
 
   els.drop.onclick = () => els.fileInput.click();
@@ -637,7 +645,127 @@ function init() {
   });
 }
 
+// ---------- versión Pro ----------
+
+// Resuelve la espera de la transcripción en curso (para procesar varios vídeos seguidos).
+function settle(ok) {
+  const w = state.waiter;
+  state.waiter = null;
+  w?.(ok);
+}
+
+const proEls = {
+  box: $("pro-box"), presets: $("presets-pro"), font: $("pro-font"), brandSave: $("brand-save"), brandApply: $("brand-apply"),
+  max4k: $("pro-4k"), batchBtn: $("batch-btn"), batchInput: $("batch-input"), msg: $("pro-msg"),
+};
+
+function brandKit() {
+  try { return JSON.parse(store.get("brand")); } catch { return null; }
+}
+
+function applyBrand(kit) {
+  if (!kit?.style) return;
+  if (kit.platform != null && (kit.platform === "" || PLATFORMS[kit.platform])) state.platform = kit.platform;
+  state.preset = PRESETS[kit.preset] ? kit.preset : state.preset;
+  state.style = { ...PRESETS[state.preset], ...kit.style };
+  if (typeof kit.credit === "boolean") state.credit = kit.credit;
+  syncControls();
+  layoutStage();
+  if (state.lines.length) regroup();
+}
+
+async function useFont(name, buf) {
+  const face = new FontFace("Caption Custom", buf);
+  document.fonts.add(await face.load());
+  FONTS.custom = { family: "Caption Custom", weight: 400, file: null };
+  let opt = [...els.font.options].find((o) => o.value === "custom");
+  if (!opt) { opt = new Option(name, "custom"); els.font.add(opt); }
+  opt.textContent = name;
+}
+
+async function initPro() {
+  const st = await proStatus(new URL("../../../data/pro.json", import.meta.url));
+  state.pro = st.active;
+  proEls.box.hidden = !(st.enabled || st.active);
+  proEls.box.disabled = !st.active;
+  if (!st.active) return;
+  document.documentElement.classList.add("pro");
+  // Con Pro el crédito empieza quitado (si no lo has elegido tú antes).
+  if (store.get("credit") == null) state.credit = false;
+  const saved = store.get("proFont");
+  if (saved) {
+    try {
+      const { name, data } = JSON.parse(saved);
+      await useFont(name, Uint8Array.from(atob(data), (c) => c.charCodeAt(0)).buffer);
+    } catch { /* fuente guardada dañada: se ignora */ }
+  }
+  const kit = brandKit();
+  proEls.brandApply.hidden = !kit;
+  if (kit) applyBrand(kit);
+  else syncControls();
+  draw();
+}
+
+async function runBatch(files) {
+  if (!state.pro || state.running || state.exporting) return;
+  let ok = 0;
+  for (const [i, f] of files.entries()) {
+    proEls.msg.textContent = fmt(T.batchProgress, { i: i + 1, n: files.length, name: f.name });
+    const done = new Promise((r) => { state.waiter = r; });
+    setFile(f);
+    if (els.tool.dataset.mode === "burn") start();
+    if (!(await done)) continue;
+    if (await exportVideo()) ok++;
+  }
+  proEls.msg.textContent = fmt(T.batchDone, { n: ok });
+}
+
+function initProEvents() {
+  proEls.presets.addEventListener("click", (e) => {
+    const b = e.target.closest(".preset");
+    if (b && state.pro) applyPreset(b.dataset.preset);
+  });
+  proEls.font.addEventListener("change", async () => {
+    const f = proEls.font.files[0];
+    proEls.font.value = "";
+    if (!f || !state.pro) return;
+    try {
+      const buf = await f.arrayBuffer();
+      const name = f.name.replace(/\.[^.]+$/, "").slice(0, 40);
+      await useFont(name, buf);
+      state.style.font = "custom";
+      syncControls();
+      draw();
+      // Se guarda en el navegador si no es muy grande (localStorage tiene ~5 MB).
+      if (buf.byteLength < 1.5e6) {
+        let bin = "";
+        const u8 = new Uint8Array(buf);
+        for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+        store.set("proFont", JSON.stringify({ name, data: btoa(bin) }));
+      }
+      proEls.msg.textContent = fmt(T.fontLoaded, { name });
+    } catch (e) {
+      console.warn(e);
+      proEls.msg.textContent = T.fontError;
+    }
+  });
+  proEls.brandSave.addEventListener("click", () => {
+    store.set("brand", JSON.stringify({ style: state.style, preset: state.preset, platform: state.platform, credit: state.credit }));
+    proEls.brandApply.hidden = false;
+    proEls.msg.textContent = T.brandSaved;
+  });
+  proEls.brandApply.addEventListener("click", () => applyBrand(brandKit()));
+  proEls.max4k.addEventListener("change", () => { state.max4k = proEls.max4k.checked; });
+  proEls.batchBtn.addEventListener("click", () => proEls.batchInput.click());
+  proEls.batchInput.addEventListener("change", () => {
+    const files = [...proEls.batchInput.files];
+    proEls.batchInput.value = "";
+    if (files.length) runBatch(files);
+  });
+}
+
 init();
+initProEvents();
 
 // Acceso para las pruebas automáticas.
 window.__captions = { state, draw };

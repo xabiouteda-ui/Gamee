@@ -109,6 +109,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   check(nLines === 4, `10 palabras en líneas de 3 → 4 líneas (hay ${nLines})`);
   const firstLine = await page.inputValue(".line-row input");
   check(firstLine === "Hola a todos", "La primera línea es «Hola a todos»: " + firstLine);
+  check(await page.locator("#pro-box").isHidden(), "Pro desactivado: no se muestra nada de Pro");
 
   // Vista previa: en t=0,35 s suena «Hola» → debe verse resaltado en amarillo.
   await page.evaluate(() => { const v = document.getElementById("video"); v.currentTime = 0.35; });
@@ -170,7 +171,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   await page.click('.preset[data-preset="neon"]');
   await page.click('.preset[data-preset="progressive"]');
   await page.click('.preset[data-preset="karaoke"]');
-  check((await page.locator(".preset").count()) === 8, "8 estilos disponibles");
+  check((await page.locator("#presets .preset").count()) === 8, "8 estilos disponibles");
   // Crédito «Hecho con …»: activado por defecto, arriba y dentro de la zona segura; se puede quitar.
   const whiteTop = () => page.evaluate(() => {
     window.__captions.draw();
@@ -366,6 +367,62 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await page.goto(srv.base + "/en/animated-captions/");
     check((await page.textContent("#start-btn")).trim() === "Generate captions", "La versión inglesa tiene la interfaz en inglés");
     await ctx.close();
+  }
+
+  // ---------- 5. Versión Pro (activada solo en esta prueba, con una clave firmada) ----------
+  {
+    const { newKeyPair, issueKey } = await import("../scripts/pro-keys.mjs");
+    const { publicJwk, privateJwk } = await newKeyPair();
+    const key = await issueKey(privateJwk);
+    const proJson = JSON.stringify({ enabled: true, provider: "paddle", checkoutUrl: "https://example.com/pagar", price: "", publicKey: publicJwk });
+    const proLibs = { ...libs, [srv.base + "/data/pro.json"]: proJson };
+    // Sin clave: se ve bloqueado, con enlace a la página de Pro.
+    {
+      const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, proLibs);
+      const page = await ctx.newPage();
+      await page.goto(srv.base + dir);
+      await page.setInputFiles("#file-input", videoFile);
+      await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
+      await page.waitForFunction(() => !document.getElementById("pro-box").hidden);
+      check(await page.evaluate(() => document.getElementById("pro-box").disabled), "Pro a la venta sin clave: funciones Pro visibles pero bloqueadas");
+      check((await page.getAttribute("#pro-box .pro-locked a", "href")).endsWith("pro.html"), "Pro bloqueado: enlace a la página de Pro");
+      check(await page.locator("#st-credit").isChecked(), "Sin Pro el crédito sigue activado por defecto");
+      await ctx.close();
+    }
+    // Con clave válida: funciones desbloqueadas.
+    {
+      const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, proLibs);
+      await ctx.addInitScript((k) => { if (!localStorage.getItem("tl.pro.key")) localStorage.setItem("tl.pro.key", k); }, key);
+      const page = await ctx.newPage();
+      const errs = [];
+      page.on("pageerror", (e) => errs.push(e.message));
+      await page.goto(srv.base + dir);
+      await page.waitForFunction(() => document.documentElement.classList.contains("pro"));
+      await page.setInputFiles("#file-input", videoFile);
+      await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
+      check(!(await page.evaluate(() => document.getElementById("pro-box").disabled)), "Pro con clave válida: funciones desbloqueadas");
+      check(!(await page.locator("#st-credit").isChecked()), "Pro: el crédito empieza quitado");
+      await page.click('.preset[data-preset="headline"]');
+      check((await page.evaluate(() => window.__captions.state.preset)) === "headline", "Pro: estilo extra «Titular»");
+      await page.fill("#st-size", "0.12");
+      await page.dispatchEvent("#st-size", "input");
+      await page.click("#brand-save");
+      await page.reload();
+      await page.waitForFunction(() => window.__captions.state.preset === "headline" && window.__captions.state.style.size === 0.12, null, { timeout: 5000 }).catch(() => {});
+      check((await page.evaluate(() => [window.__captions.state.preset, window.__captions.state.style.size].join())) === "headline,0.12", "Pro: el kit de marca se guarda y se aplica solo al volver");
+      // Fuente propia: se usa una de las fuentes OFL de la web como si fuera del usuario.
+      await page.setInputFiles("#pro-font", path.join(__dirname, "..", "assets", "fonts", "bangers-latin-400-normal.woff2"));
+      await page.waitForFunction(() => /cargada/.test(document.getElementById("pro-msg").textContent));
+      check((await page.inputValue("#st-font")) === "custom" && (await page.evaluate(() => document.fonts.check('20px "Caption Custom"'))), "Pro: fuente propia cargada y elegida");
+      // Varios vídeos seguidos con el mismo estilo.
+      const downloads = [];
+      page.on("download", (d) => downloads.push(d.suggestedFilename()));
+      await page.setInputFiles("#batch-input", [{ ...videoFile, name: "uno.webm" }, { ...videoFile, name: "dos.webm" }]);
+      await page.waitForFunction(() => /Listo: \d+ vídeos/.test(document.getElementById("pro-msg").textContent), null, { timeout: 240000 });
+      check(/Listo: 2 vídeos/.test(await page.textContent("#pro-msg")) && downloads.filter((n) => /^(uno|dos)-subtitulado\./.test(n)).length === 2, "Pro: dos vídeos procesados y descargados seguidos (" + downloads.join(", ") + ")");
+      check(errs.length === 0, "Pro: sin errores de página" + (errs.length ? ": " + errs.join(" | ") : ""));
+      await ctx.close();
+    }
   }
 
   const stray = srv.outside.filter((p) => p !== "/no-existe");

@@ -27,6 +27,16 @@ const sandbox = { window: {} };
 vm.runInNewContext(readFileSync(join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
 const adsCfg = sandbox.window.SITE_CONFIG || {};
 
+// Versión Pro (data/pro.json): desactivada por defecto. Con ella desactivada, /pro.html no se indexa.
+const proCfg = existsSync(join(ROOT, "data/pro.json")) ? JSON.parse(readFileSync(join(ROOT, "data/pro.json"), "utf8")) : {};
+const proOn = proCfg.enabled === true && /^https:\/\//.test(proCfg.checkoutUrl || "");
+
+function proBuy() {
+  if (!proOn) return `<p class="muted">Todavía no está a la venta. Las herramientas siguen siendo gratis y sin marca de agua.</p>`;
+  return `<a class="btn btn-primary" href="${esc(proCfg.checkoutUrl)}" rel="noopener">Comprar Pro</a>
+<p class="muted small">El pago lo gestiona ${esc(proCfg.provider === "stripe" ? "Stripe" : proCfg.provider === "paddle" ? "Paddle" : "la pasarela de pago")}, que emite la factura con el IVA de tu país. Recibirás tu clave de licencia por correo.</p>`;
+}
+
 const UI = {
   es: {
     home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
@@ -222,7 +232,10 @@ function layout(page, pagesBySlug) {
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
+    .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
+    .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{moneyHref\}\}/g, () => href(L.money))
+    .replace(/\{\{proHref\}\}/g, () => href("pro.html"))
     .replace(/\{\{root\}\}/g, root);
 
   const hreflang = alt
@@ -240,7 +253,7 @@ function layout(page, pagesBySlug) {
 <meta name="description" content="${esc(page.description)}">
 <link rel="canonical" href="${url}">
 ${hreflang}
-<meta name="robots" content="${page.noindex ? "noindex" : "index, follow"}">
+<meta name="robots" content="${page.noindex || (page.proPage && !proOn) ? "noindex" : "index, follow"}">
 <meta name="theme-color" content="#4f46e5">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(site.siteName)}">
@@ -287,6 +300,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
 ${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
+${page.script ? `<script type="module" src="${root}${page.script}"></script>` : ""}
 </body>
 </html>
 `;
@@ -308,7 +322,7 @@ function build() {
     writeFileSync(dest, layout(p, bySlug));
   }
 
-  const indexable = pages.filter((p) => !p.noindex);
+  const indexable = pages.filter((p) => !p.noindex && !(p.proPage && !proOn));
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${indexable.map((p) => {

@@ -1,0 +1,62 @@
+<!--{
+  "slug": "pro.html",
+  "proPage": true,
+  "script": "assets/js/pro-page.js",
+  "title": "Herramientas Libres Pro: pago único, sin suscripción",
+  "description": "La versión Pro de Herramientas Libres: fuentes propias, kit de marca, estilos extra, 4K, varios vídeos seguidos y Word. Pago único; lo gratis sigue gratis."
+}-->
+<section class="hero">
+  <h1>Herramientas Libres Pro</h1>
+  <p class="lead">Para quien hace vídeos o transcribe todos los días. <strong>Un solo pago, sin suscripción y sin cuenta.</strong> Todo sigue funcionando en tu navegador: tus archivos no salen de tu dispositivo.</p>
+</section>
+
+<div class="pro-plans">
+  <section class="card">
+    <h2>Gratis</h2>
+    <p class="pro-price">0 €</p>
+    <ul>
+      <li>Subtítulos animados sin marca de agua y sin límite de vídeos</li>
+      <li>8 estilos, colores, palabras clave y emojis</li>
+      <li>Exportación hasta 1080p</li>
+      <li>Transcripción a TXT, SRT y VTT</li>
+      <li>Comparador de tarifas de luz</li>
+      <li>Crédito «Hecho con» opcional (lo puedes quitar)</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Pro <span class="pro-badge">Pro</span></h2>
+    <p class="pro-price">{{proPrice}}</p>
+    <ul>
+      <li>Todo lo gratis</li>
+      <li><strong>Tus propias fuentes</strong> (TTF, OTF, WOFF)</li>
+      <li><strong>Kit de marca guardado</strong>: tu estilo se aplica solo</li>
+      <li><strong>2 estilos extra</strong> (Titular y Suave)</li>
+      <li><strong>Exportación en 4K</strong> (resolución original)</li>
+      <li><strong>Varios vídeos seguidos</strong> con el mismo estilo</li>
+      <li><strong>Exportar la transcripción a Word</strong> (.docx)</li>
+      <li>Sin crédito «Hecho con» por defecto</li>
+    </ul>
+    {{proBuy}}
+  </section>
+</div>
+
+<section class="card" aria-labelledby="activate-title">
+  <h2 id="activate-title">¿Ya tienes tu clave?</h2>
+  <p class="muted small">Pégala aquí. Se guarda solo en este navegador; si usas otro dispositivo, pégala también allí.</p>
+  <form class="pro-activate" id="pro-form">
+    <label class="sr-only" for="pro-key">Clave de licencia</label>
+    <input id="pro-key" autocomplete="off" spellcheck="false" placeholder="HL1.…">
+    <button type="submit" class="btn btn-primary">Activar</button>
+    <button type="button" class="btn btn-ghost" id="pro-off" hidden>Quitar la licencia de este navegador</button>
+  </form>
+  <p class="status" id="pro-status" hidden aria-live="polite"></p>
+</section>
+
+<article class="content">
+  <h2>Preguntas frecuentes</h2>
+  <details><summary>¿Lo gratis va a dejar de ser gratis?</summary><p>No. Todo lo que hoy es gratis sigue gratis y sin marca de agua. Pro añade funciones para quien las usa a diario.</p></details>
+  <details><summary>¿Necesito crear una cuenta?</summary><p>No. Recibes una clave de licencia y la pegas en esta página. No guardamos tu nombre ni tu correo en la web; la clave no contiene datos personales.</p></details>
+  <details><summary>¿Por qué pago único y no suscripción?</summary><p>Porque todo se procesa en tu dispositivo: no nos cuesta servidores que cada vídeo o audio que hagas. No tiene sentido cobrarte cada mes.</p></details>
+  <details><summary>¿Y si cambio de navegador o de ordenador?</summary><p>Pega la misma clave en el nuevo navegador. La licencia es personal: úsala en tus dispositivos.</p></details>
+  <p class="muted small">Más información en <a href="{{root}}como-ganamos-dinero.html">cómo ganamos dinero</a>.</p>
+</article>

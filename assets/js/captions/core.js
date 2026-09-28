@@ -137,6 +137,9 @@ export const PRESETS = {
   neon: { font: "anton", size: 0.09, pos: 0.64, color: "#ffffff", highlight: "#ff4fd8", keyColor: "#7df9ff", outline: "#000000", outlineWidth: 0, box: "", activeBox: "", anim: "pop", upper: true, maxWords: 2, shadow: false, glow: true },
   box: { font: "montserrat", size: 0.065, pos: 0.68, color: "#ffffff", highlight: "#ffffff", keyColor: "#ffe600", outline: "#000000", outlineWidth: 0, box: "", activeBox: "#7c3aed", anim: "none", upper: false, maxWords: 4, shadow: false },
   bubble: { font: "bangers", size: 0.085, pos: 0.66, color: "#ffffff", highlight: "#22d3ee", keyColor: "#ffe600", outline: "#111111", outlineWidth: 0.18, box: "", activeBox: "", anim: "bounce", upper: true, maxWords: 2, shadow: true },
+  // Estilos Pro
+  headline: { font: "anton", size: 0.1, pos: 0.6, color: "#ffffff", highlight: "#ffffff", activeText: "#ffffff", keyColor: "#ffe600", outline: "#000000", outlineWidth: 0.1, box: "", activeBox: "#ef4444", anim: "pop", upper: true, maxWords: 2, shadow: true, pro: true },
+  soft: { font: "montserrat", size: 0.06, pos: 0.7, color: "#1f2937", highlight: "#7c3aed", keyColor: "#db2777", outline: "#000000", outlineWidth: 0, box: "rgba(255,255,255,0.9)", activeBox: "", anim: "fill", upper: false, maxWords: 4, shadow: false, pro: true },
   classic: { font: "sans", size: 0.05, pos: 0.86, color: "#ffffff", highlight: "#ffffff", keyColor: "#ffffff", outline: "#000000", outlineWidth: 0, box: "rgba(0,0,0,0.65)", activeBox: "", anim: "none", upper: false, maxWords: 8, shadow: false },
 };
 

@@ -1,4 +1,4 @@
-<section class="tool card" id="tool" aria-label="{{t.generate}}" data-mode="{{mode}}" data-platform="{{platform}}" data-preset="{{preset}}" data-credit="{{credit}}">
+<section class="tool card" id="tool" aria-label="{{t.generate}}" data-mode="{{mode}}" data-platform="{{platform}}" data-preset="{{preset}}" data-credit="{{credit}}" data-pro-href="{{proHref}}">
   <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-hint">
     <svg class="drop-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.4l4 2.7a1 1 0 0 0 1.5-.8V7.5a1 1 0 0 0-1.5-.8L17 9.4V7a2 2 0 0 0-2-2H4Zm2 8h7v1.5H6V13Zm0-3h4v1.5H6V10Z"/></svg>
     <strong>{{t.dropTitle}}</strong>
@@ -108,6 +108,25 @@
         <label class="check"><input type="checkbox" id="st-keys" checked> {{t.autoKeys}}</label>
         <label class="check"><input type="checkbox" id="st-emojis"> {{t.autoEmojis}}</label>
       </div>
+      <fieldset class="pro-box" id="pro-box" data-pro hidden>
+        <legend><span class="pro-badge">Pro</span> {{t.proTitle}}</legend>
+        <p class="pro-locked muted small">{{t.proLocked}} <a href="{{proHref}}">{{t.proMore}}</a></p>
+        <div class="presets presets-pro" id="presets-pro">
+          <button type="button" class="preset" data-preset="headline" aria-pressed="false"><span class="pv pv-headline">A<b>B</b>C</span>{{t.presetHeadline}}</button>
+          <button type="button" class="preset" data-preset="soft" aria-pressed="false"><span class="pv pv-soft">Abc</span>{{t.presetSoft}}</button>
+        </div>
+        <label>{{t.proFont}} <input type="file" id="pro-font" accept=".ttf,.otf,.woff,.woff2,font/*"></label>
+        <p class="pro-actions">
+          <button type="button" class="btn btn-ghost" id="brand-save">{{t.brandSave}}</button>
+          <button type="button" class="btn btn-ghost" id="brand-apply" hidden>{{t.brandApply}}</button>
+        </p>
+        <label class="check small"><input type="checkbox" id="pro-4k"> {{t.pro4k}}</label>
+        <p class="pro-actions">
+          <button type="button" class="btn btn-ghost" id="batch-btn">{{t.batch}}</button>
+          <input type="file" id="batch-input" accept="video/*,.mp4,.mov,.webm,.mkv,.m4v" multiple hidden>
+        </p>
+        <p class="muted small" id="pro-msg" aria-live="polite"></p>
+      </fieldset>
       <h2>{{t.step3}}</h2>
       <p class="muted small">{{t.step3Hint}} {{t.keyHint}}</p>
       <div class="lines" id="lines"></div>

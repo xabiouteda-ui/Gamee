@@ -244,3 +244,21 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     en la versión gratis** (el plan decía a la vez «Pro quita el crédito» y «se puede quitar siempre»; gana lo
     segundo porque la promesa de la herramienta es «sin marca de agua»). La elección se recuerda. Con dominio
     propio el crédito añade el dominio (`… · tudominio.es`); con la dirección larga de github.io, no.
+72. **Pro de pago único sin servidor**: licencia `HL1.<datos>.<firma>` firmada con ECDSA P-256 y comprobada en el
+    navegador con Web Crypto y la clave pública de `data/pro.json`. La privada la crea el titular con
+    `node scripts/pro-keys.mjs init` (queda en `pro-private-key.json`, en `.gitignore`) y emite claves con
+    `issue`. La clave no lleva nombre ni correo. Sin servidor no se puede emitir la clave automáticamente al pagar:
+    al principio se envía a mano (o con la función de «license keys» de la pasarela si se usa). Se asume que alguien
+    experto podría saltarse la comprobación en el navegador; no merece la pena montar servidores por eso.
+    **Desactivado por defecto** (`enabled: false`, sin clave pública, sin enlace de pago y sin precio: el precio lo
+    decide el titular, no se inventa). Con Pro desactivado no se ve nada de Pro en las herramientas y `/pro.html`
+    queda `noindex` y fuera del sitemap. Si está a la venta pero no tienes clave, las funciones se ven bloqueadas
+    con enlace a `/pro.html`.
+73. **Qué desbloquea Pro:** fuentes propias (se guardan en el navegador si pesan <1,5 MB), kit de marca guardado que
+    se aplica solo, 2 estilos extra («Titular» y «Suave»), exportación hasta 4K (gratis sigue en 1080p), varios
+    vídeos seguidos con el mismo estilo y exportar la transcripción a Word (.docx generado sin librerías, ZIP
+    «store» propio, validado con python-docx). El crédito «Hecho con» empieza quitado con Pro. **No se limita la
+    duración de los vídeos gratis** («vídeos largos» del plan): la herramienta promete «sin límite» en muchas
+    páginas y quitarlo empeoraría el producto gratis; se puede revisar con datos.
+74. **Pagos:** enlace de pago de Paddle o Stripe (Managed Payments) en `checkoutUrl`: son «merchant of record» y
+    se ocupan del IVA de la UE. La web no toca datos de tarjeta. Privacidad actualizada (es y en).
