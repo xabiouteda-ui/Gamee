@@ -5,6 +5,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { STRINGS, AUDIO_LANGUAGES } from "./assets/js/i18n.js";
+import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
@@ -25,13 +26,13 @@ const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 const UI = {
   es: {
-    home: "Transcribir", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Transcribir", captions: "Subtítulos animados", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramienta gratuita financiada con publicidad. El audio se procesa en tu dispositivo.",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
-    home: "Transcribe", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
+    home: "Transcribe", captions: "Animated captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
     contact: "Contact", skip: "Skip to content", tagline: "Free and private audio and video transcription",
     footerNote: "Free tool supported by ads. Audio is processed on your device.",
     otherLang: "Español", otherLangLabel: "Leer en español",
@@ -39,8 +40,8 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
-  en: { home: "en/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
+  es: { home: "", captions: "subtitulos-animados/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
+  en: { home: "en/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
 };
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -60,17 +61,29 @@ function readPages() {
   return pages;
 }
 
-function toolHtml(lang) {
-  const t = STRINGS[lang];
+// Herramientas del sitio: plantilla HTML, textos y script de cada una.
+// En la cabecera JSON de una página, "tool": true equivale a "transcribe".
+const TOOLS = {
+  transcribe: { partial: "tool.html", strings: STRINGS, script: "assets/js/app.js", category: "MultimediaApplication" },
+  captions: { partial: "captions.html", strings: CAPTIONS_STRINGS, script: "assets/js/captions/app.js", category: "MultimediaApplication" },
+};
+const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
+
+function languageOptions(lang, autoLabel) {
   const langIdx = lang === "es" ? 1 : 2;
   const langs = [...AUDIO_LANGUAGES].sort((a, b) => (a[0] === lang ? -1 : b[0] === lang ? 1 : 0));
-  const options = [`<option value="auto">${esc(t.autoDetect)}</option>`]
+  return [`<option value="auto">${esc(autoLabel)}</option>`]
     .concat(langs.map(([code, ...names]) => `<option value="${code}"${code === lang ? " selected" : ""}>${esc(names[langIdx - 1])}</option>`))
     .join("\n        ");
-  return readFileSync(join(ROOT, "src/partials/tool.html"), "utf8")
-    .replace("{{languageOptions}}", options)
+}
+
+function toolHtml(tool, lang, mode) {
+  const t = TOOLS[tool].strings[lang];
+  return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
+    .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
+    .replace(/\{\{mode\}\}/g, esc(mode || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
-      if (!(k in t)) throw new Error(`Texto sin traducir: ${k}`);
+      if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
       return esc(t[k]);
     });
 }
@@ -94,10 +107,10 @@ function appSchema(page, url) {
   return {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: site.siteName,
+    name: page.appName || site.siteName,
     url,
     description: page.description,
-    applicationCategory: "MultimediaApplication",
+    applicationCategory: TOOLS[toolOf(page)].category,
     operatingSystem: "Any (web browser)",
     browserRequirements: "Requires JavaScript and WebAssembly",
     inLanguage: page.lang,
@@ -120,14 +133,15 @@ function layout(page, pagesBySlug) {
   const L = LINKS[lang];
 
   const schemas = [];
-  if (page.tool) schemas.push(appSchema(page, url));
+  const tool = toolOf(page);
+  if (tool) schemas.push(appSchema(page, url));
   if (page.faqSchema) { const s = faqSchema(page.body); if (s) schemas.push(s); }
   if (page.slug.endsWith("index.html") || page.slug === "index.html") {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
 
   let body = page.body
-    .replace("{{tool}}", page.tool ? toolHtml(lang) : "")
+    .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page.mode) : ""))
     .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace(/\{\{root\}\}/g, root);
@@ -171,6 +185,7 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
     <a class="brand" href="${href(L.home)}">${LOGO}<span>${esc(site.siteName)}</span></a>
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
       ${nav("home", ui.home)}
+      ${pagesBySlug.has(L.captions + "index.html") ? nav("captions", ui.captions) : ""}
       ${nav("faq", ui.faq)}
       ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
     </nav>
@@ -194,7 +209,7 @@ ${body.trim()}
 </footer>
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
-${page.tool ? `<script type="module" src="${root}assets/js/app.js"></script>` : ""}
+${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
 </body>
 </html>
 `;
