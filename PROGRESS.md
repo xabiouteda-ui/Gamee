@@ -2,7 +2,7 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
-## Sesión 3 (28/09/2026, en curso) – luz en 1 clic, subtítulos para creadores, SEO
+## Sesión 3 (28/09/2026) – luz en 1 clic, subtítulos para creadores, SEO
 
 | Tarea | Estado |
 |---|---|
@@ -35,10 +35,24 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
   **subtítulos en inglés para un vídeo en español** (nueva opción de traducir) y **videopodcasts**.
 - Todas enlazadas entre sí, en el sitemap y con datos estructurados de preguntas frecuentes.
 
-**Qué tienes que hacer tú (nuevo)**
-- Tras fusionar, en *Actions* lanza «Publicar en GitHub Pages» a mano una vez y comprueba en el log el paso
-  «Descargar precios del PVPC» (debe decir cuántos días descargó). Desde este entorno no pude llegar a REE.
-- Revisa `data/ofertas.json` de vez en cuando (precios de mercado libre cambian; la fecha está en el fichero).
+**Calidad:** todas las pruebas pasan (`bash tests/run-all.sh`: 34 páginas, unitarias, 4 e2e y accesibilidad).
+Un push intermedio salió con la auditoría de accesibilidad en rojo (fallo real: un selector de plataformas
+alcanzaba la sección entera); se corrigió en el siguiente commit y ahora hay un script que para en el primer fallo.
+
+**Qué tienes que hacer tú**
+1. **Fusionar la PR #2.** Después, en *Actions* → «Publicar en GitHub Pages» → *Run workflow* una vez, y mira el
+   paso «Descargar precios del PVPC»: debe decir cuántos días descargó. Desde aquí no pude conectar con Red
+   Eléctrica; si falla, la web funciona igual (sin PVPC) y me lo dices.
+2. **Probar con cosas reales:** tu CSV de consumo en `/luz/`, un vídeo tuyo en `/subtitulos-animados/` (también en el
+   iPhone) y `/luz/precio-luz-hoy.html` al día siguiente de fusionar.
+3. **Revisar `data/ofertas.json`** cada mes o dos (los precios del mercado libre cambian; cada tarifa tiene su
+   fuente y fecha). Si quieres más tarifas, añádelas copiando una entrada.
+4. Pendiente de antes: datos del titular, dominio propio y Search Console (necesarios para AdSense).
+
+**Siguiente en el backlog (no empezado para no pasarme del presupuesto)**
+- Reencuadre automático a 9:16 siguiendo la cara (ahora es recorte centrado).
+- Autoconsumo/placas en la luz (columna de vertido ya se ignora correctamente).
+- Versiones en inglés de las páginas nuevas del transcriptor y de subtítulos.
 
 ---
 
