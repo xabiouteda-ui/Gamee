@@ -98,3 +98,12 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 30. **`basePath` = `/Gamee/`**, igual que el nombre del repositorio (GitHub Pages distingue mayúsculas), en lugar
     de `/game/`, para que canonical, hreflang y sitemap coincidan con la URL real de GitHub Pages sin renombrar el
     repositorio.
+
+## Sesión 2 (28/09/2026): nuevas herramientas
+
+31. **La PR #1 ya estaba fusionada**, así que la rama `claude/charming-edison-uxkvjw` se ha reiniciado desde `main`
+    y el trabajo nuevo va en una PR nueva (la única de esta sesión).
+32. **Herramientas elegidas** (ver `RESEARCH-2.md`): subtítulos karaoke grabados en el vídeo (4,55) y analizador de
+    consumo eléctrico con comparador de tarifas a partir del CSV (4,05). Se descarta "limpiar la voz" porque con
+    modelos autocontenidos (RNNoise) el resultado sería peor que alternativas gratis existentes, y DeepFilterNet
+    solo está empaquetado con el modelo en el CDN de un tercero.
