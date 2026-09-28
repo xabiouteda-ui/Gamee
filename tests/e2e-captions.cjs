@@ -35,22 +35,22 @@ export async function pipeline(task, model, opts) {
 }`;
 
 // Crea en el navegador un WebM de 6 s (360×640, VP8 + Opus) con un tono como "voz".
-async function makeVideo(page) {
-  return page.evaluate(async (url) => {
+async function makeVideo(page, w = 360, h = 640, secs = 6) {
+  return page.evaluate(async ([url, w, h, secs]) => {
     const MB = await import(url);
     const target = new MB.BufferTarget();
     const out = new MB.Output({ format: new MB.WebMOutputFormat(), target });
-    const canvas = new OffscreenCanvas(360, 640);
+    const canvas = new OffscreenCanvas(w, h);
     const ctx = canvas.getContext("2d");
     const video = new MB.CanvasSource(canvas, { codec: "vp8", bitrate: 1e6 });
     out.addVideoTrack(video, { frameRate: 30 });
     const audio = new MB.AudioBufferSource({ codec: "opus", bitrate: 64000 });
     out.addAudioTrack(audio);
     await out.start();
-    const secs = 6, rate = 48000;
+    const rate = 48000;
     for (let i = 0; i < secs * 30; i++) {
       ctx.fillStyle = `hsl(${(i * 2) % 360} 40% 35%)`;
-      ctx.fillRect(0, 0, 360, 640);
+      ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = "#fff";
       ctx.font = "40px sans-serif";
       ctx.fillText(String(i), 20, 60);
@@ -65,7 +65,7 @@ async function makeVideo(page) {
     const bytes = new Uint8Array(target.buffer);
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return btoa(s);
-  }, CDN.mediabunny);
+  }, [CDN.mediabunny, w, h, secs]);
 }
 
 // Cuenta píxeles "amarillo resaltado" en una región del canvas de vista previa.
@@ -102,8 +102,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   check(videoFile.buffer.length > 10000, `Vídeo de prueba generado (${Math.round(videoFile.buffer.length / 1024)} KB)`);
 
   await page.setInputFiles("#file-input", videoFile);
-  check(await page.locator("#start-btn").isEnabled(), "Al elegir el vídeo se activa «Generar subtítulos»");
-  await page.click("#start-btn");
+  check(await page.locator("#cancel-btn").isVisible() || await page.locator("#studio").isVisible(), "Al elegir el vídeo empieza a generar los subtítulos solo (sin más clics)");
   await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
   check((await page.getAttribute("#status", "data-kind")) === "ok", "Termina con éxito: " + (await page.textContent("#status-text")).trim());
   const nLines = await page.locator(".line-row").count();
@@ -139,6 +138,41 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   const srtText = fs.readFileSync(await srt.path(), "utf8");
   check(/^1\n00:00:00,\d{3} --> 00:00:0\d,\d{3}\nHOLA GENTE\n/.test(srtText), "El SRT exporta el texto editado (en mayúsculas como el estilo)");
 
+  // Palabras clave automáticas y a mano
+  const autoKeys = await page.evaluate(() => window.__captions.state.lines.flatMap((l) => l.words).filter((w) => w.key === "auto").map((w) => w.text));
+  check(autoKeys.includes("subtítulos") || autoKeys.includes("animados") || autoKeys.includes("prueba"), "Resalta palabras clave automáticamente: " + autoKeys.join(", "));
+  const in2 = page.locator(".line-row input").nth(1);
+  await in2.fill("esto es *una*");
+  await in2.press("Enter");
+  await in2.blur();
+  const manual = await page.evaluate(() => window.__captions.state.lines[1].words.find((w) => w.text === "una")?.key);
+  check(manual === true && (await in2.inputValue()) === "esto es *una*", "Se puede resaltar una palabra a mano con *asteriscos*");
+  await page.uncheck("#st-keys");
+  const left = await page.evaluate(() => window.__captions.state.lines.flatMap((l) => l.words).filter((w) => w.key).map((w) => w.key));
+  check(left.length === 1 && left[0] === true, "Desactivar las automáticas mantiene las marcadas a mano");
+  await page.check("#st-keys");
+
+  // Plataforma: zona segura en la vista previa y posición dentro de ella
+  await page.click('[data-platform="tiktok"]');
+  check(await page.locator("#safe-row").isVisible(), "Al elegir TikTok se ofrece ver la zona que tapa la app");
+  check((await page.inputValue("#st-pos")) === "0.62", "La posición se coloca dentro de la zona segura de TikTok");
+  await page.evaluate(() => { document.getElementById("video").currentTime = 0.35; });
+  await page.waitForTimeout(300);
+  const redTop = await page.evaluate(() => {
+    const c = document.getElementById("overlay");
+    const d = c.getContext("2d").getImageData(Math.floor(c.width / 2), 2, 1, 1).data;
+    return d[0] > d[1] && d[3] > 20;
+  });
+  check(redTop, "La zona segura se marca en la vista previa");
+  await page.click('[data-preset="marker"]');
+  await page.evaluate(() => window.__captions.draw());
+  check((await yellowInOverlay(page)) > 200, "Estilo «Marcador»: caja amarilla en la palabra activa");
+  await page.click('[data-preset="neon"]');
+  await page.click('[data-preset="progressive"]');
+  await page.click('[data-preset="karaoke"]');
+  check((await page.locator(".preset").count()) === 8, "8 estilos disponibles");
+  await page.screenshot({ path: path.join(OUT, "subtitulos-tiktok.png"), fullPage: false });
+
   // Exportar el vídeo
   const [dl] = await Promise.all([
     page.waitForEvent("download", { timeout: 180000 }),
@@ -172,6 +206,16 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   }, CDN.mediabunny);
   console.log("  vídeo exportado:", JSON.stringify(info));
   check(info.w === 360 && info.h === 640, "Mantiene la resolución vertical 360×640");
+  // La zona segura NO se graba: arriba del todo el fotograma exportado no tiene el tinte rojo.
+  const tint = await page.evaluate(async (url) => {
+    const MB = await import(url);
+    const blob = await (await fetch(document.getElementById("download-link").href)).blob();
+    const input = new MB.Input({ source: new MB.BlobSource(blob), formats: MB.ALL_FORMATS });
+    const c = (await new MB.CanvasSink(await input.getPrimaryVideoTrack()).getCanvas(0.35)).canvas;
+    const [r, g, b] = c.getContext("2d").getImageData(Math.floor(c.width / 2), 3, 1, 1).data;
+    return { r, g, b };
+  }, CDN.mediabunny);
+  check(Math.abs(tint.r - tint.g) < 60, "La zona segura no aparece en el vídeo exportado");
   check(Math.abs(info.duration - 6) < 0.3, `Mantiene la duración (${info.duration.toFixed(2)} s)`);
   check(!!info.audio, "Conserva la pista de audio");
   check(info.yellow > 100, `Los subtítulos están grabados en el vídeo (${info.yellow} píxeles amarillos en t=0,35 s)`);
@@ -180,6 +224,56 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   check(!external.some((u) => u.includes("googlesyndication")), "Sin AdSense con los anuncios desactivados");
   check(errors.length === 0, "Sin errores en la consola" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();
+
+  // ---------- 1b. Vídeo horizontal → vertical 9:16, cancelar, emojis ----------
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, libs);
+    const page = await ctx.newPage();
+    await page.goto(srv.base + dir);
+    const wide = Buffer.from(await makeVideo(page, 640, 360, 20), "base64");
+    await page.setInputFiles("#file-input", { name: "horizontal.webm", mimeType: "video/webm", buffer: wide });
+    await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
+    check(await page.locator("#crop-row").isVisible(), "Con un vídeo horizontal se ofrece pasarlo a vertical 9:16");
+    await page.check("#st-crop");
+    const ar = await page.evaluate(() => getComputedStyle(document.getElementById("stage")).aspectRatio);
+    check(/203 \/ 360/.test(ar), "La vista previa pasa a 9:16: " + ar);
+    await page.check("#st-emojis");
+    const hasEmojiState = await page.evaluate(() => typeof window.__captions.state.autoEmojis === "boolean" && window.__captions.state.autoEmojis);
+    check(hasEmojiState, "Se pueden activar los emojis automáticos");
+    // Cancelar
+    await page.click("#export-btn");
+    await page.waitForSelector("#export-cancel:not([hidden])", { timeout: 30000 });
+    await page.click("#export-cancel");
+    await page.waitForSelector('#export-status[data-kind="warn"]', { timeout: 30000 });
+    check(/Cancelado/.test(await page.textContent("#export-text")), "La exportación se puede cancelar");
+    // Exportar recortado
+    const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 180000 }), page.click("#export-btn")]);
+    await page.waitForSelector('#export-status[data-kind="ok"]', { timeout: 180000 });
+    const dims = await page.evaluate(async (url) => {
+      const MB = await import(url);
+      const blob = await (await fetch(document.getElementById("download-link").href)).blob();
+      const vt = await new MB.Input({ source: new MB.BlobSource(blob), formats: MB.ALL_FORMATS }).getPrimaryVideoTrack();
+      return [vt.displayWidth, vt.displayHeight];
+    }, CDN.mediabunny);
+    check(dims[0] === 204 && dims[1] === 360, "El vídeo horizontal se exporta en vertical 9:16: " + dims.join("×"));
+    await ctx.close();
+  }
+
+  // ---------- 1c. Navegador sin codificador de vídeo (p. ej. Safari antiguo) ----------
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, libs);
+    await ctx.addInitScript(() => { delete window.VideoEncoder; });
+    const page = await ctx.newPage();
+    await page.goto(srv.base + dir + "incrustar-subtitulos.html");
+    await page.setInputFiles("#file-input", videoFile);
+    await page.setInputFiles("#subs-input", { name: "s.srt", mimeType: "application/x-subrip", buffer: Buffer.from("1\n00:00:00,500 --> 00:00:02,000\nPara ahorrar dinero\n") });
+    await page.waitForSelector("#studio:not([hidden])");
+    check(await page.locator("#encoder-warn").isVisible() && await page.locator("#export-btn").isDisabled(), "Sin codificador de vídeo avisa y ofrece el SRT");
+    check(await page.locator("#srt-btn").isEnabled(), "…el SRT sigue disponible");
+    await page.check("#st-emojis");
+    check((await page.evaluate(() => window.__captions.state.lines[0].emoji)) === "💰", "Emoji automático según el texto («ahorrar dinero» → 💰)");
+    await ctx.close();
+  }
 
   // ---------- 2. Incrustar un SRT existente ----------
   {
@@ -203,7 +297,6 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     page.on("pageerror", (e) => errs.push(e.message));
     await page.goto(srv.base + dir);
     await page.setInputFiles("#file-input", videoFile);
-    await page.click("#start-btn");
     await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
     check(/aproximados/.test(await page.textContent("#status-text")), "Si el modelo no da tiempos por palabra, avisa y los reparte");
     check((await page.locator(".line-row").count()) === 4, "…y agrupa igualmente las 10 palabras en 4 líneas");
@@ -223,7 +316,6 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await page.goto(srv.base + dir);
     check((await page.inputValue("#opt-quality")) === "base-words", "En móvil también se usa palabra a palabra por defecto");
     await page.setInputFiles("#file-input", videoFile);
-    await page.click("#start-btn");
     await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
     await page.screenshot({ path: path.join(OUT, "subtitulos-movil.png"), fullPage: true });
     await page.goto(srv.base + "/en/animated-captions/");

@@ -185,3 +185,16 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 57. **Formatos reales de CSV** en `tests/fixtures/`: CNMC (i-DE), e-distribución (`AE_kWh;AS_KWh;…;REAL/ESTIMADO`,
     documentado en SFL/Nergiza) y la descarga de Datadis (comillas, fecha AAAA/MM/DD, hora HH:MM). Del formato de UFD
     no encontré documentación fiable: se asume el formato común de la CNMC.
+58. **Subtítulos para creadores:** selector «Para: TikTok / Reels / Shorts / Otro» que coloca el texto y estrecha
+    las líneas dentro de la zona segura (valores aproximados en `PLATFORMS`, con margen) y la sombrea en la vista
+    previa (nunca en el vídeo). Vídeos horizontales → opción de recorte centrado a 9:16 (sin IA de seguimiento de
+    cara: queda como mejora). Tres estilos nuevos (Marcador, Progresivo, Neón) → 8 en total.
+59. **Palabras clave:** automáticas (una por línea como mucho: números y palabras largas que no sean vacías) y a mano
+    escribiendo `*palabra*` en el editor; se pintan en un tercer color configurable. **Emojis automáticos**
+    desactivados por defecto (pueden resultar cargantes): diccionario de raíces ES/EN → un emoji por línea.
+60. **Menos pasos:** la generación empieza sola al elegir el vídeo (salvo en «incrustar SRT»), y el botón de
+    descarga está justo debajo de la vista previa. De subir a descargar: 2 clics.
+61. **Exportación más rápida y honesta:** vídeos de más de 30 fps se exportan a 30 fps; progreso con tiempo
+    restante; botón Cancelar; aviso si el navegador no pudo conservar el audio.
+62. **Safari/iPhone:** no se ha podido probar en un Safari real. Se detecta la falta de `VideoEncoder` (iOS < 16.4,
+    navegadores antiguos) y se avisa con alternativa (descargar el SRT); probado simulándolo en Chromium.

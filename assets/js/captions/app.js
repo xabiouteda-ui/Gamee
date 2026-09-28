@@ -1,5 +1,5 @@
 import { STRINGS } from "./i18n.js";
-import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS } from "./core.js";
+import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
 
 // Librería de vídeo (MPL-2.0): lee el vídeo, nos deja dibujar sobre cada fotograma y lo vuelve a codificar.
 const MEDIABUNNY_URL = "https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/dist/bundles/mediabunny.min.mjs";
@@ -20,11 +20,14 @@ const els = {
   exportText: $("export-text"), exportBar: $("export-bar"),
   font: $("st-font"), color: $("st-color"), highlight: $("st-highlight"), size: $("st-size"), pos: $("st-pos"),
   words: $("st-words"), wordsVal: $("st-words-val"), upper: $("st-upper"),
+  keyColor: $("st-key"), keys: $("st-keys"), emojis: $("st-emojis"), crop: $("st-crop"), cropRow: $("crop-row"),
+  safe: $("st-safe"), safeRow: $("safe-row"), exportCancel: $("export-cancel"), encoderWarn: $("encoder-warn"),
 };
 
 const state = {
   file: null, running: false, phase: null, worker: null, segments: [], lines: [],
   style: { ...PRESETS.karaoke }, preset: "karaoke", exporting: null, wordsExact: true,
+  platform: "", crop: false, safe: true, autoKeys: true, autoEmojis: false,
 };
 
 const store = {
@@ -92,6 +95,8 @@ function setFile(file) {
     layoutStage();
     if (isFinite(els.video.duration)) els.fileName.textContent = `${file.name} · ${clock(els.video.duration)}`;
   };
+  // Para ir rápido: en cuanto eliges el vídeo empieza a generar los subtítulos (salvo en «incrustar SRT»).
+  if (els.tool.dataset.mode !== "burn") start();
 }
 
 function clearFile() {
@@ -251,8 +256,18 @@ async function loadSubtitleFile(file) {
 
 // ---------- estudio: vista previa, estilo y texto ----------
 
+// Palabras clave y emojis automáticos (si están activados) sobre las líneas actuales.
+function decorate() {
+  if (state.autoKeys) autoKeywords(state.lines); else clearAutoKeywords(state.lines);
+  if (state.autoEmojis) autoEmojis(state.lines); else clearAutoEmojis(state.lines);
+}
+
 function openStudio(words) {
   state.lines = groupWords(words, { maxWords: state.style.maxWords });
+  decorate();
+  const noEncoder = typeof VideoEncoder === "undefined";
+  els.encoderWarn.hidden = !noEncoder;
+  els.exportBtn.disabled = noEncoder;
   els.studio.hidden = false;
   renderLines();
   syncControls();
@@ -264,6 +279,7 @@ function openStudio(words) {
 function regroup() {
   const words = state.lines.flatMap((l) => l.words);
   state.lines = groupWords(words, { maxWords: state.style.maxWords });
+  decorate();
   renderLines();
   draw();
 }
@@ -281,7 +297,7 @@ function renderLines() {
     ts.setAttribute("aria-label", `${clock(l.start)}`);
     const input = document.createElement("input");
     input.type = "text";
-    input.value = l.text;
+    input.value = lineEditText(l);
     input.dataset.i = i;
     input.setAttribute("aria-label", `${clock(l.start)}`);
     row.append(ts, input);
@@ -290,14 +306,50 @@ function renderLines() {
   els.lines.replaceChildren(frag);
 }
 
+// Encuadre de salida en píxeles del vídeo original: completo o recortado a 9:16 centrado.
+function frame(vw, vh) {
+  if (state.crop && vw > vh) {
+    const cw = Math.round((vh * 9) / 16);
+    return { W: cw, H: vh, sx: Math.round((vw - cw) / 2), sw: cw };
+  }
+  return { W: vw, H: vh, sx: 0, sw: vw };
+}
+
+// Estilo efectivo: el del usuario + el ancho máximo de la zona segura de la plataforma elegida.
+function effectiveStyle(W, H) {
+  const p = PLATFORMS[state.platform];
+  if (!p || W >= H) return state.style;
+  return { ...state.style, maxWidth: Math.min(state.style.maxWidth ?? 0.88, 1 - 2 * Math.max(p.right, p.left)) };
+}
+
 function layoutStage() {
   const v = els.video;
   if (!v.videoWidth) return;
-  const ratio = v.videoWidth / v.videoHeight;
-  els.stage.style.aspectRatio = `${v.videoWidth} / ${v.videoHeight}`;
+  const horizontal = v.videoWidth > v.videoHeight;
+  els.cropRow.hidden = !horizontal;
+  if (!horizontal) state.crop = false;
+  const f = frame(v.videoWidth, v.videoHeight);
+  els.safeRow.hidden = !(PLATFORMS[state.platform] && f.W < f.H);
+  els.stage.classList.toggle("crop", f.W !== v.videoWidth);
+  els.stage.style.aspectRatio = `${f.W} / ${f.H}`;
   // Los vídeos verticales no deben ocupar más del 70 % de la altura de la pantalla.
-  els.stage.style.maxWidth = `${Math.round(window.innerHeight * 0.7 * ratio)}px`;
+  els.stage.style.maxWidth = `${Math.round(window.innerHeight * 0.7 * (f.W / f.H))}px`;
   draw();
+}
+
+function drawSafeZone(ctx, W, H) {
+  const p = PLATFORMS[state.platform];
+  if (!p || !state.safe || W >= H) return;
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 60, 60, 0.22)";
+  ctx.fillRect(0, 0, W, H * p.top);
+  ctx.fillRect(0, H * (1 - p.bottom), W, H * p.bottom);
+  ctx.fillRect(W * (1 - p.right), H * p.top, W * p.right, H * (1 - p.top - p.bottom));
+  ctx.setLineDash([W * 0.02, W * 0.015]);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+  ctx.lineWidth = Math.max(2, W * 0.004);
+  ctx.strokeRect(W * p.left, H * p.top, W * (1 - p.left - p.right), H * (1 - p.top - p.bottom));
+  ctx.restore();
 }
 
 function draw() {
@@ -308,10 +360,12 @@ function draw() {
   if (!w || !h) return;
   if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
   const ctx = c.getContext("2d");
+  const { W, H } = frame(v.videoWidth, v.videoHeight);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  ctx.setTransform(w / v.videoWidth, 0, 0, h / v.videoHeight, 0, 0);
-  drawCaptions(ctx, v.videoWidth, v.videoHeight, v.currentTime, state.lines, state.style);
+  ctx.setTransform(w / W, 0, 0, h / H, 0, 0);
+  drawSafeZone(ctx, W, H);
+  drawCaptions(ctx, W, H, v.currentTime, state.lines, effectiveStyle(W, H));
 }
 
 function loop() {
@@ -329,13 +383,22 @@ function syncControls() {
   els.words.value = s.maxWords;
   els.wordsVal.textContent = s.maxWords;
   els.upper.checked = s.upper;
+  els.keyColor.value = s.keyColor || "#4ade80";
+  els.keys.checked = state.autoKeys;
+  els.emojis.checked = state.autoEmojis;
+  els.crop.checked = state.crop;
+  els.safe.checked = state.safe;
+  for (const b of document.querySelectorAll("[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
   for (const b of els.presets.querySelectorAll(".preset")) b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
 }
 
 function applyPreset(name, save = true) {
   const words = state.style.maxWords;
   state.preset = name;
+  const pos = state.style.pos;
   state.style = { ...PRESETS[name] };
+  // Con una plataforma elegida se mantiene la posición dentro de su zona segura.
+  if (PLATFORMS[state.platform] && name !== "classic") state.style.pos = PLATFORMS[state.platform].pos ?? pos;
   if (save) store.set("preset", name);
   syncControls();
   if (words !== state.style.maxWords && state.lines.length) regroup();
@@ -357,10 +420,13 @@ async function exportVideo() {
     const input = new MB.Input({ source: new MB.BlobSource(state.file), formats: MB.ALL_FORMATS });
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new Error("sin pista de vídeo");
-    let W = track.displayWidth, H = track.displayHeight;
-    const k = Math.min(1, MAX_SIDE / Math.max(W, H));
-    W = Math.round((W * k) / 2) * 2;
-    H = Math.round((H * k) / 2) * 2;
+    const f = frame(track.displayWidth, track.displayHeight);
+    const k = Math.min(1, MAX_SIDE / Math.max(f.W, f.H));
+    const W = Math.round((f.W * k) / 2) * 2;
+    const H = Math.round((f.H * k) / 2) * 2;
+    // Los vídeos a 50/60 fps se exportan a 30 fps: la mitad de trabajo y se ven igual en redes sociales.
+    let frameRate;
+    try { if ((await track.computePacketStats(90)).averagePacketRate > 32) frameRate = 30; } catch {}
 
     // MP4 (H.264/AAC si el navegador puede; si no, VP9/AV1/Opus dentro de MP4) y, como último recurso, WebM.
     let format = new MB.Mp4OutputFormat({ fastStart: "in-memory" });
@@ -375,7 +441,7 @@ async function exportVideo() {
     const output = new MB.Output({ format, target });
     const canvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(W, H) : Object.assign(document.createElement("canvas"), { width: W, height: H });
     const ctx = canvas.getContext("2d");
-    const lines = state.lines, style = { ...state.style };
+    const lines = state.lines, style = { ...effectiveStyle(W, H) };
 
     conversion = await MB.Conversion.init({
       input,
@@ -387,17 +453,25 @@ async function exportVideo() {
         quality: MB.QUALITY_HIGH,
         processedWidth: W,
         processedHeight: H,
+        ...(frameRate ? { frameRate } : {}),
         process: (sample) => {
           ctx.clearRect(0, 0, W, H);
-          sample.draw(ctx, 0, 0, W, H);
+          sample.draw(ctx, f.sx, 0, f.sw, f.H, 0, 0, W, H);
           drawCaptions(ctx, W, H, sample.timestamp + (sample.duration || 0) / 2, lines, style);
           return canvas;
         },
       },
     });
     if (!conversion.isValid) throw new Error((conversion.discardedTracks || []).map((d) => d.reason).join(", ") || "conversión no válida");
+    const noAudio = (conversion.discardedTracks || []).some((d) => d.track.type === "audio" && d.reason !== "discarded_by_user");
     state.exporting = conversion;
-    conversion.onProgress = (p) => setExport(fmt(T.exporting, { p: Math.round(p * 100) }), "", p * 100);
+    els.exportCancel.hidden = false;
+    const t0 = performance.now();
+    conversion.onProgress = (p) => {
+      const el = (performance.now() - t0) / 1000;
+      const eta = p > 0.05 ? (el / p) * (1 - p) : null;
+      setExport(eta == null ? fmt(T.exporting, { p: Math.round(p * 100) }) : fmt(T.exportingEta, { p: Math.round(p * 100), eta: eta < 60 ? `${Math.ceil(eta)} ${T.seconds}` : `${Math.ceil(eta / 60)} ${T.minutes}` }), "", p * 100);
+    };
     await conversion.execute();
 
     const isMp4 = format instanceof MB.Mp4OutputFormat;
@@ -408,7 +482,7 @@ async function exportVideo() {
     els.downloadLink.download = name;
     els.downloadLink.hidden = false;
     els.downloadLink.dataset.size = String(blob.size);
-    setExport(fmt(T.exported, { size: bytes(blob.size) }), "ok", 100);
+    setExport(fmt(T.exported, { size: bytes(blob.size) }) + (noAudio ? " " + T.noAudio : ""), noAudio ? "warn" : "ok", 100);
     els.downloadLink.click();
   } catch (e) {
     console.error(e);
@@ -416,7 +490,8 @@ async function exportVideo() {
     else setExport(e?.noEncoder ? T.noEncoder : fmt(T.exportError, { msg: e?.message || String(e) }), "error");
   } finally {
     state.exporting = null;
-    els.exportBtn.disabled = false;
+    els.exportCancel.hidden = true;
+    els.exportBtn.disabled = typeof VideoEncoder === "undefined";
   }
 }
 
@@ -447,6 +522,9 @@ function init() {
   if (l && [...els.language.options].some((o) => o.value === l)) els.language.value = l;
   els.quality.onchange = () => store.set("quality", els.quality.value);
   els.language.onchange = () => store.set("language", els.language.value);
+  state.platform = PLATFORMS[store.get("platform")] ? store.get("platform") : "";
+  state.autoKeys = store.get("autoKeys") !== "0";
+  state.autoEmojis = store.get("autoEmojis") === "1";
   const p = store.get("preset");
   if (els.tool.dataset.mode === "burn") applyPreset("classic", false);
   else if (p && PRESETS[p]) applyPreset(p, false);
@@ -498,6 +576,8 @@ function init() {
     const i = Number(e.target.dataset.i);
     if (e.target.tagName !== "INPUT" || !state.lines[i]) return;
     state.lines[i] = retimeLine(state.lines[i], e.target.value);
+    decorate();
+    e.target.value = lineEditText(state.lines[i]);
     draw();
   });
   els.lines.addEventListener("click", (e) => {
@@ -515,6 +595,19 @@ function init() {
   window.addEventListener("resize", layoutStage);
 
   els.exportBtn.onclick = exportVideo;
+  els.exportCancel.onclick = () => state.exporting?.cancel();
+  document.querySelectorAll("[data-platform]").forEach((b) => b.addEventListener("click", () => {
+    state.platform = b.dataset.platform;
+    store.set("platform", state.platform);
+    if (PLATFORMS[state.platform] && state.preset !== "classic") state.style.pos = PLATFORMS[state.platform].pos;
+    syncControls();
+    layoutStage();
+  }));
+  els.crop.addEventListener("change", () => { state.crop = els.crop.checked; layoutStage(); });
+  els.safe.addEventListener("change", () => { state.safe = els.safe.checked; draw(); });
+  els.keys.addEventListener("change", () => { state.autoKeys = els.keys.checked; store.set("autoKeys", state.autoKeys ? "1" : "0"); decorate(); renderLines(); draw(); });
+  els.emojis.addEventListener("change", () => { state.autoEmojis = els.emojis.checked; store.set("autoEmojis", state.autoEmojis ? "1" : "0"); decorate(); draw(); });
+  els.keyColor.addEventListener("input", () => { state.style.keyColor = els.keyColor.value; draw(); });
   els.srtBtn.onclick = downloadSRT;
 
   window.addEventListener("beforeunload", (e) => {

@@ -7,7 +7,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | Tarea | Estado |
 |---|---|
 | 1. Luz: resultado en 1 clic con PVPC real y tarifas del mercado | ✅ |
-| 2. Subtítulos: presets para Shorts/Reels/TikTok, palabras clave, emojis, móvil, Safari | ⏳ |
+| 2. Subtítulos: presets para Shorts/Reels/TikTok, palabras clave, emojis, móvil, Safari | ✅ |
 | 3. SEO: páginas por búsqueda concreta | ⏳ |
 
 **1. Luz ✅**
@@ -18,6 +18,15 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 - El PVPC lo descarga GitHub Actions **cada día** de la API pública de Red Eléctrica (`scripts/fetch-pvpc.mjs`);
   si falla, se reutiliza el último publicado y la web sigue funcionando.
 - Probado con formatos reales de CSV (i-DE/CNMC, e-distribución, Datadis) y end-to-end.
+
+**2. Subtítulos ✅**
+- **2 clics** de subir a descargar: empieza sola al elegir el vídeo; botón de descarga bajo la vista previa.
+- «Para: TikTok / Reels / Shorts»: texto dentro de la **zona segura** (se ve sombreada en la vista previa, no en el
+  vídeo). Vídeos horizontales → **vertical 9:16**.
+- **Palabras clave** resaltadas solas (o con `*palabra*`), **emojis automáticos** opcionales, 3 estilos nuevos
+  (Marcador, Progresivo, Neón).
+- Exportación a 30 fps, con tiempo restante y **Cancelar**. Si el navegador no puede crear vídeo (iPhone antiguo),
+  lo avisa y ofrece el SRT. No pude probar en un iPhone real: pruébalo tú.
 
 **Qué tienes que hacer tú (nuevo)**
 - Tras fusionar, en *Actions* lanza «Publicar en GitHub Pages» a mano una vez y comprueba en el log el paso

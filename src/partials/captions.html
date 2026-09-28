@@ -54,12 +54,35 @@
         <video id="video" playsinline controls preload="metadata"></video>
         <canvas id="overlay" aria-hidden="true"></canvas>
       </div>
+      <p class="warn" id="encoder-warn" hidden>{{t.noEncoderEarly}}</p>
+      <div class="export-row">
+        <button type="button" class="btn btn-primary" id="export-btn">{{t.export}}</button>
+        <button type="button" class="btn btn-ghost" id="export-cancel" hidden>{{t.cancel}}</button>
+        <button type="button" class="btn btn-ghost" id="srt-btn">{{t.exportSrt}}</button>
+        <a class="btn btn-ghost" id="download-link" hidden download>{{t.downloadAgain}}</a>
+      </div>
+      <div class="status" id="export-status" hidden aria-live="polite">
+        <p id="export-text"></p>
+        <progress id="export-bar" max="100" value="0"></progress>
+      </div>
     </div>
     <div class="controls-col">
+      <div class="platforms" role="group" aria-label="{{t.platformLabel}}">
+        <span class="platforms-label">{{t.platformLabel}}</span>
+        <button type="button" class="chip" data-platform="tiktok" aria-pressed="false">TikTok</button>
+        <button type="button" class="chip" data-platform="reels" aria-pressed="false">Reels</button>
+        <button type="button" class="chip" data-platform="shorts" aria-pressed="false">Shorts</button>
+        <button type="button" class="chip" data-platform="" aria-pressed="true">{{t.platformOther}}</button>
+      </div>
+      <label class="check small" id="crop-row" hidden><input type="checkbox" id="st-crop"> {{t.crop916}}</label>
+      <label class="check small" id="safe-row" hidden><input type="checkbox" id="st-safe" checked> {{t.showSafe}}</label>
       <h2 id="studio-title">{{t.step2}}</h2>
       <div class="presets" id="presets">
         <button type="button" class="preset" data-preset="karaoke" aria-pressed="true"><span class="pv pv-karaoke">AB<b>C</b></span>{{t.presetKaraoke}}</button>
         <button type="button" class="preset" data-preset="pop" aria-pressed="false"><span class="pv pv-pop">ABC</span>{{t.presetPop}}</button>
+        <button type="button" class="preset" data-preset="marker" aria-pressed="false"><span class="pv pv-marker">A<b>B</b>C</span>{{t.presetMarker}}</button>
+        <button type="button" class="preset" data-preset="progressive" aria-pressed="false"><span class="pv pv-progressive"><b>AB</b>C</span>{{t.presetProgressive}}</button>
+        <button type="button" class="preset" data-preset="neon" aria-pressed="false"><span class="pv pv-neon">A<b>B</b>C</span>{{t.presetNeon}}</button>
         <button type="button" class="preset" data-preset="box" aria-pressed="false"><span class="pv pv-box">A<b>B</b>C</span>{{t.presetBox}}</button>
         <button type="button" class="preset" data-preset="bubble" aria-pressed="false"><span class="pv pv-bubble">A<b>B</b>C</span>{{t.presetBubble}}</button>
         <button type="button" class="preset" data-preset="classic" aria-pressed="false"><span class="pv pv-classic">Abc</span>{{t.presetClassic}}</button>
@@ -78,20 +101,14 @@
         <label>{{t.size}} <input type="range" id="st-size" min="0.03" max="0.16" step="0.005" value="0.075"></label>
         <label>{{t.position}} <input type="range" id="st-pos" min="0.1" max="0.92" step="0.01" value="0.7"></label>
         <label><span>{{t.wordsPerLine}}: <b class="range-value" id="st-words-val">3</b></span><input type="range" id="st-words" min="1" max="8" step="1" value="3"></label>
+        <label class="color">{{t.keyColor}} <input type="color" id="st-key" value="#4ade80"></label>
         <label class="check"><input type="checkbox" id="st-upper" checked> {{t.uppercase}}</label>
+        <label class="check"><input type="checkbox" id="st-keys" checked> {{t.autoKeys}}</label>
+        <label class="check"><input type="checkbox" id="st-emojis"> {{t.autoEmojis}}</label>
       </div>
       <h2>{{t.step3}}</h2>
-      <p class="muted small">{{t.step3Hint}}</p>
+      <p class="muted small">{{t.step3Hint}} {{t.keyHint}}</p>
       <div class="lines" id="lines"></div>
     </div>
-  </div>
-  <div class="export-row">
-    <button type="button" class="btn btn-primary" id="export-btn">{{t.export}}</button>
-    <button type="button" class="btn btn-ghost" id="srt-btn">{{t.exportSrt}}</button>
-    <a class="btn btn-ghost" id="download-link" hidden download>{{t.downloadAgain}}</a>
-  </div>
-  <div class="status" id="export-status" hidden aria-live="polite">
-    <p id="export-text"></p>
-    <progress id="export-bar" max="100" value="0"></progress>
   </div>
 </section>

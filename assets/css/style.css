@@ -357,3 +357,18 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .quick-form output { color: var(--text); }
 @media (max-width: 480px) { .quick-form { grid-template-columns: 1fr; } }
 .luz-results h3 { font-size: 1rem; margin: 18px 0 4px; }
+
+/* Subtítulos: plataformas, recorte 9:16 y nuevos estilos */
+.platforms { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.platforms-label { font-weight: 700; font-size: .9rem; margin-right: 2px; }
+.chip { font: inherit; font-size: .88rem; font-weight: 600; color: var(--text); background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 999px; padding: 5px 12px; cursor: pointer; min-height: 36px; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-2); }
+#crop-row, #safe-row { margin: 4px 0; }
+.stage.crop video { object-fit: cover; }
+.pv-marker b { background: #ffe600; color: #111; border-radius: 4px; padding: 0 3px; }
+.pv-progressive b { color: #22d3ee; }
+.pv-neon { color: #fff; text-shadow: 0 0 6px #ff4fd8; }
+.pv-neon b { color: #ff4fd8; }
+.preview-col .export-row { margin-top: 12px; }
+.preview-col .export-row #export-btn { flex: 1 1 100%; }
+.preview-col .status { margin-top: 10px; }
