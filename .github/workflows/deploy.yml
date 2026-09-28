@@ -52,6 +52,7 @@ jobs:
         run: |
           node tests/check-site.mjs
           node tests/unit-captions.mjs
+          node tests/unit-luz.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:

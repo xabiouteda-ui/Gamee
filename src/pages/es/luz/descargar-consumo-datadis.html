@@ -1,0 +1,58 @@
+<!--{
+  "slug": "luz/descargar-consumo-datadis.html",
+  "tool": "luz",
+  "appName": "Analizador del CSV de consumo eléctrico",
+  "faqSchema": true,
+  "title": "Cómo descargar tu consumo de luz en CSV (Datadis) y analizarlo",
+  "description": "Paso a paso para descargar el fichero CSV con tu consumo eléctrico hora a hora desde Datadis o tu distribuidora, y cómo analizarlo gratis sin enviar tus datos."
+}-->
+<section class="hero">
+  <h1>Cómo descargar tu consumo de luz en CSV y analizarlo</h1>
+  <p class="lead">Tu contador inteligente registra lo que consumes cada hora, y tienes derecho a descargarlo gratis. Con ese fichero puedes saber qué tarifa te conviene de verdad. Así se consigue en unos minutos.</p>
+</section>
+
+<article class="content">
+  <h2>Opción 1: la plataforma común de las distribuidoras (Datadis)</h2>
+  <p>Las distribuidoras eléctricas tienen una plataforma conjunta, Datadis, donde puedes ver el consumo de todos tus suministros, sea cual sea tu zona.</p>
+  <ol>
+    <li>Entra en la web de Datadis y regístrate como persona física con el DNI/NIE del titular del contrato de luz. Te pedirán un teléfono o email para verificarte.</li>
+    <li>Una vez dentro, ve a la sección de consumos de tu suministro (aparece identificado por su dirección y su CUPS).</li>
+    <li>Elige el periodo: lo ideal es <strong>el último año completo</strong>, para que se vean invierno y verano.</li>
+    <li>Descarga el fichero en formato <strong>CSV</strong>.</li>
+    <li>Arrástralo a la herramienta de abajo.</li>
+  </ol>
+
+  <h2>Opción 2: la web de tu distribuidora</h2>
+  <p>La distribuidora no es la compañía que te factura, sino la empresa que gestiona los cables de tu zona; su nombre aparece en tu factura. En su área de clientes suele haber un apartado de «consumos» o «curva de carga» desde el que puedes descargar un CSV con el consumo horario. El formato suele ser el estándar de la CNMC:</p>
+  <pre class="code">CUPS;Fecha;Hora;Consumo_kWh;Metodo_obtencion
+ES00XXXXXXXXXXXXXXXX;01/01/2026;1;0,143;R</pre>
+  <p>La herramienta también entiende variantes: separador coma o punto y coma, fechas con guiones o barras, hora como «1» o «01:00», datos cuartohorarios (cada 15 minutos) y valores en Wh.</p>
+
+  {{ad:content}}
+
+  <h2>Analiza tu fichero</h2>
+  <p>Súbelo aquí y verás tu reparto por periodos, el mapa de horas de consumo y qué oferta te sale más barata. El fichero no sale de tu dispositivo.</p>
+</article>
+
+{{tool}}
+
+<article class="content">
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿Qué significa la columna «Metodo_obtencion»?</summary>
+    <div><p>Indica si la lectura es real (R) o estimada (E), por ejemplo cuando el contador no pudo comunicarse. Para comparar tarifas sirven ambas.</p></div>
+  </details>
+  <details>
+    <summary>¿Por qué la hora va de 1 a 24?</summary>
+    <div><p>Porque cada valor es el consumo de la hora que termina a esa hora: «1» es de 0:00 a 1:00 y «24» de 23:00 a 24:00. Los días de cambio de hora tienen 23 o 25 valores.</p></div>
+  </details>
+  <details>
+    <summary>Mi distribuidora me da un Excel, no un CSV</summary>
+    <div><p>Ábrelo con cualquier hoja de cálculo y usa «Guardar como» → CSV. Asegúrate de que las columnas de fecha, hora y consumo siguen ahí.</p></div>
+  </details>
+  <details>
+    <summary>¿Es gratis descargar mis datos de consumo?</summary>
+    <div><p>Sí. Los datos de tu contador son tuyos y las distribuidoras están obligadas a dártelos gratis.</p></div>
+  </details>
+  <p class="muted small">Datadis es una plataforma de las distribuidoras eléctricas; esta web no está vinculada a ella.</p>
+</article>

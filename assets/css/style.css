@@ -253,3 +253,62 @@ details > div { padding-bottom: 8px; }
 .line-row input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 .export-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 #export-btn { flex: 1 1 260px; }
+
+/* ---------- Analizador de consumo eléctrico ---------- */
+:root { --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; }
+@media (prefers-color-scheme: dark) { :root { --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; } }
+.luz-results { margin-top: 20px; }
+.luz-results > h2:first-child { margin-top: 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.kpi-label { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.kpi-value { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.kpi-value:empty { display: none; }
+.kpi-sub { font-size: .85rem; color: var(--muted); }
+.kpi-sub.split { display: flex; flex-direction: column; gap: 2px; color: var(--text); font-size: .95rem; margin-top: 2px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+.sw-P1 { background: var(--series-1); } .sw-P2 { background: var(--series-2); } .sw-P3 { background: var(--series-3); }
+.ranking td.num, .data-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ranking tr.best td { font-weight: 700; background: var(--accent-soft); }
+.setup { margin-top: 18px; }
+.contract { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.contract label, .offer label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.contract input, .offer input, .offer select {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: 100%;
+}
+.offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.offer { border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px 14px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; background: var(--surface); }
+.offer legend { font-weight: 700; padding: 0 6px; }
+.offer label:nth-of-type(1), .offer label:nth-of-type(2) { grid-column: 1 / -1; }
+.offer .remove { grid-column: 1 / -1; justify-self: start; padding: 0; }
+.insight-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.insight-list li { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; max-width: none; }
+.insight-list input[type="range"] { width: 100%; accent-color: var(--accent); margin: 8px 0 4px; }
+.insight-result { margin: 0; font-weight: 700; }
+.block { display: block; margin-top: 6px; }
+.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-svg .grid { stroke: var(--border); stroke-width: 1; }
+.chart-svg .axis { stroke: var(--muted); stroke-width: 1; }
+.chart-svg .tick { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.seg-P1 { fill: var(--series-1); } .seg-P2 { fill: var(--series-2); } .seg-P3 { fill: var(--series-3); }
+.chart-svg .hit { fill: transparent; }
+.chart-svg .bar:hover .seg, .chart-svg .bar:focus .seg { opacity: .85; }
+.chart-svg .bar:focus { outline: none; }
+.chart-svg .bar:focus-visible .hit { stroke: var(--accent); stroke-width: 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .88rem; margin-bottom: 6px; }
+.data-table { margin-top: 8px; }
+.data-table summary { padding: 8px 0; }
+.data-table table { font-size: .88rem; }
+.heat-wrap { overflow-x: auto; }
+.heat { display: grid; grid-template-columns: 22px repeat(24, minmax(10px, 1fr)); gap: 2px; min-width: 300px; }
+.heat .cell { aspect-ratio: 1; border-radius: 3px; min-height: 10px; }
+.heat .cell:hover { outline: 2px solid var(--text); outline-offset: -1px; }
+.heat-h, .heat-d { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.2; }
+.heat-d { text-align: left; align-self: center; }
+.heat-legend { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); margin-top: 8px; }
+.heat-legend i { display: block; width: 140px; height: 8px; border-radius: 4px; }
+.viz-tip {
+  position: absolute; z-index: 20; pointer-events: none; background: var(--text); color: var(--bg); font-size: .82rem;
+  padding: 6px 9px; border-radius: 8px; max-width: 260px; box-shadow: var(--shadow);
+}
+pre.code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font-size: .85rem; }

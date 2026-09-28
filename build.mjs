@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { STRINGS, AUDIO_LANGUAGES } from "./assets/js/i18n.js";
 import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
+import { STRINGS as LUZ_STRINGS } from "./assets/js/luz/i18n.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
@@ -26,7 +27,7 @@ const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 const UI = {
   es: {
-    home: "Transcribir", captions: "Subtítulos animados", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Transcribir", captions: "Subtítulos animados", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramienta gratuita financiada con publicidad. El audio se procesa en tu dispositivo.",
     otherLang: "English", otherLangLabel: "Read in English",
@@ -40,7 +41,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", captions: "subtitulos-animados/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
+  es: { home: "", captions: "subtitulos-animados/", luz: "luz/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
   en: { home: "en/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
 };
 
@@ -66,6 +67,7 @@ function readPages() {
 const TOOLS = {
   transcribe: { partial: "tool.html", strings: STRINGS, script: "assets/js/app.js", category: "MultimediaApplication" },
   captions: { partial: "captions.html", strings: CAPTIONS_STRINGS, script: "assets/js/captions/app.js", category: "MultimediaApplication" },
+  luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
 
@@ -186,6 +188,7 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
       ${nav("home", ui.home)}
       ${pagesBySlug.has(L.captions + "index.html") ? nav("captions", ui.captions) : ""}
+      ${L.luz && pagesBySlug.has(L.luz + "index.html") ? nav("luz", ui.luz) : ""}
       ${nav("faq", ui.faq)}
       ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
     </nav>

@@ -6,8 +6,8 @@ Resumen rápido para revisar desde el móvil. Se actualiza al final de cada fase
 |---|---|
 | 1. Investigación → `RESEARCH-2.md` | ✅ Hecha |
 | 2. Herramienta 1: subtítulos karaoke | ✅ Hecha |
-| 3. Herramienta 2: tarifa de luz con tu CSV | ⏳ En curso |
-| 4. Mejoras (marca común, SEO Transcribe Libre, rendimiento, accesibilidad) | ⏳ Pendiente |
+| 3. Herramienta 2: tarifa de luz con tu CSV | ✅ Hecha |
+| 4. Mejoras (marca común, SEO Transcribe Libre, rendimiento, accesibilidad) | ⏳ En curso |
 
 ## Fase 1 – Investigación ✅
 
@@ -38,8 +38,27 @@ Resumen rápido para revisar desde el móvil. Se actualiza al final de cada fase
 - **Sin probar aquí:** el reconocimiento de voz con el modelo real (el entorno no puede descargar modelos). Pruébalo
   en la web publicada con un vídeo tuyo.
 
+## Fase 3 – ¿Qué tarifa de luz me conviene? ✅
+
+**Dónde:** `/luz/` (solo español: la tarifa 2.0TD es española).
+
+- **Qué hace:** subes el CSV de consumo horario de tu distribuidora (o pruebas con un ejemplo) y ves: consumo total
+  y anual, reparto punta/llano/valle, consumo base («fantasma») en W y €/año, **ranking de ofertas con impuestos
+  incluidos** (las ofertas y precios los pones tú y se guardan), simulador de mover consumo a valle, pista sobre la
+  potencia, gráfico mensual por periodos (con tabla) y mapa de calor día×hora. Nada sale del navegador.
+- **Páginas SEO:** portada con tabla de periodos y FAQ; «Cómo descargar tu consumo en CSV (Datadis)»;
+  «¿Qué potencia de luz contratar?» con tabla de electrodomésticos.
+- **Pruebas:** unitarias (`tests/unit-luz.mjs`: periodos, festivos, formatos de CSV, factura calculada a mano) y
+  end-to-end (`tests/e2e-luz.cjs`: CSV con reparto conocido, ranking, edición de ofertas, potencia, simulador,
+  tooltip, error de fichero, móvil, modo oscuro y que no se hace ninguna petición a terceros). Encontraron y
+  corregí un fallo (el simulador podía prometer un «ahorro» negativo).
+- **Revisar tú:** los precios de ejemplo (0,13 €/kWh fijo; 0,19/0,125/0,085 por periodos; potencia 0,0877
+  €/kW·día) son orientativos; cámbialos en `assets/js/luz/core.js` si quieres otros de referencia.
+
 ## Qué tienes que hacer tú
 
 - Al final de la sesión: revisa y fusiona la pull request.
 - Después de publicar: prueba los subtítulos animados con un vídeo real tuyo (en ordenador y en el móvil) y dime si
   los tiempos por palabra salen bien.
+- Prueba la herramienta de luz con tu propio CSV de Datadis o de tu distribuidora (por si su formato tuviera alguna
+  variante que no lea).

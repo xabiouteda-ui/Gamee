@@ -127,3 +127,18 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 39. **Pruebas nuevas:** `tests/unit-captions.mjs` (Node, sin dependencias, también en el workflow) y
     `tests/e2e-captions.cjs`, que genera un vídeo real en Chromium, simula solo el reconocimiento de voz, exporta
     con Mediabunny real y comprueba en los fotogramas del MP4 resultante que los subtítulos están grabados.
+40. **Tarifa de luz: solo en español.** La tarifa 2.0TD, los ficheros de las distribuidoras y los impuestos son de
+    España; una versión inglesa apenas tendría búsquedas. Queda en la lista de mejoras (público extranjero en España).
+41. **Periodos 2.0TD sin tabla anual de festivos:** solo cuentan como valle los festivos nacionales de fecha fija
+    (Circular 3/2020 CNMC), así que la regla no caduca. Impuestos (impuesto eléctrico 5,11 %, IVA 21 %, alquiler de
+    contador típico) en `assets/js/luz/core.js` → `RULES`, con fecha de revisión visible en la página.
+42. **Precios de las ofertas los pone el usuario** (sin IVA), con dos ofertas de ejemplo claramente marcadas. No se
+    usan precios de ninguna compañía (ni marcas) ni el PVPC horario en la v1: exigiría datos externos que cambian a
+    diario. Las ofertas y la potencia se guardan en `localStorage` para volver a comparar (uso recurrente).
+43. **Lector de CSV tolerante:** detecta separador, columnas por nombre (fecha, hora, consumo; ignora
+    «método de obtención»), fechas DD/MM/AAAA o AAAA-MM-DD, hora 1–24 o HH:MM (fin de intervalo), datos
+    cuartohorarios (se suman por hora) y valores en Wh. El CUPS se muestra enmascarado.
+44. **Potencia: consejo prudente.** El CSV horario solo da la media de cada hora, no el pico real; se muestra la
+    hora de más consumo y cuánto ahorra cada kW, remitiendo al maxímetro de la distribuidora para decidir.
+45. **Gráficos a mano en SVG/HTML** con la paleta categórica validada (3 series, modo claro y oscuro) y rampa
+    secuencial azul para el mapa de calor; leyenda, tooltip y tabla de datos para accesibilidad.
