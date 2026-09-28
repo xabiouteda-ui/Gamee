@@ -198,3 +198,20 @@ details > div { padding-bottom: 8px; }
 /* Anuncios: sin espacio mientras están desactivados */
 .ad-slot { display: none; }
 .ad-slot.ad-on { display: block; margin: 20px 0; min-height: 100px; text-align: center; }
+
+/* Móvil: la herramienta lo antes posible en pantalla */
+@media (max-width: 560px) {
+  .header-inner { min-height: 52px; flex-wrap: nowrap; }
+  .brand { font-size: 1rem; white-space: nowrap; gap: 8px; }
+  .logo { width: 26px; height: 26px; }
+  .site-header nav { flex-wrap: nowrap; }
+  .site-header nav a { white-space: nowrap; }
+  .site-header nav a:not(.lang):not(:only-child) { display: none; } /* las FAQ siguen en el pie */
+  .logo { flex: none; }
+  .site-header nav a { padding: 6px 8px; font-size: .88rem; }
+  .hero { padding-top: 18px; }
+  h1 { font-size: 1.55rem; }
+  .hero p.lead { font-size: 1rem; margin-bottom: 12px; }
+  .badges { display: none; }
+  .drop { padding: 22px 12px; }
+}

@@ -18,6 +18,7 @@ let lib = null;
 let transcriber = null;
 let loadedKey = null;
 let cancelled = false;
+let stage = null;
 
 const post = (msg) => self.postMessage(msg);
 
@@ -92,7 +93,7 @@ function splitPoints(audio) {
     let best = hi, bestE = Infinity;
     for (let i = lo; i <= hi; i += frame) {
       const e = rms(audio, i, i + frame);
-      if (e < bestE) { bestE = e; best = i; }
+      if (e <= bestE) { bestE = e; best = i; } // en empate, el más tardío: fragmentos más largos
     }
     start = best + Math.floor(frame / 2);
     points.push(start);
@@ -173,11 +174,12 @@ async function transcribe({ audio, language, task, fallbackLanguage }) {
 
 self.onmessage = async ({ data }) => {
   try {
+    stage = data.type;
     if (data.type === "load") await load(data.model);
     else if (data.type === "transcribe") await transcribe(data);
     else if (data.type === "cancel") cancelled = true;
   } catch (err) {
     console.error(err);
-    post({ type: "error", message: String(err?.message || err) });
+    post({ type: "error", stage, message: String(err?.message || err) });
   }
 };

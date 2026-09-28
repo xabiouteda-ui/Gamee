@@ -283,7 +283,8 @@ function onWorkerMessage({ data: m }) {
       break;
     case "error":
       finish();
-      setStatus(fmt(T.error, { msg: m.message }), "error");
+      // Si falla al cargar (sin conexión, navegador sin soporte…), mensaje comprensible + detalle técnico.
+      setStatus(m.stage === "load" ? `${T.engineError} (${m.message})` : fmt(T.error, { msg: m.message }), "error");
       break;
   }
 }
@@ -353,6 +354,10 @@ function init() {
   }
 
   els.quality.value = store.get("quality") || (isMobile() ? "tiny" : "base");
+  if (isMobile()) {
+    els.drop.querySelector("strong").textContent = T.dropTitleTouch;
+    els.drop.querySelector(".muted").textContent = T.dropHint.split("·").pop().trim();
+  }
   const savedLang = store.get("language");
   if (savedLang && [...els.language.options].some((o) => o.value === savedLang)) els.language.value = savedLang;
   els.quality.onchange = () => store.set("quality", els.quality.value);

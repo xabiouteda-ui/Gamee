@@ -3,6 +3,7 @@
 export const STRINGS = {
   es: {
     dropTitle: "Arrastra aquí un audio o un vídeo",
+    dropTitleTouch: "Toca para elegir un audio o un vídeo",
     dropHint: "o haz clic para elegir un archivo · MP3, WAV, M4A, OGG, OPUS, FLAC, MP4, WEBM, MOV…",
     or: "o",
     record: "Grabar con el micrófono",
@@ -52,6 +53,7 @@ export const STRINGS = {
   },
   en: {
     dropTitle: "Drop an audio or video file here",
+    dropTitleTouch: "Tap to choose an audio or video file",
     dropHint: "or click to choose a file · MP3, WAV, M4A, OGG, OPUS, FLAC, MP4, WEBM, MOV…",
     or: "or",
     record: "Record with microphone",
