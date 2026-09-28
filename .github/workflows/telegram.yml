@@ -1,0 +1,54 @@
+name: Precio de la luz mañana en Telegram
+
+# Cada día a las 20:40 (hora de Madrid) publica en un canal de Telegram las horas más baratas y más caras de mañana.
+# Necesita dos secretos (Settings → Secrets and variables → Actions → Secrets): TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID.
+# Si no existen, el workflow termina bien sin publicar nada. Cómo crear el bot: README → «Canal de Telegram».
+on:
+  schedule:
+    # Los cron de GitHub van en UTC: 18:40 UTC = 20:40 en horario de verano; 19:40 UTC = 20:40 en invierno.
+    # Se lanzan los dos y el paso «¿Toca hoy?» deja pasar solo el que coincide con el horario vigente en Madrid.
+    - cron: "40 18 * * *"
+    - cron: "40 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-pvpc
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: ¿Toca hoy?
+        id: gate
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          OFFSET=$(TZ=Europe/Madrid date +%z)   # +0200 en verano, +0100 en invierno
+          if [ -z "$SCHEDULE" ]; then RUN=true
+          elif [ "$SCHEDULE" = "40 18 * * *" ] && [ "$OFFSET" = "+0200" ]; then RUN=true
+          elif [ "$SCHEDULE" = "40 19 * * *" ] && [ "$OFFSET" = "+0100" ]; then RUN=true
+          else RUN=false; fi
+          echo "Horario de Madrid: UTC$OFFSET · cron: ${SCHEDULE:-manual} · publicar: $RUN"
+          echo "run=$RUN" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: 22
+
+      - name: Publicar el precio de mañana
+        if: steps.gate.outputs.run == 'true'
+        run: node scripts/telegram-pvpc.mjs
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
