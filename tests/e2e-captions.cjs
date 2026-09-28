@@ -171,6 +171,22 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   await page.click('.preset[data-preset="progressive"]');
   await page.click('.preset[data-preset="karaoke"]');
   check((await page.locator(".preset").count()) === 8, "8 estilos disponibles");
+  // Crédito «Hecho con …»: activado por defecto, arriba y dentro de la zona segura; se puede quitar.
+  const whiteTop = () => page.evaluate(() => {
+    window.__captions.draw();
+    const c = document.getElementById("overlay");
+    const d = c.getContext("2d").getImageData(0, 0, c.width, Math.floor(c.height * 0.2)).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 230 && d[i + 2] > 230 && d[i + 3] > 200) n++;
+    return n;
+  });
+  check(await page.locator("#st-credit").isChecked(), "Crédito «Hecho con»: activado por defecto");
+  const withCredit = await whiteTop();
+  await page.uncheck("#st-credit");
+  const noCredit = await whiteTop();
+  check(withCredit - noCredit > 50, `Crédito «Hecho con»: se ve en la vista previa y se quita con la casilla (${withCredit} → ${noCredit} píxeles)`);
+  check((await page.evaluate(() => localStorage.getItem("tl.cap.credit"))) === "0", "Crédito «Hecho con»: se recuerda si lo quitas");
+  await page.check("#st-credit");
   await page.screenshot({ path: path.join(OUT, "subtitulos-tiktok.png"), fullPage: false });
 
   // Exportar el vídeo
@@ -202,7 +218,11 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     const d2 = late.getContext("2d").getImageData(0, 0, late.width, late.height).data;
     let yellow2 = 0;
     for (let i = 0; i < d2.length; i += 4) if (d2[i] > 200 && d2[i + 1] > 180 && d2[i + 2] < 100) yellow2++;
-    return { mime: blob.type, size: blob.size, w: vt.displayWidth, h: vt.displayHeight, codec: vt.codec, audio: at?.codec || null, duration, yellow, yellow2 };
+    // Crédito «Hecho con …» (TikTok: dentro de la zona segura, debajo del contador blanco del vídeo de prueba).
+    let credit = 0;
+    const cr = late.getContext("2d").getImageData(Math.round(late.width * 0.07), Math.round(late.height * 0.12), Math.round(late.width * 0.6), Math.round(late.height * 0.03)).data;
+    for (let i = 0; i < cr.length; i += 4) if (cr[i] > 200 && cr[i + 1] > 200 && cr[i + 2] > 200) credit++;
+    return { credit, mime: blob.type, size: blob.size, w: vt.displayWidth, h: vt.displayHeight, codec: vt.codec, audio: at?.codec || null, duration, yellow, yellow2 };
   }, CDN.mediabunny);
   console.log("  vídeo exportado:", JSON.stringify(info));
   check(info.w === 360 && info.h === 640, "Mantiene la resolución vertical 360×640");
@@ -220,6 +240,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   check(!!info.audio, "Conserva la pista de audio");
   check(info.yellow > 100, `Los subtítulos están grabados en el vídeo (${info.yellow} píxeles amarillos en t=0,35 s)`);
   check(info.yellow2 < 20, "Sin subtítulos cuando no se habla (t=5,8 s)");
+  check(info.credit > 20, `El crédito «Hecho con» está grabado en el vídeo (${info.credit} píxeles)`);
   await page.screenshot({ path: path.join(OUT, "subtitulos-exportado.png"), fullPage: true });
   check(!external.some((u) => u.includes("googlesyndication")), "Sin AdSense con los anuncios desactivados");
   check(errors.length === 0, "Sin errores en la consola" + (errors.length ? ": " + errors.join(" | ") : ""));

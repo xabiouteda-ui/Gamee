@@ -1,6 +1,6 @@
 import { STRINGS } from "./i18n.js";
 import { showAffiliates } from "../afiliados.js";
-import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
+import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, drawCredit, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
 
 // Librería de vídeo (MPL-2.0): lee el vídeo, nos deja dibujar sobre cada fotograma y lo vuelve a codificar.
 const MEDIABUNNY_URL = "https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/dist/bundles/mediabunny.min.mjs";
@@ -22,13 +22,13 @@ const els = {
   font: $("st-font"), color: $("st-color"), highlight: $("st-highlight"), size: $("st-size"), pos: $("st-pos"),
   words: $("st-words"), wordsVal: $("st-words-val"), upper: $("st-upper"),
   keyColor: $("st-key"), keys: $("st-keys"), emojis: $("st-emojis"), crop: $("st-crop"), cropRow: $("crop-row"),
-  safe: $("st-safe"), safeRow: $("safe-row"), exportCancel: $("export-cancel"), encoderWarn: $("encoder-warn"),
+  credit: $("st-credit"), safe: $("st-safe"), safeRow: $("safe-row"), exportCancel: $("export-cancel"), encoderWarn: $("encoder-warn"),
 };
 
 const state = {
   file: null, running: false, phase: null, worker: null, segments: [], lines: [],
   style: { ...PRESETS.karaoke }, preset: "karaoke", exporting: null, wordsExact: true,
-  platform: "", crop: false, safe: true, autoKeys: true, autoEmojis: false,
+  platform: "", crop: false, safe: true, autoKeys: true, autoEmojis: false, credit: true,
 };
 
 const store = {
@@ -339,6 +339,13 @@ function layoutStage() {
   draw();
 }
 
+// Crédito «Hecho con …»: dentro de la zona segura de la plataforma si el vídeo es vertical.
+function creditArgs(W, H) {
+  if (!state.credit) return null;
+  const p = PLATFORMS[state.platform];
+  return [els.tool.dataset.credit, p && W < H ? p : null];
+}
+
 function drawSafeZone(ctx, W, H) {
   const p = PLATFORMS[state.platform];
   if (!p || !state.safe || W >= H) return;
@@ -368,6 +375,8 @@ function draw() {
   ctx.setTransform(w / W, 0, 0, h / H, 0, 0);
   drawSafeZone(ctx, W, H);
   drawCaptions(ctx, W, H, v.currentTime, state.lines, effectiveStyle(W, H));
+  const cr = creditArgs(W, H);
+  if (cr) drawCredit(ctx, W, H, ...cr);
 }
 
 function loop() {
@@ -389,6 +398,7 @@ function syncControls() {
   els.keys.checked = state.autoKeys;
   els.emojis.checked = state.autoEmojis;
   els.crop.checked = state.crop;
+  els.credit.checked = state.credit;
   els.safe.checked = state.safe;
   for (const b of document.querySelectorAll(".chip[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
   for (const b of els.presets.querySelectorAll(".preset")) b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
@@ -443,7 +453,7 @@ async function exportVideo() {
     const output = new MB.Output({ format, target });
     const canvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(W, H) : Object.assign(document.createElement("canvas"), { width: W, height: H });
     const ctx = canvas.getContext("2d");
-    const lines = state.lines, style = { ...effectiveStyle(W, H) };
+    const lines = state.lines, style = { ...effectiveStyle(W, H) }, credit = creditArgs(W, H);
 
     conversion = await MB.Conversion.init({
       input,
@@ -460,6 +470,7 @@ async function exportVideo() {
           ctx.clearRect(0, 0, W, H);
           sample.draw(ctx, f.sx, 0, f.sw, f.H, 0, 0, W, H);
           drawCaptions(ctx, W, H, sample.timestamp + (sample.duration || 0) / 2, lines, style);
+          if (credit) drawCredit(ctx, W, H, ...credit);
           return canvas;
         },
       },
@@ -528,6 +539,7 @@ function init() {
   state.platform = PLATFORMS[store.get("platform")] ? store.get("platform") : "";
   state.autoKeys = store.get("autoKeys") !== "0";
   state.autoEmojis = store.get("autoEmojis") === "1";
+  state.credit = store.get("credit") !== "0";
   const p = store.get("preset");
   // Cada página puede preseleccionar plataforma, estilo o traducción (p. ej. «subtítulos para TikTok»).
   const d = els.tool.dataset;
@@ -614,6 +626,7 @@ function init() {
   }));
   els.crop.addEventListener("change", () => { state.crop = els.crop.checked; layoutStage(); });
   els.safe.addEventListener("change", () => { state.safe = els.safe.checked; draw(); });
+  els.credit.addEventListener("change", () => { state.credit = els.credit.checked; store.set("credit", state.credit ? "1" : "0"); draw(); });
   els.keys.addEventListener("change", () => { state.autoKeys = els.keys.checked; store.set("autoKeys", state.autoKeys ? "1" : "0"); decorate(); renderLines(); draw(); });
   els.emojis.addEventListener("change", () => { state.autoEmojis = els.emojis.checked; store.set("autoEmojis", state.autoEmojis ? "1" : "0"); decorate(); draw(); });
   els.keyColor.addEventListener("input", () => { state.style.keyColor = els.keyColor.value; draw(); });

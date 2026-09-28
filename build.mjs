@@ -133,11 +133,19 @@ function pvpcAverages() {
   return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
 }
 
+// Texto del crédito «Hecho con …» de los vídeos. Con dominio propio se añade (se lee bien en un vídeo);
+// una dirección larga de github.io, no.
+function creditText(lang) {
+  const host = new URL(siteUrl).host.replace(/^www\./, "");
+  return `${lang === "es" ? "Hecho con" : "Made with"} ${site.siteName}${/github\.io$/.test(host) ? "" : ` · ${host}`}`;
+}
+
 function toolHtml(tool, lang, page) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
     .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
+    .replace(/\{\{credit\}\}/g, () => esc(creditText(lang)))
     .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
     .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
     .replace(/\{\{preset\}\}/g, esc(page.preset || ""))

@@ -323,3 +323,36 @@ export function drawCaptions(ctx, W, H, t, lines, style) {
   }
   ctx.restore();
 }
+
+// Crédito opcional «Hecho con …» (arriba a la izquierda, dentro de la zona segura si la hay). Pequeño y discreto:
+// una píldora semitransparente con el logotipo de barras de la web. safe: { top, left } en fracciones del vídeo.
+export function drawCredit(ctx, W, H, text, safe = null) {
+  if (!text) return;
+  const px = Math.max(10, Math.round(Math.min(W, H) * 0.024));
+  const x = W * ((safe?.left ?? 0) + 0.03), y = H * ((safe?.top ?? 0) + 0.02);
+  ctx.save();
+  ctx.font = `600 ${px}px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  const icon = px * 1.1, gap = px * 0.45, padX = px * 0.6, h = px * 1.9;
+  const w = padX * 2 + icon + gap + ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+  roundRect(ctx, x, y, w, h, h / 2);
+  // Logotipo: 5 barras de ecualizador.
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.lineCap = "round";
+  ctx.lineWidth = icon * 0.13;
+  const cy = y + h / 2;
+  [0.35, 0.6, 0.9, 0.55, 0.3].forEach((k, i) => {
+    const bx = x + padX + (icon * (i + 0.5)) / 5;
+    ctx.beginPath();
+    ctx.moveTo(bx, cy - (icon * k) / 2);
+    ctx.lineTo(bx, cy + (icon * k) / 2);
+    ctx.stroke();
+  });
+  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.fillText(text, x + padX + icon + gap, cy + px * 0.04);
+  ctx.restore();
+  return { x, y, w, h };
+}
+

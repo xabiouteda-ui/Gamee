@@ -238,3 +238,9 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     tope mensual de la compensación simplificada. Coste 1.300 €/kWp (rango publicado 850–1.600). Todo en
     `data/ofertas.json` → `solar`, con fuentes. Tamaño recomendado: el mayor cuyo retorno no empeora más de 1 año
     respecto al mejor. No se piden teléfonos (riesgo AEPD del plan): solo se sugiere pedir presupuestos.
+71. **Crédito «Hecho con Herramientas Libres»** en los vídeos exportados: píldora semitransparente con el logotipo
+    de barras de la web, arriba a la izquierda (dentro de la zona segura si se eligió TikTok/Reels/Shorts), ≈2,4 %
+    del lado corto. Activado por defecto, se ve en la vista previa y **se quita siempre con una casilla, también
+    en la versión gratis** (el plan decía a la vez «Pro quita el crédito» y «se puede quitar siempre»; gana lo
+    segundo porque la promesa de la herramienta es «sin marca de agua»). La elección se recuerda. Con dominio
+    propio el crédito añade el dominio (`… · tudominio.es`); con la dirección larga de github.io, no.
