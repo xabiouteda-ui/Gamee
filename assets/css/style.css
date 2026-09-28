@@ -381,3 +381,51 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .gasto-form input { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
 .gasto-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
 @media (max-width: 480px) { .gasto-result { grid-template-columns: 1fr; } }
+
+/* Recomendaciones con enlace de afiliado (solo en pantallas de resultado) */
+.afiliados { margin-top: 20px; }
+.afiliados h2 { margin-top: 0; font-size: 1.15rem; }
+.aff-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 10px; }
+.aff-list li { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; max-width: none; }
+.aff-list a { display: flex; flex-direction: column; flex: 1 1 260px; text-decoration: none; color: var(--text); }
+.aff-list a strong { color: var(--accent); }
+.aff-list a:hover strong { text-decoration: underline; }
+.aff-list a span { color: var(--muted); font-size: .92rem; }
+.aff-tag { font-size: .75rem; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+
+/* Luz: patrocinados (siempre marcados, sin cambiar el orden por precio) y placas solares */
+.sponsored-tag { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--warn); border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; }
+.sponsored-box { border: 1px dashed var(--border); border-radius: 10px; padding: 8px 14px; margin: 12px 0; }
+.sponsored-box h3 { margin: .3em 0; font-size: 1rem; }
+.sponsored-box ul { margin: 0; padding-left: 0; list-style: none; }
+.solar { margin-top: 8px; }
+.solar-saving { font-size: 1.3rem; font-weight: 800; color: var(--ok); margin: 10px 0 4px; }
+
+/* Versión Pro */
+.pro-badge { display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, #7c3aed, #db2777); border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
+.pro-box { border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px 12px; margin: 18px 0 0; display: grid; gap: 10px; }
+.pro-box legend { font-weight: 700; padding: 0 6px; }
+.pro-box label { display: grid; gap: 4px; font-size: .92rem; }
+.pro-box label.check { display: flex; }
+.pro-box[disabled] > :not(legend):not(.pro-locked) { opacity: .55; }
+.pro-box:not([disabled]) .pro-locked { display: none; }
+.pro-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.presets-pro { grid-template-columns: repeat(2, 1fr); }
+.pv-headline { font-family: "Caption Anton", Impact, sans-serif; font-weight: 400; }
+.pv-headline b { background: #ef4444; border-radius: 3px; padding: 0 2px; }
+.pv-soft { background: #f5f5f7; color: #1f2937; font-weight: 700; }
+.pv-soft b, .pv-headline b { color: inherit; }
+[data-export][data-pro].locked { opacity: .8; }
+.pro-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 20px 0; }
+.pro-plans .card h2 { margin-top: 0; }
+.pro-plans ul { padding-left: 1.2em; }
+.pro-price { font-size: 1.6rem; font-weight: 800; margin: 4px 0 12px; }
+.pro-activate { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.pro-activate input { flex: 1 1 280px; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+
+/* Página del widget de la luz */
+.widget-demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 20px 0; }
+.widget-demo h2 { margin-top: 0; }
+.widget-demo iframe { border: 0; max-width: 420px; display: block; }
+.widget-opts label { display: grid; gap: 4px; margin-bottom: 10px; }
+.widget-code { width: 100%; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); resize: vertical; }

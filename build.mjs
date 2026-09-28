@@ -27,17 +27,27 @@ const sandbox = { window: {} };
 vm.runInNewContext(readFileSync(join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
 const adsCfg = sandbox.window.SITE_CONFIG || {};
 
+// Versión Pro (data/pro.json): desactivada por defecto. Con ella desactivada, /pro.html no se indexa.
+const proCfg = existsSync(join(ROOT, "data/pro.json")) ? JSON.parse(readFileSync(join(ROOT, "data/pro.json"), "utf8")) : {};
+const proOn = proCfg.enabled === true && /^https:\/\//.test(proCfg.checkoutUrl || "");
+
+function proBuy() {
+  if (!proOn) return `<p class="muted">Todavía no está a la venta. Las herramientas siguen siendo gratis y sin marca de agua.</p>`;
+  return `<a class="btn btn-primary" href="${esc(proCfg.checkoutUrl)}" rel="noopener">Comprar Pro</a>
+<p class="muted small">El pago lo gestiona ${esc(proCfg.provider === "stripe" ? "Stripe" : proCfg.provider === "paddle" ? "Paddle" : "la pasarela de pago")}, que emite la factura con el IVA de tu país. Recibirás tu clave de licencia por correo.</p>`;
+}
+
 const UI = {
   es: {
     home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
-    contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
+    contact: "Contacto", money: "Cómo ganamos dinero", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
     home: "Home", transcribe: "Audio to text", captions: "Captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
-    contact: "Contact", skip: "Skip to content", tagline: "Free and private audio and video transcription",
+    contact: "Contact", money: "How we make money", skip: "Skip to content", tagline: "Free and private audio and video transcription",
     footerNote: "Free tools supported by ads. Your files are processed on your device.",
     related: "More free tools",
     otherLang: "Español", otherLangLabel: "Leer en español",
@@ -45,8 +55,8 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
-  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html" },
+  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
 // Tarjetas de herramientas (portada y enlaces cruzados al final de cada herramienta).
@@ -133,11 +143,19 @@ function pvpcAverages() {
   return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
 }
 
+// Texto del crédito «Hecho con …» de los vídeos. Con dominio propio se añade (se lee bien en un vídeo);
+// una dirección larga de github.io, no.
+function creditText(lang) {
+  const host = new URL(siteUrl).host.replace(/^www\./, "");
+  return `${lang === "es" ? "Hecho con" : "Made with"} ${site.siteName}${/github\.io$/.test(host) ? "" : ` · ${host}`}`;
+}
+
 function toolHtml(tool, lang, page) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
     .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
+    .replace(/\{\{credit\}\}/g, () => esc(creditText(lang)))
     .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
     .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
     .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
@@ -179,6 +197,28 @@ function appSchema(page, url) {
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
+// Página «desnuda» para insertar en otras webs con un iframe (widget): sin cabecera, menú, pie ni anuncios.
+function bareLayout(page, url, root) {
+  const body = page.body.replace(/\{\{root\}\}/g, root).replace(/\{\{siteUrl\}\}/g, siteUrl);
+  return `<!doctype html>
+<html lang="${page.lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(page.title)}</title>
+<meta name="description" content="${esc(page.description)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="noindex">
+${page.style ? `<link rel="stylesheet" href="${root}${page.style}">` : ""}
+</head>
+<body>
+${body.trim()}
+${page.script ? `<script type="module" src="${root}${page.script}"></script>` : ""}
+</body>
+</html>
+`;
+}
+
 function layout(page, pagesBySlug) {
   const lang = page.lang;
   const ui = UI[lang];
@@ -190,6 +230,7 @@ function layout(page, pagesBySlug) {
   const alt = page.alt != null ? pagesBySlug.get(page.alt) : null;
   const altUrl = alt ? `${siteUrl}/${alt.slug.replace(/index\.html$/, "")}` : null;
   const L = LINKS[lang];
+  if (page.bare) return bareLayout(page, url, root);
 
   const schemas = [];
   const tool = toolOf(page);
@@ -214,6 +255,11 @@ function layout(page, pagesBySlug) {
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
+    .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
+    .replace("{{proBuy}}", () => proBuy())
+    .replace(/\{\{siteUrl\}\}/g, siteUrl)
+    .replace(/\{\{moneyHref\}\}/g, () => href(L.money))
+    .replace(/\{\{proHref\}\}/g, () => href("pro.html"))
     .replace(/\{\{root\}\}/g, root);
 
   const hreflang = alt
@@ -231,7 +277,7 @@ function layout(page, pagesBySlug) {
 <meta name="description" content="${esc(page.description)}">
 <link rel="canonical" href="${url}">
 ${hreflang}
-<meta name="robots" content="${page.noindex ? "noindex" : "index, follow"}">
+<meta name="robots" content="${page.noindex || (page.proPage && !proOn) ? "noindex" : "index, follow"}">
 <meta name="theme-color" content="#4f46e5">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(site.siteName)}">
@@ -270,6 +316,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
       ${nav("privacy", ui.privacy)}
       ${nav("legal", ui.legal)}
       ${nav("contact", ui.contact)}
+      ${exists("money") ? nav("money", ui.money) : ""}
     </nav>
     <p class="muted small">© ${new Date().getFullYear()} ${esc(site.siteName)} · ${ui.footerNote}</p>
   </div>
@@ -277,6 +324,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
 ${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
+${page.script ? `<script type="module" src="${root}${page.script}"></script>` : ""}
 </body>
 </html>
 `;
@@ -289,6 +337,13 @@ function build() {
   // Datos de las herramientas (tarifas de luz a mano; data/pvpc.json lo genera scripts/fetch-pvpc.mjs en Actions).
   if (existsSync(join(ROOT, "data"))) cpSync(join(ROOT, "data"), join(OUT, "data"), { recursive: true, filter: (src) => !/\/\./.test(src.slice(ROOT.length)) });
   writeFileSync(join(OUT, ".nojekyll"), "");
+  // Versión ligera del PVPC para el widget (de ayer a pasado mañana): ~1 KB en vez de todo el año.
+  if (existsSync(join(ROOT, "data", "pvpc.json"))) {
+    const pv = JSON.parse(readFileSync(join(ROOT, "data", "pvpc.json"), "utf8"));
+    const keep = [-1, 0, 1, 2].map((d) => madridDate(d));
+    const days = Object.fromEntries(keep.filter((d) => pv.days?.[d]).map((d) => [d, pv.days[d]]));
+    writeFileSync(join(OUT, "data", "pvpc-hoy.json"), JSON.stringify({ updated: pv.updated, source: pv.source, days }));
+  }
 
   const pages = readPages();
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
@@ -298,7 +353,7 @@ function build() {
     writeFileSync(dest, layout(p, bySlug));
   }
 
-  const indexable = pages.filter((p) => !p.noindex);
+  const indexable = pages.filter((p) => !p.noindex && !p.bare && !(p.proPage && !proOn));
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${indexable.map((p) => {

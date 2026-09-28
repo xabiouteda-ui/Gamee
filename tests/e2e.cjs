@@ -99,13 +99,15 @@ function check(cond, msg) {
   console.log(`Sirviendo _site/ en ${base}/ (URL pública: ${PUBLIC_URL})`);
   const browser = await chromium.launch();
 
-  async function newContext(opts = {}, { lib = MOCK_LIB, config = null } = {}) {
+  async function newContext(opts = {}, { lib = MOCK_LIB, config = null, affiliates = null, pro = null } = {}) {
     const ctx = await browser.newContext({ acceptDownloads: true, ...opts });
     const external = [];
     await ctx.route("**/*", async (route) => {
       const url = route.request().url();
       if (url === LIB_URL) return route.fulfill({ contentType: "text/javascript", body: lib, headers: { "Access-Control-Allow-Origin": "*" } });
       if (config && url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: config });
+      if (pro && url.endsWith("/data/pro.json")) return route.fulfill({ contentType: "application/json", body: pro });
+      if (affiliates && url.endsWith("/data/afiliados.json")) return route.fulfill({ contentType: "application/json", body: affiliates });
       if (url.startsWith(origin)) return route.continue();
       // URLs absolutas a la web pública (canonical, 404…) se sirven desde el servidor local.
       if (url.startsWith(PUBLIC_URL)) {
@@ -116,6 +118,63 @@ function check(cond, msg) {
       return route.abort();
     });
     return { ctx, external };
+  }
+
+  // ---------- 0. Recomendaciones de afiliado (activadas solo en esta prueba) ----------
+  {
+    const aff = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "afiliados.json"), "utf8"));
+    aff.enabled = true;
+    for (const it of aff.items) { it.enabled = true; it.url = "https://example.com/ref/" + it.id; }
+    const { ctx, external } = await newContext({ viewport: { width: 1280, height: 900 } }, { affiliates: JSON.stringify(aff) });
+    const page = await ctx.newPage();
+    await page.goto(base + TOOL);
+    check(await page.locator("#afiliados").isHidden(), "Afiliados: nada antes de usar la herramienta");
+    await page.setInputFiles("#file-input", wavPath);
+    await page.click("#start-btn");
+    await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
+    await page.waitForSelector("#afiliados:not([hidden])", { timeout: 5000 }).catch(() => {});
+    const links = page.locator("#afiliados a[rel~=sponsored]");
+    const ids = await links.evaluateAll((as) => as.map((a) => a.getAttribute("href").split("/").pop()));
+    check(ids.join() === "voz-doblaje,transcripcion-humana,traduccion", "Afiliados: tras transcribir salen solo los de transcripción (" + ids.join() + ")");
+    check((await links.first().getAttribute("rel")) === "sponsored nofollow noopener", "Afiliados: rel=\"sponsored nofollow\"");
+    check((await page.locator("#afiliados .aff-tag").count()) === 3 && /Enlace de afiliado/.test(await page.textContent("#afiliados")), "Afiliados: cada uno lleva la etiqueta «Enlace de afiliado»");
+    check(!external.length, "Afiliados: no se pide nada a terceros hasta que se pulsa");
+    await page.click("#new-btn");
+    check(await page.locator("#afiliados").isHidden(), "Afiliados: se ocultan al empezar otra transcripción");
+    await ctx.close();
+  }
+
+  // ---------- 0b. Pro: exportar a Word con una licencia válida ----------
+  {
+    const { newKeyPair, issueKey } = await import("../scripts/pro-keys.mjs");
+    const { publicJwk, privateJwk } = await newKeyPair();
+    const pro = JSON.stringify({ enabled: true, checkoutUrl: "https://example.com/pagar", publicKey: publicJwk });
+    const { ctx } = await newContext({ viewport: { width: 1280, height: 900 } }, { pro });
+    const page = await ctx.newPage();
+    await page.goto(base + TOOL);
+    await page.setInputFiles("#file-input", wavPath);
+    await page.click("#start-btn");
+    await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
+    await page.click('[data-export="docx"]');
+    await page.waitForURL(/\/pro\.html$/);
+    check(true, "Pro sin licencia: el botón de Word lleva a la página de Pro");
+    // Activar la licencia en la página de Pro
+    await page.fill("#pro-key", "HL1.falsa.falsa");
+    await page.click("#pro-form button[type=submit]");
+    await page.waitForSelector('#pro-status[data-kind="error"]');
+    check(true, "Página de Pro: una clave falsa se rechaza");
+    await page.fill("#pro-key", await issueKey(privateJwk));
+    await page.click("#pro-form button[type=submit]");
+    await page.waitForSelector('#pro-status[data-kind="ok"]');
+    check(await page.locator("#pro-off").isVisible(), "Página de Pro: una clave válida se activa");
+    await page.goto(base + TOOL);
+    await page.setInputFiles("#file-input", wavPath);
+    await page.click("#start-btn");
+    await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
+    const [docx] = await Promise.all([page.waitForEvent("download"), page.click('[data-export="docx"]')]);
+    const buf = fs.readFileSync(await docx.path());
+    check(docx.suggestedFilename() === "prueba.docx" && buf.readUInt32LE(0) === 0x04034b50 && buf.includes("word/document.xml") && buf.includes("Fragmento"), "Pro: la transcripción se descarga en Word (.docx)");
+    await ctx.close();
   }
 
   // ---------- 1. Página principal en escritorio ----------
@@ -141,6 +200,8 @@ function check(cond, msg) {
     await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
     const status = await page.textContent("#status-text");
     check(/Listo/.test(status), "Termina con mensaje de éxito: " + status.trim());
+    check(await page.locator("#afiliados").isHidden(), "Sin enlaces de afiliado configurados no se muestra ninguna recomendación");
+    check(await page.locator('[data-export="docx"]').isHidden(), "Pro desactivado: no aparece el botón de Word");
     const segCount = await page.locator(".seg").count();
     const chunks = await page.locator(".seg .tx", { hasText: "Fragmento" }).count();
     check(chunks === 3, `El audio de 75 s se trocea en 3 fragmentos (hay ${chunks}) y se muestran ${segCount} segmentos`);

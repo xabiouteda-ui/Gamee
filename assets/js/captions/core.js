@@ -137,6 +137,9 @@ export const PRESETS = {
   neon: { font: "anton", size: 0.09, pos: 0.64, color: "#ffffff", highlight: "#ff4fd8", keyColor: "#7df9ff", outline: "#000000", outlineWidth: 0, box: "", activeBox: "", anim: "pop", upper: true, maxWords: 2, shadow: false, glow: true },
   box: { font: "montserrat", size: 0.065, pos: 0.68, color: "#ffffff", highlight: "#ffffff", keyColor: "#ffe600", outline: "#000000", outlineWidth: 0, box: "", activeBox: "#7c3aed", anim: "none", upper: false, maxWords: 4, shadow: false },
   bubble: { font: "bangers", size: 0.085, pos: 0.66, color: "#ffffff", highlight: "#22d3ee", keyColor: "#ffe600", outline: "#111111", outlineWidth: 0.18, box: "", activeBox: "", anim: "bounce", upper: true, maxWords: 2, shadow: true },
+  // Estilos Pro
+  headline: { font: "anton", size: 0.1, pos: 0.6, color: "#ffffff", highlight: "#ffffff", activeText: "#ffffff", keyColor: "#ffe600", outline: "#000000", outlineWidth: 0.1, box: "", activeBox: "#ef4444", anim: "pop", upper: true, maxWords: 2, shadow: true, pro: true },
+  soft: { font: "montserrat", size: 0.06, pos: 0.7, color: "#1f2937", highlight: "#7c3aed", keyColor: "#db2777", outline: "#000000", outlineWidth: 0, box: "rgba(255,255,255,0.9)", activeBox: "", anim: "fill", upper: false, maxWords: 4, shadow: false, pro: true },
   classic: { font: "sans", size: 0.05, pos: 0.86, color: "#ffffff", highlight: "#ffffff", keyColor: "#ffffff", outline: "#000000", outlineWidth: 0, box: "rgba(0,0,0,0.65)", activeBox: "", anim: "none", upper: false, maxWords: 8, shadow: false },
 };
 
@@ -323,3 +326,36 @@ export function drawCaptions(ctx, W, H, t, lines, style) {
   }
   ctx.restore();
 }
+
+// Crédito opcional «Hecho con …» (arriba a la izquierda, dentro de la zona segura si la hay). Pequeño y discreto:
+// una píldora semitransparente con el logotipo de barras de la web. safe: { top, left } en fracciones del vídeo.
+export function drawCredit(ctx, W, H, text, safe = null) {
+  if (!text) return;
+  const px = Math.max(10, Math.round(Math.min(W, H) * 0.024));
+  const x = W * ((safe?.left ?? 0) + 0.03), y = H * ((safe?.top ?? 0) + 0.02);
+  ctx.save();
+  ctx.font = `600 ${px}px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  const icon = px * 1.1, gap = px * 0.45, padX = px * 0.6, h = px * 1.9;
+  const w = padX * 2 + icon + gap + ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+  roundRect(ctx, x, y, w, h, h / 2);
+  // Logotipo: 5 barras de ecualizador.
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.lineCap = "round";
+  ctx.lineWidth = icon * 0.13;
+  const cy = y + h / 2;
+  [0.35, 0.6, 0.9, 0.55, 0.3].forEach((k, i) => {
+    const bx = x + padX + (icon * (i + 0.5)) / 5;
+    ctx.beginPath();
+    ctx.moveTo(bx, cy - (icon * k) / 2);
+    ctx.lineTo(bx, cy + (icon * k) / 2);
+    ctx.stroke();
+  });
+  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.fillText(text, x + padX + icon + gap, cy + px * 0.04);
+  ctx.restore();
+  return { x, y, w, h };
+}
+

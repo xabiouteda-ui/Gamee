@@ -1,9 +1,14 @@
 {
   "_readme": "Tarifas de mercado libre para el comparador de /luz/. Edita a mano: precios SIN IVA ni impuesto eléctrico. energy: €/kWh (1 valor = precio fijo 24 h; 3 valores = punta, llano, valle). power: €/kW·día [punta-llano, valle]. Cada tarifa lleva la fecha de verificación y de dónde salió el dato; comprueba siempre en la web oficial antes de actualizar.",
   "verified": "2026-09-28",
+  "sponsoredEnabled": false,
+  "_sponsored": "Ofertas patrocinadas: pon \"sponsoredEnabled\": true y, en la tarifa que te pague comisión, \"sponsored\": true y \"affiliateUrl\": \"https://...\". Se marca como «Patrocinado» pero NO cambia de puesto: la lista se ordena siempre por precio.",
   "pvpcPower": {
     "_readme": "Término de potencia del PVPC 2026: peajes y cargos (Resolución CNMC 18/12/2025 y Orden TED/1524/2025) + margen de comercialización fijo 3,113 €/kW·año en punta-llano. €/kW·año / 365.",
-    "power": [0.084431, 0.001987],
+    "power": [
+      0.084431,
+      0.001987
+    ],
     "source": "Peajes y cargos 2026: P1 27,704413 €/kW·año, P2 0,725423 €/kW·año; margen 3,113 €/kW·año (consultado en somenergia.coop, lacorrientecoop.es y comparadorluz.com el 28/09/2026)"
   },
   "offers": [
@@ -12,8 +17,13 @@
       "company": "Iberdrola",
       "name": "Plan Estable",
       "type": "fixed",
-      "energy": [0.168625],
-      "power": [0.109562, 0.060247],
+      "energy": [
+        0.168625
+      ],
+      "power": [
+        0.109562,
+        0.060247
+      ],
       "official": "https://www.iberdrola.es/luz/tarifas/plan-estable-mi-iberdrola",
       "verifiedFrom": "selectra.es / papernest.es (28/09/2026)"
     },
@@ -22,8 +32,13 @@
       "company": "Endesa",
       "name": "Tarifa Fija 24h (One Luz)",
       "type": "fixed",
-      "energy": [0.1277],
-      "power": [0.0937, 0.0937],
+      "energy": [
+        0.1277
+      ],
+      "power": [
+        0.0937,
+        0.0937
+      ],
       "official": "https://www.endesa.com/en/catalog/light/one/one-luz",
       "verifiedFrom": "selectra.es (28/09/2026); otras fuentes dan entre 0,1246 y 0,1401 €/kWh"
     },
@@ -32,8 +47,13 @@
       "company": "Naturgy",
       "name": "Tarifa Por Uso Luz",
       "type": "fixed",
-      "energy": [0.112],
-      "power": [0.123, 0.0616],
+      "energy": [
+        0.112
+      ],
+      "power": [
+        0.123,
+        0.0616
+      ],
       "official": "https://www.naturgy.es/hogar/luz/tarifa_por_uso_luz",
       "verifiedFrom": "kelisto.es / costeenergia.es (datos de julio-septiembre de 2026)"
     },
@@ -42,8 +62,13 @@
       "company": "TotalEnergies",
       "name": "A tu Aire Luz Siempre",
       "type": "fixed",
-      "energy": [0.0999],
-      "power": [0.0863, 0.0863],
+      "energy": [
+        0.0999
+      ],
+      "power": [
+        0.0863,
+        0.0863
+      ],
       "official": "https://www.totalenergies.es/es/hogares/tarifas-luz/a-tu-aire-siempre",
       "verifiedFrom": "totalenergies.es y kelisto.es (septiembre de 2026)"
     },
@@ -52,8 +77,15 @@
       "company": "TotalEnergies",
       "name": "A tu Aire Luz Programa tu Ahorro",
       "type": "periods",
-      "energy": [0.1636, 0.0939, 0.0662],
-      "power": [0.0863, 0.0863],
+      "energy": [
+        0.1636,
+        0.0939,
+        0.0662
+      ],
+      "power": [
+        0.0863,
+        0.0863
+      ],
       "official": "https://www.totalenergies.es/es/hogares/atencion-al-cliente/que-necesitas/precios-en-vigor-luz",
       "verifiedFrom": "mifacturadeluz.es / costeenergia.es (septiembre de 2026); otra fuente da 0,1736 / 0,1039 / 0,0762 €/kWh"
     },
@@ -62,10 +94,26 @@
       "company": "Octopus Energy",
       "name": "Octopus Relax",
       "type": "fixed",
-      "energy": [0.129],
-      "power": [0.12, 0.12],
+      "energy": [
+        0.129
+      ],
+      "power": [
+        0.12,
+        0.12
+      ],
       "official": "https://octopusenergy.es/precios",
       "verifiedFrom": "selectra.es (2026)"
     }
-  ]
+  ],
+  "solar": {
+    "_readme": "Parámetros orientativos del bloque «¿Te salen a cuenta las placas solares?». yield: kWh producidos por kWp al año según la zona; costPerKwp: € por kWp instalado (IVA incluido, sin baterías); surplusPrice: €/kWh que se descuentan por la energía vertida (compensación simplificada).",
+    "yield": {
+      "norte": 1150,
+      "centro": 1350,
+      "sur": 1550
+    },
+    "costPerKwp": 1300,
+    "surplusPrice": 0.06,
+    "source": "Producción: PVGIS (Madrid ≈1.250 kWh/kWp con 30° al sur; Valencia ≈1.500; Almería ≈1.700; Ferrol ≈1.270), consultado en tienda-solar.es y fischer.es. Coste: 850–1.600 €/kWp en vivienda en 2026 según sotysolar.es, eniplenitude.es y solarplus.es. Excedentes: 0,04–0,10 €/kWh habitual (selectra.es, preciluz.com). Consultado el 28/09/2026."
+  }
 }

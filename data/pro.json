@@ -1,0 +1,8 @@
+{
+  "_readme": "Versión Pro de pago único. Desactivada: con enabled false no se muestra nada de Pro en las herramientas y la página /pro.html no se indexa. Para venderla: 1) node scripts/pro-keys.mjs init (rellena publicKey); 2) crea el producto en Paddle o Stripe (Managed Payments) y pega el enlace de pago en checkoutUrl; 3) pon el precio que decidas en price (texto, p. ej. \"24 €, IVA incluido\"); 4) enabled: true. Las claves se envían a cada comprador con node scripts/pro-keys.mjs issue.",
+  "enabled": false,
+  "provider": "",
+  "checkoutUrl": "",
+  "price": "",
+  "publicKey": null
+}

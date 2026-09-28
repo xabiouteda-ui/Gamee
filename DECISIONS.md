@@ -213,3 +213,64 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     audio al inglés con Whisper) y «videopodcasts y entrevistas» (estilo clásico preseleccionado). No se crea una
     página aparte para «subtítulos automáticos gratis sin marca de agua»: es la búsqueda principal de la portada
     de la herramienta y otra página competiría con ella.
+
+## Sesión 4 (28/09/2026): monetización más allá de AdSense
+
+67. **Afiliados en `data/afiliados.json`, desactivados dos veces** (interruptor general `enabled` y uno por enlace,
+    con `url` vacía). Sin URL `https://` válida no se pinta nada. Solo salen en la pantalla de resultado: tras
+    exportar el vídeo (subtítulos) y al terminar de transcribir; nunca antes de usar la herramienta. Texto propio en
+    español e inglés, etiqueta «Enlace de afiliado», `rel="sponsored nofollow noopener"` y enlace a «Cómo ganamos
+    dinero». El nombre del proveedor va como texto entre paréntesis, sin logos. No se escriben comisiones en ningún
+    sitio (no son públicas de forma fiable y el plan pide no inventarlas).
+68. **Página «Cómo ganamos dinero»** (es + en) enlazada en el pie de todas las páginas: publicidad, afiliados,
+    comparador de luz ordenado por precio con patrocinados marcados, Pro opcional y crédito «Hecho con». Dice
+    expresamente que el comparador no es oficial y enlaza el de la CNMC (Directiva Ómnibus / LSSI).
+69. **Luz, patrocinados sin tocar el orden:** la lista ya se ordenaba por coste anual; se deja fijo y hay prueba.
+    Una tarifa solo cuenta como patrocinada si `sponsoredEnabled: true` (desactivado) y la tarifa tiene
+    `sponsored: true` + `affiliateUrl` https. Entonces lleva la etiqueta «Patrocinado», su enlace pasa a
+    `rel="sponsored nofollow"` y aparece también en un hueco «Ofertas patrocinadas» con su **puesto real por
+    precio**. Nunca sube de puesto. Nota bajo la lista explicándolo y enlace a «Cómo ganamos dinero».
+70. **Placas solares (orientativo, sin datos personales):** solo con consumo horario (CSV o ejemplo; en el cálculo
+    rápido no hay horas y no se muestra). Producción = kWp × producción anual de la zona (norte 1.150, centro
+    1.350, sur 1.550 kWh/kWp, a partir de PVGIS) repartida por meses y en una curva de sol por horas (mediodía
+    solar 13:15/14:15 según horario). Autoconsumo hora a hora = mín(producción, consumo), valorado al precio de
+    energía de la tarifa actual elegida (o la mejor) + impuesto eléctrico e IVA; excedentes a 0,06 €/kWh con el
+    tope mensual de la compensación simplificada. Coste 1.300 €/kWp (rango publicado 850–1.600). Todo en
+    `data/ofertas.json` → `solar`, con fuentes. Tamaño recomendado: el mayor cuyo retorno no empeora más de 1 año
+    respecto al mejor. No se piden teléfonos (riesgo AEPD del plan): solo se sugiere pedir presupuestos.
+71. **Crédito «Hecho con Herramientas Libres»** en los vídeos exportados: píldora semitransparente con el logotipo
+    de barras de la web, arriba a la izquierda (dentro de la zona segura si se eligió TikTok/Reels/Shorts), ≈2,4 %
+    del lado corto. Activado por defecto, se ve en la vista previa y **se quita siempre con una casilla, también
+    en la versión gratis** (el plan decía a la vez «Pro quita el crédito» y «se puede quitar siempre»; gana lo
+    segundo porque la promesa de la herramienta es «sin marca de agua»). La elección se recuerda. Con dominio
+    propio el crédito añade el dominio (`… · tudominio.es`); con la dirección larga de github.io, no.
+72. **Pro de pago único sin servidor**: licencia `HL1.<datos>.<firma>` firmada con ECDSA P-256 y comprobada en el
+    navegador con Web Crypto y la clave pública de `data/pro.json`. La privada la crea el titular con
+    `node scripts/pro-keys.mjs init` (queda en `pro-private-key.json`, en `.gitignore`) y emite claves con
+    `issue`. La clave no lleva nombre ni correo. Sin servidor no se puede emitir la clave automáticamente al pagar:
+    al principio se envía a mano (o con la función de «license keys» de la pasarela si se usa). Se asume que alguien
+    experto podría saltarse la comprobación en el navegador; no merece la pena montar servidores por eso.
+    **Desactivado por defecto** (`enabled: false`, sin clave pública, sin enlace de pago y sin precio: el precio lo
+    decide el titular, no se inventa). Con Pro desactivado no se ve nada de Pro en las herramientas y `/pro.html`
+    queda `noindex` y fuera del sitemap. Si está a la venta pero no tienes clave, las funciones se ven bloqueadas
+    con enlace a `/pro.html`.
+73. **Qué desbloquea Pro:** fuentes propias (se guardan en el navegador si pesan <1,5 MB), kit de marca guardado que
+    se aplica solo, 2 estilos extra («Titular» y «Suave»), exportación hasta 4K (gratis sigue en 1080p), varios
+    vídeos seguidos con el mismo estilo y exportar la transcripción a Word (.docx generado sin librerías, ZIP
+    «store» propio, validado con python-docx). El crédito «Hecho con» empieza quitado con Pro. **No se limita la
+    duración de los vídeos gratis** («vídeos largos» del plan): la herramienta promete «sin límite» en muchas
+    páginas y quitarlo empeoraría el producto gratis; se puede revisar con datos.
+74. **Pagos:** enlace de pago de Paddle o Stripe (Managed Payments) en `checkoutUrl`: son «merchant of record» y
+    se ocupan del IVA de la UE. La web no toca datos de tarjeta. Privacidad actualizada (es y en).
+75. **Telegram a las 20:40 de Madrid:** los `cron` de GitHub van en UTC y no entienden el horario de verano, así
+    que hay dos (18:40 y 19:40 UTC) y un primer paso que compara `github.event.schedule` con el desfase real de
+    Madrid para publicar solo una vez (aunque GitHub retrase el cron). El script pide a REE solo el día de mañana
+    (a esa hora `data/pvpc.json` de la web aún no está actualizado: el despliegue diario es a las 19:35 UTC) y
+    reintenta 4 veces cada 5 min si aún no están. Sin secretos, sin precios o si Telegram rechaza el mensaje:
+    aviso en el registro y termina en verde. El token nunca se imprime. Probado con un servidor local que simula
+    REE y Telegram (`tests/unit-monetizacion.mjs`); no se ha probado con un bot real.
+76. **Widget con iframe** (no un script que se ejecute en la web ajena): más seguro para quien lo inserta y no
+    puede romper su página. Página `/widget/luz-hoy.html` «desnuda» (sin menú ni anuncios, `noindex`, fuera del
+    sitemap) con CSS propio de 2 KB y un JSON de 4 días (`data/pvpc-hoy.json`) en vez de los ~400 días; si no
+    existe, usa `pvpc.json`. El enlace de atribución va **fuera** del iframe en el código para copiar (dentro de un
+    iframe no cuenta para buscadores) y también dentro del widget. Tema claro/oscuro/automático. Sin cookies.

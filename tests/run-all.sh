@@ -7,6 +7,7 @@ node build.mjs
 node tests/check-site.mjs
 node tests/unit-captions.mjs
 node tests/unit-luz.mjs
+node tests/unit-monetizacion.mjs
 node tests/e2e.cjs
 node tests/e2e-captions.cjs
 node tests/e2e-luz.cjs

@@ -31,7 +31,7 @@ function makeCsv() {
   // PVPC sintético de 13 meses: punta 0,22, llano 0,15, valle 0,09 €/kWh.
   const days = {};
   const today = new Date();
-  for (let d = -400; d <= 1; d++) {
+  for (let d = -400; d <= 2; d++) { // +2: de noche la fecha de Madrid ya va un día por delante de la UTC
     const date = new Date(today.getTime() + d * 86400000).toISOString().slice(0, 10);
     days[date] = Array.from({ length: 24 }, (_, h) => ({ P1: 0.22, P2: 0.15, P3: 0.09 })[periodOf(date, h)]);
   }
@@ -64,6 +64,18 @@ function makeCsv() {
   check(/verificados el 28\/09\/2026/.test(await page.textContent("#verified-note")), "Se indica la fecha de verificación de los precios");
   check([12, 13].includes(await page.locator("#monthly .bar").count()) && (await page.locator("#heat .cell").count()) === 168, "Gráficos del ejemplo");
   await page.screenshot({ path: path.join(OUT, "luz-resultado.png"), fullPage: false });
+  const years = await page.evaluate(() => window.__luz.ranking().map((x) => x.total));
+  check(years.every((v, i) => i === 0 || v >= years[i - 1]), "La lista está ordenada por precio (de menor a mayor)");
+  check(await page.locator("#sponsored").isHidden() && (await page.locator(".sponsored-tag").count()) === 0, "Sin patrocinios activados no se marca nada como patrocinado");
+  check(/Cómo ganamos dinero/.test(await page.textContent("#sort-note")), "Nota de orden por precio con enlace a «Cómo ganamos dinero»");
+  check(await page.locator("#solar").isVisible(), "Placas solares: el bloque aparece tras analizar el consumo");
+  const saving = await page.textContent("#solar-saving");
+  check(/Ahorro orientativo: [\d.]+(,\d+)?\s€/.test(saving) && /se pagarían en unos \d/.test(await page.textContent("#solar-result")), "Placas solares: ahorro y años de retorno (" + saving.trim() + ")");
+  check(/recomendada/.test(await page.locator("#solar-size option:checked").textContent()), "Placas solares: propone un tamaño recomendado");
+  await page.selectOption("#solar-size", "8");
+  check(saving !== (await page.textContent("#solar-saving")), "Placas solares: cambiar el tamaño recalcula");
+  await page.selectOption("#solar-zone", "sur");
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.solarZone")))) === "sur", "Placas solares: la zona se recuerda");
 
   // 2. Tarifa actual → ahorro concreto
   const worst = await page.textContent("#ranking tbody tr:last-child td:nth-child(2)");
@@ -117,6 +129,7 @@ function makeCsv() {
   await page.click("#quick-form button[type=submit]");
   await page.waitForFunction(() => /Cálculo rápido/.test(document.getElementById("status-text").textContent));
   check(await page.locator("#charts").isHidden() && await page.locator("#consumption").isHidden(), "En el cálculo rápido no se muestran gráficos horarios");
+  check(await page.locator("#solar").isHidden(), "Placas solares: sin consumo horario (cálculo rápido) no se estima");
   check(/Media del último año/.test(await page.textContent("#ranking")), "En el cálculo rápido el PVPC usa la media por periodo");
   const quickPeriodsWins = await page.evaluate(() => window.__luz.ranking().findIndex((x) => x.offer.type === "periods"));
   check(quickPeriodsWins >= 0, "La tarifa por periodos entra en el ranking rápido (posición " + (quickPeriodsWins + 1) + ")");
@@ -128,6 +141,58 @@ function makeCsv() {
   check(external.length === 0, "Ninguna petición a terceros: el CSV no sale del navegador" + (external.length ? ": " + external.join(", ") : ""));
   check(errors.length === 0, "Sin errores en la consola" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();
+
+  // 7b. Oferta patrocinada (activada solo en esta prueba): marcada, con enlace patrocinado y SIN cambiar de puesto
+  {
+    const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ofertas.json"), "utf8"));
+    cat.sponsoredEnabled = true;
+    const sp = cat.offers.at(-1);
+    sp.sponsored = true;
+    sp.affiliateUrl = "https://example.com/afiliado";
+    const { ctx, external } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, { ...withPvpc, [srv.base + "/data/ofertas.json"]: JSON.stringify(cat) });
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/");
+    await page.click("#example-btn");
+    await page.waitForSelector("#headline:not([hidden]) .headline-name");
+    const order = await page.evaluate(() => window.__luz.ranking().map((x) => x.total));
+    check(order.every((v, i) => i === 0 || v >= order[i - 1]), "Patrocinado: la lista sigue ordenada por precio");
+    const row = page.locator("#ranking tbody tr", { hasText: "Patrocinado" });
+    check((await row.count()) === 1, "Patrocinado: la tarifa aparece marcada una sola vez en la lista");
+    check((await row.locator("a[rel='sponsored nofollow noopener']").getAttribute("href")) === "https://example.com/afiliado", "Patrocinado: enlace con rel=sponsored");
+    check(await page.locator("#sponsored").isVisible() && /Puesto \d+ de \d+ por precio/.test(await page.textContent("#sponsored")), "Patrocinado: hueco propio con su puesto real por precio");
+    check(external.length === 0, "Patrocinado: no se hace ninguna petición a terceros");
+    await ctx.close();
+  }
+
+  // 7c. Widget «precio de la luz hoy» para otras webs
+  {
+    const { ctx, external } = await newContext(browser, srv, { viewport: { width: 420, height: 330 } }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    await page.goto(srv.base + "/widget/luz-hoy.html");
+    await page.waitForSelector(".w-price");
+    check(/^\d,\d{3}$/.test(await page.textContent(".w-price")) && /Ahora \(\d\d–\d\d h\)/.test(await page.textContent(".w-label")), "Widget: precio de la hora actual (" + (await page.textContent(".w-price")) + ")");
+    check((await page.locator("#w-chart span").count()) === 24 && (await page.locator("#w-chart span.now").count()) === 1, "Widget: gráfico de 24 horas con la hora actual marcada");
+    check(/Más barata: \d\d–\d\d h/.test(await page.textContent("#w-extremes")), "Widget: hora más barata y más cara");
+    check((await page.getAttribute(".w-foot a", "href")).endsWith("luz/precio-luz-hoy.html") && (await page.getAttribute(".w-foot a", "target")) === "_blank", "Widget: enlace de atribución que abre la web");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    check(overflow <= 0, "Widget: cabe en 420 px sin scroll horizontal");
+    await page.screenshot({ path: path.join(OUT, "widget-luz.png") });
+    await page.goto(srv.base + "/widget/luz-hoy.html?tema=oscuro");
+    await page.waitForSelector(".w-price");
+    check((await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(23, 23, 31)", "Widget: tema oscuro con ?tema=oscuro");
+    await page.screenshot({ path: path.join(OUT, "widget-luz-oscuro.png") });
+    check(external.length === 0 && errs.length === 0, "Widget: sin peticiones a terceros ni errores");
+    // Página con el código para copiar
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(srv.base + "/luz/widget-precio-luz.html");
+    const code = await page.inputValue("#widget-code");
+    check(code.includes('<iframe src="https://') && code.includes("/widget/luz-hoy.html") && /<a href="https:\/\/[^"]+\/luz\/precio-luz-hoy\.html">/.test(code), "Página del widget: código con iframe y enlace de atribución absolutos");
+    await page.selectOption("#w-tema", "oscuro");
+    check((await page.inputValue("#widget-code")).includes("?tema=oscuro"), "Página del widget: el código cambia con el tema");
+    await ctx.close();
+  }
 
   // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {

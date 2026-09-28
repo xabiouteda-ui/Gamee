@@ -1,5 +1,8 @@
 import { STRINGS, AUDIO_LANGUAGES } from "./i18n.js";
 import { clock, bytes, toTXT, toSRT, toVTT } from "./format.js";
+import { showAffiliates } from "./afiliados.js";
+import { proStatus } from "./pro.js";
+import { toDOCX } from "./docx.js";
 
 const LANG = document.documentElement.lang.startsWith("en") ? "en" : "es";
 const T = STRINGS[LANG];
@@ -272,10 +275,13 @@ function onWorkerMessage({ data: m }) {
       finish();
       setBar(100);
       if (!state.segments.length) setStatus(T.noSpeech, "warn");
-      else setStatus(fmt(T.done, {
-        dur: humanDuration(state.duration),
-        time: humanDuration((performance.now() - state.startedAt) / 1000),
-      }), "ok");
+      else {
+        setStatus(fmt(T.done, {
+          dur: humanDuration(state.duration),
+          time: humanDuration((performance.now() - state.startedAt) / 1000),
+        }), "ok");
+        showAffiliates($("afiliados"), "transcripcion", LANG, new URL("../../data/afiliados.json", import.meta.url));
+      }
       break;
     case "cancelled":
       finish();
@@ -412,10 +418,25 @@ function init() {
       if (kind === "txt") download(baseName() + ".txt", toTXT(state.segments, els.showTimes.checked), "text/plain");
       if (kind === "srt") download(baseName() + ".srt", toSRT(state.segments), "application/x-subrip");
       if (kind === "vtt") download(baseName() + ".vtt", toVTT(state.segments), "text/vtt");
+      if (kind === "docx") {
+        // Pro: sin licencia, el botón lleva a la página de la versión Pro.
+        if (!state.pro) { location.href = b.dataset.proHref; return; }
+        const paras = state.segments.filter((s) => s.text.trim()).map((s) => ({ time: els.showTimes.checked ? clock(s.start) : "", text: s.text }));
+        download(baseName() + ".docx", toDOCX(paras), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      }
     };
+  });
+  // Versión Pro: el botón de Word solo aparece si Pro está a la venta o ya tienes la licencia.
+  proStatus(new URL("../../data/pro.json", import.meta.url)).then((st) => {
+    state.pro = st.active;
+    for (const el of document.querySelectorAll("[data-pro]")) {
+      el.hidden = !(st.enabled || st.active);
+      el.classList.toggle("locked", !st.active);
+    }
   });
   els.newBtn.onclick = () => {
     els.result.hidden = true;
+    $("afiliados").hidden = true;
     els.status.hidden = true;
     state.segments = [];
     els.segments.textContent = "";
