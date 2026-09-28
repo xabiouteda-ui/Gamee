@@ -1,0 +1,67 @@
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # La URL pública sale de site.config.json (siteOrigin + basePath). Para cambiarla sin tocar el código,
+      # define las variables SITE_ORIGIN y/o BASE_PATH en Settings → Secrets and variables → Actions → Variables.
+      - name: Generar la web
+        run: node build.mjs
+        env:
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
+
+      # Aviso (no bloquea) si la URL configurada no coincide con la que GitHub Pages asigna a este repositorio.
+      - name: Comprobar URL base
+        env:
+          PAGES_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          SITE=$(sed -n 's/.*canonical" href="\([^"]*\)".*/\1/p' _site/index.html)
+          echo "URL configurada: $SITE"
+          echo "URL de GitHub Pages: $PAGES_URL/"
+          if [ "${SITE%/}" != "${PAGES_URL%/}" ]; then
+            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, el nombre del repositorio o el dominio propio."
+          fi
+
+      - name: Comprobaciones
+        run: node tests/check-site.mjs
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
