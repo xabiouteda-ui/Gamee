@@ -225,3 +225,16 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 68. **Página «Cómo ganamos dinero»** (es + en) enlazada en el pie de todas las páginas: publicidad, afiliados,
     comparador de luz ordenado por precio con patrocinados marcados, Pro opcional y crédito «Hecho con». Dice
     expresamente que el comparador no es oficial y enlaza el de la CNMC (Directiva Ómnibus / LSSI).
+69. **Luz, patrocinados sin tocar el orden:** la lista ya se ordenaba por coste anual; se deja fijo y hay prueba.
+    Una tarifa solo cuenta como patrocinada si `sponsoredEnabled: true` (desactivado) y la tarifa tiene
+    `sponsored: true` + `affiliateUrl` https. Entonces lleva la etiqueta «Patrocinado», su enlace pasa a
+    `rel="sponsored nofollow"` y aparece también en un hueco «Ofertas patrocinadas» con su **puesto real por
+    precio**. Nunca sube de puesto. Nota bajo la lista explicándolo y enlace a «Cómo ganamos dinero».
+70. **Placas solares (orientativo, sin datos personales):** solo con consumo horario (CSV o ejemplo; en el cálculo
+    rápido no hay horas y no se muestra). Producción = kWp × producción anual de la zona (norte 1.150, centro
+    1.350, sur 1.550 kWh/kWp, a partir de PVGIS) repartida por meses y en una curva de sol por horas (mediodía
+    solar 13:15/14:15 según horario). Autoconsumo hora a hora = mín(producción, consumo), valorado al precio de
+    energía de la tarifa actual elegida (o la mejor) + impuesto eléctrico e IVA; excedentes a 0,06 €/kWh con el
+    tope mensual de la compensación simplificada. Coste 1.300 €/kWp (rango publicado 850–1.600). Todo en
+    `data/ofertas.json` → `solar`, con fuentes. Tamaño recomendado: el mayor cuyo retorno no empeora más de 1 año
+    respecto al mejor. No se piden teléfonos (riesgo AEPD del plan): solo se sugiere pedir presupuestos.

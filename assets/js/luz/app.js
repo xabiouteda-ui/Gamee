@@ -1,6 +1,7 @@
 import { STRINGS } from "./i18n.js";
-import { RULES, PERIODS, parseConsumptionCSV, summarize, rankOffers, billFor, billFromEnergy, shift, powerSavingPerYear, baseLoadCostPerYear, sampleRows, quickSummary, CsvError } from "./core.js";
+import { RULES, PERIODS, periodOf, parseConsumptionCSV, summarize, rankOffers, billFor, billFromEnergy, shift, powerSavingPerYear, baseLoadCostPerYear, sampleRows, quickSummary, CsvError } from "./core.js";
 import { pvpcEnergy } from "./pvpc.js";
+import { SOLAR_DEFAULTS, solarEstimate, suggestSize } from "./solar.js";
 
 const T = STRINGS.es;
 const $ = (id) => document.getElementById(id);
@@ -19,6 +20,8 @@ const els = {
   quickForm: $("quick-form"), qKwh: $("q-kwh"), qPower: $("q-power"), qValle: $("q-valle"), qValleOut: $("q-valle-out"),
   headline: $("headline"), results: $("results"), kpis: $("kpis"), ranking: $("ranking"), verified: $("verified-note"),
   offers: $("offers"), pw1: $("pw1"), pw2: $("pw2"), addOffer: $("add-offer"), insights: $("insights"),
+  sponsored: $("sponsored"), sponsoredList: $("sponsored-list"),
+  solar: $("solar"), solarSize: $("solar-size"), solarZone: $("solar-zone"), solarSaving: $("solar-saving"), solarResult: $("solar-result"), solarNote: $("solar-note"),
   consumption: $("consumption"), charts: $("charts"), monthly: $("monthly"), heat: $("heat"), rulesNote: $("rules-note"), tip: $("tip"),
 };
 
@@ -40,7 +43,12 @@ const state = {
   contract: store.get("contract") || { p1: 4.6, p2: 4.6 },
   current: store.get("current") || "unknown",
   shiftPct: 20,
+  solarKwp: null, // null = tamaño recomendado
+  solarZone: store.get("solarZone") || "centro",
 };
+
+// Una tarifa solo cuenta como patrocinada si está activado en data/ofertas.json y tiene enlace https.
+const isSponsored = (o) => state.catalog?.sponsoredEnabled === true && o.sponsored === true && /^https:\/\/[^\s"<>]+$/.test(o.affiliateUrl || "");
 
 // Datos publicados con la web: tarifas de mercado libre (a mano) y PVPC (Actions, a diario).
 const dataReady = Promise.all([
@@ -220,11 +228,13 @@ function renderAll() {
   const r = ranking();
   renderHeadline(r);
   renderRanking(r);
+  renderSponsored(r);
   els.consumption.hidden = !!s.quick;
   els.charts.hidden = !state.rows;
   if (!s.quick) renderKpis(s);
   renderInsights(s, r);
   if (state.rows) { renderMonthly(s); renderHeat(s); }
+  renderSolar(r);
   const cat = state.catalog;
   els.verified.textContent = state.pvpc || cat
     ? fmt(T.verifiedNote, { date: cat ? dateES(cat.verified) : "—", pvpcDate: state.pvpc ? dateES(state.pvpc.updated) : "—" }) + (state.pvpc ? "" : " " + T.pvpcNone)
@@ -273,7 +283,15 @@ function renderHeadline(r) {
   pick.className = "current-pick";
   pick.append(lab, sel);
   h.append(label, name, cost, msg, pick);
-  if (best.offer.official) {
+  if (isSponsored(best.offer)) {
+    const a = document.createElement("a");
+    a.className = "btn btn-primary";
+    a.href = best.offer.affiliateUrl;
+    a.target = "_blank";
+    a.rel = "sponsored nofollow noopener";
+    a.textContent = T.goSponsored;
+    h.appendChild(a);
+  } else if (best.offer.official) {
     const a = document.createElement("a");
     a.className = "btn btn-primary";
     a.href = best.offer.official;
@@ -306,7 +324,17 @@ function renderRanking(r) {
     const sub = document.createElement("span");
     sub.className = "offer-sub";
     if (x.offer.kind === "pvpc") sub.textContent = state.rows ? T.pvpcBadge : T.pvpcApprox;
-    else if (x.offer.official) {
+    else if (isSponsored(x.offer)) {
+      const tag = document.createElement("span");
+      tag.className = "sponsored-tag";
+      tag.textContent = T.sponsored;
+      const a = document.createElement("a");
+      a.href = x.offer.affiliateUrl;
+      a.target = "_blank";
+      a.rel = "sponsored nofollow noopener";
+      a.textContent = T.sponsoredLink;
+      sub.append(tag, " ", x.offer.type === "periods" ? `${T.typePeriods} · ` : `${T.typeFixed} · `, a);
+    } else if (x.offer.official) {
       const a = document.createElement("a");
       a.href = x.offer.official;
       a.target = "_blank";
@@ -321,6 +349,48 @@ function renderRanking(r) {
       td.className = cls;
     }
   });
+}
+
+// Hueco de ofertas patrocinadas: se muestran con su puesto real por precio (nunca se reordena la lista).
+function renderSponsored(r) {
+  const items = r.map((x, k) => ({ ...x, pos: k + 1 })).filter((x) => isSponsored(x.offer));
+  els.sponsored.hidden = !items.length;
+  els.sponsoredList.replaceChildren(...items.map((x) => {
+    const li = document.createElement("li");
+    const tag = document.createElement("span");
+    tag.className = "sponsored-tag";
+    tag.textContent = T.sponsored;
+    const a = document.createElement("a");
+    a.href = x.offer.affiliateUrl;
+    a.target = "_blank";
+    a.rel = "sponsored nofollow noopener";
+    a.textContent = x.offer.name;
+    li.append(tag, " ", a, " · " + fmt(T.sponsoredRank, { n: x.pos, total: r.length, eur: eur(x.perYear) }));
+    return li;
+  }));
+}
+
+// Precio de la energía (sin impuestos) de una tarifa en una hora concreta.
+function priceFn(offer) {
+  if (offer.kind === "pvpc") return (d, h) => state.pvpc.days[d]?.[h] ?? state.pvpc.avg365[periodOf(d, h)] ?? 0;
+  const e = offer.type === "fixed" ? [offer.energy[0], offer.energy[0], offer.energy[0]] : offer.energy;
+  return (d, h) => e[PERIODS.indexOf(periodOf(d, h))];
+}
+
+function renderSolar(r) {
+  els.solar.hidden = !state.rows;
+  if (!state.rows) return;
+  const cfg = { ...SOLAR_DEFAULTS, ...(state.catalog?.solar || {}) };
+  const ref = (r.find((x) => x.offer.id === state.current) || r[0]).offer;
+  const opts = { yearlyYield: cfg.yield[state.solarZone] ?? cfg.yield.centro, costPerKwp: cfg.costPerKwp, surplusPrice: cfg.surplusPrice, priceAt: priceFn(ref) };
+  const suggested = suggestSize(state.rows, opts, SOLAR_DEFAULTS.sizes);
+  const est = state.solarKwp ? solarEstimate(state.rows, { ...opts, kwp: state.solarKwp }) : suggested;
+  els.solarZone.value = state.solarZone;
+  els.solarSize.replaceChildren(...SOLAR_DEFAULTS.sizes.map((k) => new Option(`${num(k, 1)} kWp${k === suggested.kwp ? ` (${T.solarSuggested})` : ""}`, String(k), false, k === est.kwp)));
+  els.solarSaving.textContent = fmt(T.solarSaving, { eur: eur(est.savingYear) });
+  els.solarResult.textContent = fmt(T.solarResult, { kwp: num(est.kwp, 1), prod: num(est.production), self: num(est.selfShare * 100), cover: num(est.coverage * 100) }) + " "
+    + (Number.isFinite(est.payback) && est.payback < 40 ? fmt(T.solarPayback, { cost: eur(est.cost), years: num(est.payback, est.payback < 10 ? 1 : 0) }) : fmt(T.solarNoPayback, { cost: eur(est.cost) }));
+  els.solarNote.textContent = fmt(T.solarNote, { cost: num(cfg.costPerKwp), surplus: num(cfg.surplusPrice, 2), offer: ref.name });
 }
 
 function kpi(label, value, sub) {
@@ -576,9 +646,11 @@ function init() {
       renderAll();
     });
   }
+  els.solarSize.addEventListener("change", () => { state.solarKwp = Number(els.solarSize.value); renderAll(); });
+  els.solarZone.addEventListener("change", () => { state.solarZone = els.solarZone.value; store.set("solarZone", state.solarZone); state.solarKwp = null; renderAll(); });
   for (const ev of ["mousemove", "focusin"]) els.results.addEventListener(ev, tip);
   els.results.addEventListener("mouseleave", () => { els.tip.hidden = true; });
 }
 
 init();
-window.__luz = { state, ranking, dataReady };
+window.__luz = { state, ranking, dataReady, isSponsored };

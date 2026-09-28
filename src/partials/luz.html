@@ -40,6 +40,11 @@
   <p class="muted small">{{t.rankingHint}}</p>
   <div class="table-wrap"><table class="ranking" id="ranking"></table></div>
   <p class="muted small" id="verified-note"></p>
+  <p class="muted small" id="sort-note">{{t.sortNote}} <a href="{{moneyHref}}">{{t.moneyLink}}</a></p>
+  <aside class="sponsored-box" id="sponsored" hidden aria-labelledby="sponsored-title">
+    <h3 id="sponsored-title">{{t.sponsoredTitle}}</h3>
+    <ul id="sponsored-list"></ul>
+  </aside>
 
   <details class="setup" id="setup">
     <summary>{{t.settingsTitle}}</summary>
@@ -62,6 +67,24 @@
 
   <h2>{{t.savingsTitle}}</h2>
   <div class="insights" id="insights"></div>
+
+  <section class="solar" id="solar" hidden aria-labelledby="solar-title">
+    <h2 id="solar-title">{{t.solarTitle}}</h2>
+    <p class="muted small">{{t.solarIntro}}</p>
+    <div class="contract">
+      <label>{{t.solarSize}} <select id="solar-size"></select></label>
+      <label>{{t.solarZone}}
+        <select id="solar-zone">
+          <option value="norte">{{t.zoneNorte}}</option>
+          <option value="centro" selected>{{t.zoneCentro}}</option>
+          <option value="sur">{{t.zoneSur}}</option>
+        </select>
+      </label>
+    </div>
+    <p class="solar-saving" id="solar-saving"></p>
+    <p id="solar-result"></p>
+    <p class="muted small" id="solar-note"></p>
+  </section>
 
   <div id="charts">
     <h2>{{t.monthlyTitle}}</h2>

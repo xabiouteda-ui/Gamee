@@ -64,6 +64,18 @@ function makeCsv() {
   check(/verificados el 28\/09\/2026/.test(await page.textContent("#verified-note")), "Se indica la fecha de verificación de los precios");
   check([12, 13].includes(await page.locator("#monthly .bar").count()) && (await page.locator("#heat .cell").count()) === 168, "Gráficos del ejemplo");
   await page.screenshot({ path: path.join(OUT, "luz-resultado.png"), fullPage: false });
+  const years = await page.evaluate(() => window.__luz.ranking().map((x) => x.total));
+  check(years.every((v, i) => i === 0 || v >= years[i - 1]), "La lista está ordenada por precio (de menor a mayor)");
+  check(await page.locator("#sponsored").isHidden() && (await page.locator(".sponsored-tag").count()) === 0, "Sin patrocinios activados no se marca nada como patrocinado");
+  check(/Cómo ganamos dinero/.test(await page.textContent("#sort-note")), "Nota de orden por precio con enlace a «Cómo ganamos dinero»");
+  check(await page.locator("#solar").isVisible(), "Placas solares: el bloque aparece tras analizar el consumo");
+  const saving = await page.textContent("#solar-saving");
+  check(/Ahorro orientativo: [\d.]+(,\d+)?\s€/.test(saving) && /se pagarían en unos \d/.test(await page.textContent("#solar-result")), "Placas solares: ahorro y años de retorno (" + saving.trim() + ")");
+  check(/recomendada/.test(await page.locator("#solar-size option:checked").textContent()), "Placas solares: propone un tamaño recomendado");
+  await page.selectOption("#solar-size", "8");
+  check(saving !== (await page.textContent("#solar-saving")), "Placas solares: cambiar el tamaño recalcula");
+  await page.selectOption("#solar-zone", "sur");
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.solarZone")))) === "sur", "Placas solares: la zona se recuerda");
 
   // 2. Tarifa actual → ahorro concreto
   const worst = await page.textContent("#ranking tbody tr:last-child td:nth-child(2)");
@@ -117,6 +129,7 @@ function makeCsv() {
   await page.click("#quick-form button[type=submit]");
   await page.waitForFunction(() => /Cálculo rápido/.test(document.getElementById("status-text").textContent));
   check(await page.locator("#charts").isHidden() && await page.locator("#consumption").isHidden(), "En el cálculo rápido no se muestran gráficos horarios");
+  check(await page.locator("#solar").isHidden(), "Placas solares: sin consumo horario (cálculo rápido) no se estima");
   check(/Media del último año/.test(await page.textContent("#ranking")), "En el cálculo rápido el PVPC usa la media por periodo");
   const quickPeriodsWins = await page.evaluate(() => window.__luz.ranking().findIndex((x) => x.offer.type === "periods"));
   check(quickPeriodsWins >= 0, "La tarifa por periodos entra en el ranking rápido (posición " + (quickPeriodsWins + 1) + ")");
@@ -128,6 +141,28 @@ function makeCsv() {
   check(external.length === 0, "Ninguna petición a terceros: el CSV no sale del navegador" + (external.length ? ": " + external.join(", ") : ""));
   check(errors.length === 0, "Sin errores en la consola" + (errors.length ? ": " + errors.join(" | ") : ""));
   await ctx.close();
+
+  // 7b. Oferta patrocinada (activada solo en esta prueba): marcada, con enlace patrocinado y SIN cambiar de puesto
+  {
+    const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ofertas.json"), "utf8"));
+    cat.sponsoredEnabled = true;
+    const sp = cat.offers.at(-1);
+    sp.sponsored = true;
+    sp.affiliateUrl = "https://example.com/afiliado";
+    const { ctx, external } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, { ...withPvpc, [srv.base + "/data/ofertas.json"]: JSON.stringify(cat) });
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/");
+    await page.click("#example-btn");
+    await page.waitForSelector("#headline:not([hidden]) .headline-name");
+    const order = await page.evaluate(() => window.__luz.ranking().map((x) => x.total));
+    check(order.every((v, i) => i === 0 || v >= order[i - 1]), "Patrocinado: la lista sigue ordenada por precio");
+    const row = page.locator("#ranking tbody tr", { hasText: "Patrocinado" });
+    check((await row.count()) === 1, "Patrocinado: la tarifa aparece marcada una sola vez en la lista");
+    check((await row.locator("a[rel='sponsored nofollow noopener']").getAttribute("href")) === "https://example.com/afiliado", "Patrocinado: enlace con rel=sponsored");
+    check(await page.locator("#sponsored").isVisible() && /Puesto \d+ de \d+ por precio/.test(await page.textContent("#sponsored")), "Patrocinado: hueco propio con su puesto real por precio");
+    check(external.length === 0, "Patrocinado: no se hace ninguna petición a terceros");
+    await ctx.close();
+  }
 
   // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {
