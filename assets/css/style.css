@@ -381,3 +381,14 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .gasto-form input { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
 .gasto-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
 @media (max-width: 480px) { .gasto-result { grid-template-columns: 1fr; } }
+
+/* Recomendaciones con enlace de afiliado (solo en pantallas de resultado) */
+.afiliados { margin-top: 20px; }
+.afiliados h2 { margin-top: 0; font-size: 1.15rem; }
+.aff-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 10px; }
+.aff-list li { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; max-width: none; }
+.aff-list a { display: flex; flex-direction: column; flex: 1 1 260px; text-decoration: none; color: var(--text); }
+.aff-list a strong { color: var(--accent); }
+.aff-list a:hover strong { text-decoration: underline; }
+.aff-list a span { color: var(--muted); font-size: .92rem; }
+.aff-tag { font-size: .75rem; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }

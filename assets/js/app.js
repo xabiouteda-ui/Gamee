@@ -1,5 +1,6 @@
 import { STRINGS, AUDIO_LANGUAGES } from "./i18n.js";
 import { clock, bytes, toTXT, toSRT, toVTT } from "./format.js";
+import { showAffiliates } from "./afiliados.js";
 
 const LANG = document.documentElement.lang.startsWith("en") ? "en" : "es";
 const T = STRINGS[LANG];
@@ -272,10 +273,13 @@ function onWorkerMessage({ data: m }) {
       finish();
       setBar(100);
       if (!state.segments.length) setStatus(T.noSpeech, "warn");
-      else setStatus(fmt(T.done, {
-        dur: humanDuration(state.duration),
-        time: humanDuration((performance.now() - state.startedAt) / 1000),
-      }), "ok");
+      else {
+        setStatus(fmt(T.done, {
+          dur: humanDuration(state.duration),
+          time: humanDuration((performance.now() - state.startedAt) / 1000),
+        }), "ok");
+        showAffiliates($("afiliados"), "transcripcion", LANG, new URL("../../data/afiliados.json", import.meta.url));
+      }
       break;
     case "cancelled":
       finish();
@@ -416,6 +420,7 @@ function init() {
   });
   els.newBtn.onclick = () => {
     els.result.hidden = true;
+    $("afiliados").hidden = true;
     els.status.hidden = true;
     state.segments = [];
     els.segments.textContent = "";

@@ -1,0 +1,57 @@
+{
+  "_readme": "Recomendaciones con enlace de afiliado que se muestran SOLO en pantallas de resultado (tras exportar un vídeo con subtítulos o tras transcribir). Desactivadas por defecto. Para activar una: pega tu enlace de afiliado en \"url\" (debe empezar por https://) y pon \"enabled\": true en ella y en \"enabled\" general. Se muestran con la etiqueta «Enlace de afiliado» y rel=\"sponsored nofollow\". No pongas logos: solo texto. \"where\": \"subtitulos\" o \"transcripcion\". \"lang\": idiomas en los que se muestra.",
+  "enabled": false,
+  "max": 3,
+  "items": [
+    {
+      "id": "voz-doblaje",
+      "where": ["subtitulos", "transcripcion"],
+      "lang": ["es", "en"],
+      "provider": "ElevenLabs",
+      "es": { "title": "Dobla tu vídeo a otro idioma", "text": "Voces de IA naturales para doblar o narrar tus vídeos." },
+      "en": { "title": "Dub your video into another language", "text": "Natural AI voices to dub or narrate your videos." },
+      "url": "",
+      "enabled": false
+    },
+    {
+      "id": "clips-automaticos",
+      "where": ["subtitulos"],
+      "lang": ["es", "en"],
+      "provider": "OpusClip",
+      "es": { "title": "Saca clips cortos de un vídeo largo", "text": "Encuentra los mejores momentos y los recorta en vertical automáticamente." },
+      "en": { "title": "Turn a long video into short clips", "text": "Finds the best moments and crops them to vertical automatically." },
+      "url": "",
+      "enabled": false
+    },
+    {
+      "id": "musica-libre",
+      "where": ["subtitulos"],
+      "lang": ["es", "en"],
+      "provider": "Artlist",
+      "es": { "title": "Música sin problemas de derechos", "text": "Canciones y efectos con licencia para redes sociales y YouTube." },
+      "en": { "title": "Royalty-free music", "text": "Licensed songs and sound effects for social media and YouTube." },
+      "url": "",
+      "enabled": false
+    },
+    {
+      "id": "transcripcion-humana",
+      "where": ["transcripcion"],
+      "lang": ["es", "en"],
+      "provider": "Happy Scribe",
+      "es": { "title": "¿Necesitas una transcripción revisada por personas?", "text": "Transcripción y subtítulos con revisión humana para entregas profesionales." },
+      "en": { "title": "Need a human-reviewed transcript?", "text": "Transcripts and subtitles checked by people for professional deliveries." },
+      "url": "",
+      "enabled": false
+    },
+    {
+      "id": "traduccion",
+      "where": ["transcripcion"],
+      "lang": ["es", "en"],
+      "provider": "ElevenLabs",
+      "es": { "title": "Traduce y dobla el audio", "text": "Pasa tu audio a otro idioma con una voz parecida a la original." },
+      "en": { "title": "Translate and dub the audio", "text": "Turn your audio into another language with a similar-sounding voice." },
+      "url": "",
+      "enabled": false
+    }
+  ]
+}

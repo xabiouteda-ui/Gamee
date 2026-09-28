@@ -31,7 +31,7 @@ function makeCsv() {
   // PVPC sintético de 13 meses: punta 0,22, llano 0,15, valle 0,09 €/kWh.
   const days = {};
   const today = new Date();
-  for (let d = -400; d <= 1; d++) {
+  for (let d = -400; d <= 2; d++) { // +2: de noche la fecha de Madrid ya va un día por delante de la UTC
     const date = new Date(today.getTime() + d * 86400000).toISOString().slice(0, 10);
     days[date] = Array.from({ length: 24 }, (_, h) => ({ P1: 0.22, P2: 0.15, P3: 0.09 })[periodOf(date, h)]);
   }

@@ -99,13 +99,14 @@ function check(cond, msg) {
   console.log(`Sirviendo _site/ en ${base}/ (URL pública: ${PUBLIC_URL})`);
   const browser = await chromium.launch();
 
-  async function newContext(opts = {}, { lib = MOCK_LIB, config = null } = {}) {
+  async function newContext(opts = {}, { lib = MOCK_LIB, config = null, affiliates = null } = {}) {
     const ctx = await browser.newContext({ acceptDownloads: true, ...opts });
     const external = [];
     await ctx.route("**/*", async (route) => {
       const url = route.request().url();
       if (url === LIB_URL) return route.fulfill({ contentType: "text/javascript", body: lib, headers: { "Access-Control-Allow-Origin": "*" } });
       if (config && url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: config });
+      if (affiliates && url.endsWith("/data/afiliados.json")) return route.fulfill({ contentType: "application/json", body: affiliates });
       if (url.startsWith(origin)) return route.continue();
       // URLs absolutas a la web pública (canonical, 404…) se sirven desde el servidor local.
       if (url.startsWith(PUBLIC_URL)) {
@@ -116,6 +117,30 @@ function check(cond, msg) {
       return route.abort();
     });
     return { ctx, external };
+  }
+
+  // ---------- 0. Recomendaciones de afiliado (activadas solo en esta prueba) ----------
+  {
+    const aff = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "afiliados.json"), "utf8"));
+    aff.enabled = true;
+    for (const it of aff.items) { it.enabled = true; it.url = "https://example.com/ref/" + it.id; }
+    const { ctx, external } = await newContext({ viewport: { width: 1280, height: 900 } }, { affiliates: JSON.stringify(aff) });
+    const page = await ctx.newPage();
+    await page.goto(base + TOOL);
+    check(await page.locator("#afiliados").isHidden(), "Afiliados: nada antes de usar la herramienta");
+    await page.setInputFiles("#file-input", wavPath);
+    await page.click("#start-btn");
+    await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
+    await page.waitForSelector("#afiliados:not([hidden])", { timeout: 5000 }).catch(() => {});
+    const links = page.locator("#afiliados a[rel~=sponsored]");
+    const ids = await links.evaluateAll((as) => as.map((a) => a.getAttribute("href").split("/").pop()));
+    check(ids.join() === "voz-doblaje,transcripcion-humana,traduccion", "Afiliados: tras transcribir salen solo los de transcripción (" + ids.join() + ")");
+    check((await links.first().getAttribute("rel")) === "sponsored nofollow noopener", "Afiliados: rel=\"sponsored nofollow\"");
+    check((await page.locator("#afiliados .aff-tag").count()) === 3 && /Enlace de afiliado/.test(await page.textContent("#afiliados")), "Afiliados: cada uno lleva la etiqueta «Enlace de afiliado»");
+    check(!external.length, "Afiliados: no se pide nada a terceros hasta que se pulsa");
+    await page.click("#new-btn");
+    check(await page.locator("#afiliados").isHidden(), "Afiliados: se ocultan al empezar otra transcripción");
+    await ctx.close();
   }
 
   // ---------- 1. Página principal en escritorio ----------
@@ -141,6 +166,7 @@ function check(cond, msg) {
     await page.waitForSelector('#status[data-kind="ok"]', { timeout: 30000 });
     const status = await page.textContent("#status-text");
     check(/Listo/.test(status), "Termina con mensaje de éxito: " + status.trim());
+    check(await page.locator("#afiliados").isHidden(), "Sin enlaces de afiliado configurados no se muestra ninguna recomendación");
     const segCount = await page.locator(".seg").count();
     const chunks = await page.locator(".seg .tx", { hasText: "Fragmento" }).count();
     check(chunks === 3, `El audio de 75 s se trocea en 3 fragmentos (hay ${chunks}) y se muestran ${segCount} segmentos`);

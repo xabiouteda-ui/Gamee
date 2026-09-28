@@ -30,14 +30,14 @@ const adsCfg = sandbox.window.SITE_CONFIG || {};
 const UI = {
   es: {
     home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
-    contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
+    contact: "Contacto", money: "Cómo ganamos dinero", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
     home: "Home", transcribe: "Audio to text", captions: "Captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
-    contact: "Contact", skip: "Skip to content", tagline: "Free and private audio and video transcription",
+    contact: "Contact", money: "How we make money", skip: "Skip to content", tagline: "Free and private audio and video transcription",
     footerNote: "Free tools supported by ads. Your files are processed on your device.",
     related: "More free tools",
     otherLang: "Español", otherLangLabel: "Leer en español",
@@ -45,8 +45,8 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
-  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html" },
+  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
 // Tarjetas de herramientas (portada y enlaces cruzados al final de cada herramienta).
@@ -214,6 +214,7 @@ function layout(page, pagesBySlug) {
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
+    .replace(/\{\{moneyHref\}\}/g, () => href(L.money))
     .replace(/\{\{root\}\}/g, root);
 
   const hreflang = alt
@@ -270,6 +271,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
       ${nav("privacy", ui.privacy)}
       ${nav("legal", ui.legal)}
       ${nav("contact", ui.contact)}
+      ${exists("money") ? nav("money", ui.money) : ""}
     </nav>
     <p class="muted small">© ${new Date().getFullYear()} ${esc(site.siteName)} · ${ui.footerNote}</p>
   </div>

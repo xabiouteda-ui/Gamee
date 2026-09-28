@@ -1,4 +1,5 @@
 import { STRINGS } from "./i18n.js";
+import { showAffiliates } from "../afiliados.js";
 import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
 
 // Librería de vídeo (MPL-2.0): lee el vídeo, nos deja dibujar sobre cada fotograma y lo vuelve a codificar.
@@ -89,6 +90,7 @@ function setFile(file) {
   els.studio.hidden = true;
   els.exportStatus.hidden = true;
   els.downloadLink.hidden = true;
+  $("afiliados").hidden = true;
   if (els.video.src) URL.revokeObjectURL(els.video.src);
   els.video.src = URL.createObjectURL(file);
   els.video.onloadedmetadata = () => {
@@ -484,6 +486,7 @@ async function exportVideo() {
     els.downloadLink.dataset.size = String(blob.size);
     setExport(fmt(T.exported, { size: bytes(blob.size) }) + (noAudio ? " " + T.noAudio : ""), noAudio ? "warn" : "ok", 100);
     els.downloadLink.click();
+    showAffiliates($("afiliados"), "subtitulos", LANG, new URL("../../../data/afiliados.json", import.meta.url));
   } catch (e) {
     console.error(e);
     if (e?.name === "ConversionCanceledError") setExport(T.cancelled, "warn");

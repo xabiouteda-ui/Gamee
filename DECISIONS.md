@@ -213,3 +213,15 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     audio al inglés con Whisper) y «videopodcasts y entrevistas» (estilo clásico preseleccionado). No se crea una
     página aparte para «subtítulos automáticos gratis sin marca de agua»: es la búsqueda principal de la portada
     de la herramienta y otra página competiría con ella.
+
+## Sesión 4 (28/09/2026): monetización más allá de AdSense
+
+67. **Afiliados en `data/afiliados.json`, desactivados dos veces** (interruptor general `enabled` y uno por enlace,
+    con `url` vacía). Sin URL `https://` válida no se pinta nada. Solo salen en la pantalla de resultado: tras
+    exportar el vídeo (subtítulos) y al terminar de transcribir; nunca antes de usar la herramienta. Texto propio en
+    español e inglés, etiqueta «Enlace de afiliado», `rel="sponsored nofollow noopener"` y enlace a «Cómo ganamos
+    dinero». El nombre del proveedor va como texto entre paréntesis, sin logos. No se escriben comisiones en ningún
+    sitio (no son públicas de forma fiable y el plan pide no inventarlas).
+68. **Página «Cómo ganamos dinero»** (es + en) enlazada en el pie de todas las páginas: publicidad, afiliados,
+    comparador de luz ordenado por precio con patrocinados marcados, Pro opcional y crédito «Hecho con». Dice
+    expresamente que el comparador no es oficial y enlaza el de la CNMC (Directiva Ómnibus / LSSI).
