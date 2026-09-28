@@ -1,4 +1,5 @@
 import { STRINGS, AUDIO_LANGUAGES } from "./i18n.js";
+import { clock, bytes, toTXT, toSRT, toVTT } from "./format.js";
 
 const LANG = document.documentElement.lang.startsWith("en") ? "en" : "es";
 const T = STRINGS[LANG];
@@ -51,44 +52,11 @@ const store = {
   set(k, v) { try { localStorage.setItem("tl." + k, v); } catch {} },
 };
 
-function clock(sec) {
-  sec = Math.max(0, Math.floor(sec));
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-  const mm = String(m).padStart(h ? 2 : 1, "0"), ss = String(s).padStart(2, "0");
-  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
-}
-
 function humanDuration(sec) {
   sec = Math.round(sec);
   if (sec < 60) return `${sec} ${T.seconds}`;
   const m = Math.floor(sec / 60), s = sec % 60;
   return s ? `${m} ${T.minutes} ${s} ${T.seconds}` : `${m} ${T.minutes}`;
-}
-
-function stamp(sec, sep) {
-  const ms = Math.round(sec * 1000);
-  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
-  const p = (n, l = 2) => String(n).padStart(l, "0");
-  return `${p(h)}:${p(m)}:${p(s)}${sep}${p(r, 3)}`;
-}
-
-function bytes(n) {
-  if (!n) return "";
-  return n > 1e9 ? (n / 1e9).toFixed(1) + " GB" : Math.round(n / 1e6) + " MB";
-}
-
-export function toTXT(segs, withTimes) {
-  return segs.map((s) => (withTimes ? `[${clock(s.start)}] ` : "") + s.text.trim()).join(withTimes ? "\n" : " ")
-    .replace(/ {2,}/g, " ").trim() + "\n";
-}
-
-export function toSRT(segs) {
-  return segs.map((s, i) => `${i + 1}\n${stamp(s.start, ",")} --> ${stamp(s.end, ",")}\n${s.text.trim()}\n`).join("\n");
-}
-
-export function toVTT(segs) {
-  return "WEBVTT\n\n" + segs.map((s) => `${stamp(s.start, ".")} --> ${stamp(s.end, ".")}\n${s.text.trim()}\n`).join("\n");
 }
 
 function download(name, text, mime) {
