@@ -27,23 +27,43 @@ const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 const UI = {
   es: {
-    home: "Transcribir", captions: "Subtítulos animados", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
-    footerNote: "Herramienta gratuita financiada con publicidad. El audio se procesa en tu dispositivo.",
+    footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
+    related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
-    home: "Transcribe", captions: "Animated captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
+    home: "Home", transcribe: "Audio to text", captions: "Captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
     contact: "Contact", skip: "Skip to content", tagline: "Free and private audio and video transcription",
-    footerNote: "Free tool supported by ads. Audio is processed on your device.",
+    footerNote: "Free tools supported by ads. Your files are processed on your device.",
+    related: "More free tools",
     otherLang: "Español", otherLangLabel: "Leer en español",
   },
 };
 
 const LINKS = {
-  es: { home: "", captions: "subtitulos-animados/", luz: "luz/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
-  en: { home: "en/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html" },
+  en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html" },
 };
+
+// Tarjetas de herramientas (portada y enlaces cruzados al final de cada herramienta).
+const CARDS = [
+  {
+    tool: "transcribe", icon: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21a1 1 0 1 1-2 0v-2.07A7 7 0 0 1 5 12Z",
+    es: { title: "Pasar audio a texto", text: "Transcribe notas de voz, clases, entrevistas y vídeos. Descarga TXT, SRT o VTT." },
+    en: { title: "Audio to text", text: "Transcribe voice notes, lectures, interviews and videos. Download TXT, SRT or VTT." },
+  },
+  {
+    tool: "captions", icon: "M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm2 9h5v2H6v-2Zm7 0h5v2h-5v-2ZM6 10h9v2H6v-2Z",
+    es: { title: "Subtítulos animados", text: "Subtítulos tipo karaoke grabados en tu vídeo para Reels, TikTok y Shorts. Sin marca de agua." },
+    en: { title: "Animated captions", text: "Karaoke-style captions burned into your video for short-form platforms. No watermark." },
+  },
+  {
+    tool: "luz", icon: "M13 2 4 14h6l-1 8 9-12h-6l1-8Z",
+    es: { title: "¿Qué tarifa de luz me conviene?", text: "Sube el CSV de consumo de tu distribuidora y compara ofertas con tu consumo real." },
+  },
+];
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -142,13 +162,20 @@ function layout(page, pagesBySlug) {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
 
+  const here = page.slug.replace(/index\.html$/, "");
+  const nav = (key, label, section = false) => {
+    const current = L[key] === here || L[key] === page.slug;
+    return `<a href="${href(L[key])}"${current ? ' aria-current="page"' : section ? ' aria-current="true"' : ""}>${label}</a>`;
+  };
+  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && L[c.tool] && pagesBySlug.has(L[c.tool] + "index.html"))
+    .map((c) => `<a class="tool-card" href="${href(L[c.tool])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${c.icon}"/></svg><strong>${esc(c[lang].title)}</strong><span>${esc(c[lang].text)}</span></a>`).join("\n");
+
   let body = page.body
     .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page.mode) : ""))
     .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
+    .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace(/\{\{root\}\}/g, root);
-
-  const nav = (key, label) => `<a href="${href(L[key])}"${L[key] === page.slug.replace(/index\.html$/, "") || L[key] === page.slug ? ' aria-current="page"' : ""}>${label}</a>`;
 
   const hreflang = alt
     ? `<link rel="alternate" hreflang="${lang}" href="${url}">
@@ -172,7 +199,7 @@ ${hreflang}
 <meta property="og:title" content="${esc(page.title)}">
 <meta property="og:description" content="${esc(page.description)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${siteUrl}/assets/img/og.png">
+<meta property="og:image" content="${siteUrl}/assets/img/og.jpg">
 <meta property="og:locale" content="${lang === "es" ? "es_ES" : "en_US"}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
@@ -186,17 +213,15 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
   <div class="wrap header-inner">
     <a class="brand" href="${href(L.home)}">${LOGO}<span>${esc(site.siteName)}</span></a>
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
-      ${nav("home", ui.home)}
-      ${pagesBySlug.has(L.captions + "index.html") ? nav("captions", ui.captions) : ""}
-      ${L.luz && pagesBySlug.has(L.luz + "index.html") ? nav("luz", ui.luz) : ""}
-      ${nav("faq", ui.faq)}
-      ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
+      ${["transcribe", "captions", "luz"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
     </nav>
+    ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>
 </header>
 <div class="wrap"><div class="ad-slot" data-slot="top"></div></div>
 <main id="main" class="wrap">
 ${body.trim()}
+${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
 <div class="wrap"><div class="ad-slot" data-slot="bottom"></div></div>
 <footer class="site-footer">

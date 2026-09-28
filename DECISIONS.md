@@ -142,3 +142,20 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     hora de más consumo y cuánto ahorra cada kW, remitiendo al maxímetro de la distribuidora para decidir.
 45. **Gráficos a mano en SVG/HTML** con la paleta categórica validada (3 series, modo claro y oscuro) y rampa
     secuencial azul para el mapa de calor; leyenda, tooltip y tabla de datos para accesibilidad.
+46. **Marca común «Herramientas Libres»** (descriptiva, sin parecido con marcas existentes, coherente con
+    «Transcribe Libre», que se mantiene como nombre del transcriptor). `siteName` en `site.config.json`.
+47. **La raíz `/` pasa a ser la portada que agrupa las herramientas**; el transcriptor se mueve a
+    `/pasar-audio-a-texto/` (y `/en/audio-to-text/`). Las demás URLs existentes (FAQ, notas de voz, subtítulos SRT,
+    legales) no cambian, así que no hay enlaces rotos; la raíz sigue existiendo. GitHub Pages no permite
+    redirecciones 301, por eso se evitó mover más páginas.
+48. **Menú:** herramientas en la cabecera (en móvil, fila desplazable debajo de la marca) y el idioma aparte; las
+    FAQ y los legales, en el pie. Al final de cada herramienta, bloque automático «Más herramientas gratis».
+49. **SEO de Transcribe Libre por casos de uso:** la página de notas de voz se reorienta a «audios de WhatsApp»
+    (lo que la gente busca) con pasos para Android, iPhone y ordenador; nuevas páginas de clases, entrevistas y
+    reuniones con contenido propio (flujo de trabajo, plantilla de acta, privacidad). «Subtítulos para TikTok» ya
+    está cubierto por la guía de Reels/TikTok/Shorts de la herramienta de subtítulos. Solo en español (donde está
+    la demanda); las versiones inglesas quedan en la lista de mejoras.
+50. **Accesibilidad:** auditoría axe-core de las 26 páginas en claro y oscuro (incluida la vista de resultados de la
+    luz) → 0 problemas; queda como prueba permanente (`tests/e2e-a11y.cjs`).
+51. **Rendimiento:** cada página pesa ≤60 KB sin comprimir; las librerías pesadas (IA, vídeo) y las fuentes solo se
+    cargan al usarlas. La imagen para redes pasa de PNG 281 KB a JPEG 33 KB.

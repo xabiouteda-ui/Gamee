@@ -7,7 +7,7 @@ Resumen rápido para revisar desde el móvil. Se actualiza al final de cada fase
 | 1. Investigación → `RESEARCH-2.md` | ✅ Hecha |
 | 2. Herramienta 1: subtítulos karaoke | ✅ Hecha |
 | 3. Herramienta 2: tarifa de luz con tu CSV | ✅ Hecha |
-| 4. Mejoras (marca común, SEO Transcribe Libre, rendimiento, accesibilidad) | ⏳ En curso |
+| 4. Mejoras (marca común, SEO Transcribe Libre, rendimiento, accesibilidad) | ✅ Hecha |
 
 ## Fase 1 – Investigación ✅
 
@@ -55,10 +55,44 @@ Resumen rápido para revisar desde el móvil. Se actualiza al final de cada fase
 - **Revisar tú:** los precios de ejemplo (0,13 €/kWh fijo; 0,19/0,125/0,085 por periodos; potencia 0,0877
   €/kW·día) son orientativos; cámbialos en `assets/js/luz/core.js` si quieres otros de referencia.
 
+## Fase 4 – Mejoras ✅
+
+- **Marca común «Herramientas Libres»** con portada en `/` que agrupa las 3 herramientas (es + en). El transcriptor
+  pasa a `/pasar-audio-a-texto/`; ninguna URL antigua se rompe. Menú de herramientas en la cabecera (desplazable
+  en móvil) y bloque «Más herramientas gratis» al final de cada herramienta.
+- **SEO de Transcribe Libre:** la página de notas de voz ahora apunta a «transcribir audios de WhatsApp» (pasos
+  Android/iPhone/ordenador) y hay 3 páginas nuevas: **clases**, **entrevistas** (TFG, periodismo, privacidad) y
+  **reuniones** (con plantilla de acta). Enlaces desde la portada del transcriptor. Subtítulos para TikTok ya
+  estaba cubierto en la fase 2.
+- **Accesibilidad:** auditoría axe-core de las 26 páginas en modo claro y oscuro → **0 problemas** (se corrigieron
+  cabeceras de tabla vacías). Queda como prueba (`tests/e2e-a11y.cjs`).
+- **Rendimiento:** ≤60 KB por página sin comprimir; IA, vídeo y fuentes solo se cargan al usarlos; imagen para
+  redes de 281 KB a 33 KB.
+- **Pruebas:** pasan todas (comprobación del sitio, 2 unitarias, 4 end-to-end).
+
 ## Qué tienes que hacer tú
 
-- Al final de la sesión: revisa y fusiona la pull request.
-- Después de publicar: prueba los subtítulos animados con un vídeo real tuyo (en ordenador y en el móvil) y dime si
-  los tiempos por palabra salen bien.
-- Prueba la herramienta de luz con tu propio CSV de Datadis o de tu distribuidora (por si su formato tuviera alguna
-  variante que no lea).
+1. **Revisar y fusionar la PR** → se publica sola en `https://xabiouteda-ui.github.io/Gamee/`.
+2. **Probar con datos reales** (lo único que no se pudo probar aquí, porque este entorno no descarga modelos de IA):
+   - Transcribir un audio real y generar subtítulos animados de un vídeo tuyo (ordenador y móvil).
+   - Subir tu CSV de Datadis/distribuidora a `/luz/`.
+3. **Rellenar los datos del titular** en `site.config.json` (aviso legal, privacidad, contacto) antes de AdSense.
+4. **Dominio propio** (necesario para AdSense) y alta en Google Search Console con el `sitemap.xml`.
+
+## Siguientes pasos recomendados (por prioridad)
+
+1. **Comparar con la tarifa regulada (PVPC) en la herramienta de luz**: descargar los precios horarios públicos
+   de Red Eléctrica para las fechas del CSV y añadir el PVPC al ranking. Es lo que más piden estos usuarios y el
+   tema tiene el CPC más alto. (Hay que comprobar que su API permite peticiones desde el navegador.)
+2. **Autoconsumo / placas solares en la luz**: leer la columna de excedentes y calcular la compensación.
+3. **Vídeo horizontal → vertical 9:16 automático** en subtítulos animados (reencuadre siguiendo la cara con
+   MediaPipe): función de pago en la competencia y buena página SEO propia (idea nº 15 de `RESEARCH-2.md`).
+4. **Más estilos de subtítulos** (emojis automáticos, palabra clave resaltada en otro color, fondo por línea) y
+   plantillas guardadas.
+5. **Leer Excel (.xlsx) de las distribuidoras** en la luz (SheetJS bajo demanda).
+6. **Versiones en inglés** de las páginas nuevas del transcriptor (clases, entrevistas, reuniones, WhatsApp).
+7. **Página «precio fijo o 3 periodos: ¿qué me conviene?»** y «¿cuánto gasta un electrodoméstico?» (SEO de luz).
+8. **Distinguir hablantes** en el transcriptor cuando haya un modelo ligero para navegador.
+9. **PWA** (instalable y sin conexión tras la primera visita) para aumentar las visitas recurrentes.
+10. **Medir**: Search Console para ver qué búsquedas traen tráfico y priorizar nuevas páginas con datos reales
+    (las cifras de demanda de las investigaciones son estimaciones).

@@ -98,7 +98,19 @@ for (const m of readFileSync(join(SITE, "sitemap.xml"), "utf8").matchAll(/(?:<lo
   check(m[1].startsWith(home), `sitemap.xml: URL fuera de la ruta base → ${m[1]}`);
 }
 
-// 5. Archivos auxiliares.
+// 5. Marca común: la portada enlaza todas las herramientas y cada herramienta enlaza a las demás.
+const portal = readFileSync(join(SITE, "index.html"), "utf8");
+for (const t of ["pasar-audio-a-texto/", "subtitulos-animados/", "luz/"]) {
+  check(portal.includes(`class="tool-card" href="./${t}"`), `La portada enlaza a ${t}`);
+}
+for (const file of htmlFiles) {
+  const html = readFileSync(file, "utf8");
+  if (/type="module" src="[^"]*assets\/js\/(app|captions\/app|luz\/app)\.js"/.test(html)) {
+    check(html.includes('class="related"') && (html.match(/class="tool-card"/g) || []).length >= 1, `${file.slice(SITE.length + 1)}: enlaza a otras herramientas`);
+  }
+}
+
+// 6. Archivos auxiliares.
 check(existsSync(join(SITE, "sitemap.xml")), "Falta sitemap.xml");
 check(existsSync(join(SITE, "robots.txt")), "Falta robots.txt");
 check(existsSync(join(SITE, ".nojekyll")), "Falta .nojekyll");

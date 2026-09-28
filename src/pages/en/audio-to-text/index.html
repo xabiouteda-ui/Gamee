@@ -1,0 +1,76 @@
+<!--{
+  "slug": "en/audio-to-text/index.html",
+  "alt": "pasar-audio-a-texto/index.html",
+  "appName": "Transcribe Libre",
+  "tool": true,
+  "title": "Free audio to text transcription, no limits | Transcribe Libre",
+  "description": "Transcribe audio and video to text for free, with no sign-up or minute limits. Get SRT and VTT subtitles. Files are never uploaded: it all runs in your browser."
+}-->
+<section class="hero">
+  <h1>Free audio to text, with no limits and no uploads</h1>
+  <p class="lead">Transcribe recordings, voice notes, interviews, lectures, meetings and videos. Download plain text or subtitles (SRT and VTT). No sign-up, no watermarks, no minute caps.</p>
+  <ul class="badges">
+    <li>100% free</li>
+    <li>No sign-up</li>
+    <li>No minute limits</li>
+    <li>Private: nothing leaves your device</li>
+  </ul>
+</section>
+
+{{tool}}
+
+<article class="content">
+  <h2>How to transcribe audio in 3 steps</h2>
+  <ol class="steps">
+    <li><strong>Choose a file</strong><br>Drop it on the box above or click to browse. You can also record your voice with the microphone.</li>
+    <li><strong>Click “Transcribe”</strong><br>Pick the audio language and quality. The AI model downloads the first time and then stays cached in your browser.</li>
+    <li><strong>Review and download</strong><br>Fix anything directly in the text, then download it as TXT or as SRT/VTT subtitles.</li>
+  </ol>
+
+  <h2>A free alternative to paid transcription services</h2>
+  <p>Most transcription websites let you try a few minutes and then ask for a monthly subscription, or cap how many files you can upload per day. That makes sense for them: every minute they transcribe on their servers costs them money.</p>
+  <p><strong>Transcribe Libre works differently.</strong> The speech recognition model runs inside your own browser, using your computer or phone. Since we don't pay for servers per minute, we can keep it free and unlimited. The site is supported by ads.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><span class="sr-only">Feature</span></th><th>Transcribe Libre</th><th>Typical paid services</th></tr></thead>
+      <tbody>
+        <tr><td>Price</td><td>Free</td><td>$8–20 per month, or pay per minute</td></tr>
+        <tr><td>Minute or file limits</td><td>None</td><td>A few minutes or files per day on free plans</td></tr>
+        <tr><td>Sign-up</td><td>Not needed</td><td>Almost always required</td></tr>
+        <tr><td>Where is your audio processed?</td><td>On your device</td><td>Uploaded to their servers</td></tr>
+        <tr><td>SRT/VTT subtitles</td><td>Included</td><td>Often paid plans only</td></tr>
+        <tr><td>Speaker identification</td><td>No (not yet)</td><td>Yes, in some</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {{ad:content}}
+
+  <h2>What you can transcribe</h2>
+  <ul class="features">
+    <li><strong>Voice notes</strong>Voice messages from chat apps (.opus, .ogg, .m4a) work like any other file.</li>
+    <li><strong>Interviews and podcasts</strong>Get the text with timestamps so you can find every quote.</li>
+    <li><strong>Lectures and talks</strong>Turn a class recording into searchable notes.</li>
+    <li><strong>Meetings</strong>Keep written minutes without sending confidential conversations to third parties.</li>
+    <li><strong>Videos</strong>Upload MP4, MOV or WEBM directly; the audio is extracted in your browser.</li>
+    <li><strong>Dictation</strong>Click “Record with microphone”, speak and get the written text.</li>
+  </ul>
+
+  <h2>Supported formats</h2>
+  <p>Audio: MP3, WAV, M4A, AAC, OGG, OPUS, FLAC and WEBM. Video: MP4, MOV, WEBM and, in most browsers, MKV. The tool uses your browser's own decoder, so exact support depends on it: if a file won't open, try another browser or convert it to MP3.</p>
+
+  <h2>Which quality should I choose?</h2>
+  <ul>
+    <li><strong>Fast (≈40 MB):</strong> great for phones and clear audio with one speaker.</li>
+    <li><strong>Balanced (≈80 MB):</strong> recommended on computers. Good accuracy and speed.</li>
+    <li><strong>Most accurate (≈250 MB):</strong> for difficult audio (noise, accents, technical terms). Slower and needs more memory.</li>
+  </ul>
+  <p>Each model downloads only once. If your browser supports <strong>WebGPU</strong> (recent Chrome and Edge do), transcription runs on your graphics card and is much faster.</p>
+
+  <h2>Real privacy</h2>
+  <p>Many sites promise privacy but still upload your audio. Here there is no server to receive it: the page downloads the public speech recognition model and your audio is processed in your browser's memory. You can check it yourself: once the model is loaded, disconnect from the internet and transcription keeps working. See our <a href="{{root}}en/privacy.html">privacy policy</a>.</p>
+
+  <p class="cta"><a class="btn btn-primary" href="#tool">Transcribe audio now</a></p>
+  <p class="muted small">Questions? Read the <a href="{{root}}en/faq.html">FAQ</a>.</p>
+</article>

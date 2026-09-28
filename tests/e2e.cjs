@@ -64,6 +64,8 @@ function makeWav(seconds = 75, rate = 44100) {
 const PUBLIC_URL = fs.readFileSync(path.join(SITE, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
 const BASE_PATH = new URL(PUBLIC_URL).pathname; // "/game/" o "/"
 const outsideBase = [];
+const TOOL = "/pasar-audio-a-texto/", TOOL_EN = "/en/audio-to-text/";
+
 
 function serve() {
   const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".xml": "application/xml", ".txt": "text/plain" };
@@ -123,7 +125,7 @@ function check(cond, msg) {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-    await page.goto(base + "/");
+    await page.goto(base + TOOL);
     check((await page.title()).includes("audio a texto"), "La portada tiene título SEO en español");
     check(await page.locator("#start-btn").isDisabled(), "El botón Transcribir está desactivado sin archivo");
     check((await page.locator(".ad-slot").count()) === 4, "Hay 4 huecos de anuncios");
@@ -197,7 +199,7 @@ function check(cond, msg) {
   {
     const { ctx } = await newContext({ viewport: { width: 1280, height: 900 } });
     const page = await ctx.newPage();
-    await page.goto(base + "/");
+    await page.goto(base + TOOL);
     await page.setInputFiles("#file-input", { name: "roto.mp3", mimeType: "audio/mpeg", buffer: Buffer.from("esto no es audio") });
     await page.click("#start-btn");
     await page.waitForSelector('#status[data-kind="error"]', { timeout: 30000 });
@@ -209,12 +211,12 @@ function check(cond, msg) {
   {
     const { ctx } = await newContext({ viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
-    for (const p of ["/", "/preguntas-frecuentes.html", "/privacidad.html", "/en/", "/subtitulos-automaticos.html"]) {
+    for (const p of ["/", TOOL, "/preguntas-frecuentes.html", "/privacidad.html", "/en/", TOOL_EN, "/subtitulos-automaticos.html"]) {
       await page.goto(base + p);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       check(overflow <= 0, `Móvil ${p}: sin scroll horizontal (${overflow}px)`);
     }
-    await page.goto(base + "/");
+    await page.goto(base + TOOL);
     check((await page.inputValue("#opt-quality")) === "tiny", "En móvil se elige la calidad rápida por defecto");
     await page.screenshot({ path: path.join(OUT, "movil-inicio.png") });
     await page.setInputFiles("#file-input", wavPath);
@@ -228,11 +230,11 @@ function check(cond, msg) {
   {
     const { ctx } = await newContext({ viewport: { width: 1280, height: 900 } });
     const page = await ctx.newPage();
-    await page.goto(base + "/en/");
+    await page.goto(base + TOOL_EN);
     check((await page.textContent("#start-btn")).trim() === "Transcribe", "La versión inglesa tiene la interfaz en inglés");
     check((await page.inputValue("#opt-language")) === "en", "En inglés el idioma por defecto es inglés");
     await page.click("header a.lang");
-    check(new URL(page.url()).pathname === BASE_PATH, "El selector de idioma lleva a la versión española dentro de " + BASE_PATH);
+    check(new URL(page.url()).pathname === BASE_PATH + TOOL.slice(1), "El selector de idioma lleva a la versión española dentro de " + BASE_PATH);
     await page.goto(base + "/preguntas-frecuentes.html");
     const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent());
     check(ld["@type"] === "FAQPage" && ld.mainEntity.length >= 10, `FAQ con datos estructurados (${ld.mainEntity?.length} preguntas)`);
@@ -241,7 +243,7 @@ function check(cond, msg) {
     const styled = await page.evaluate(() => getComputedStyle(document.querySelector(".site-header")).borderBottomStyle);
     check(styled === "solid", "La 404 carga el CSS aunque se sirva desde otra ruta");
     await page.click(".hero .btn-primary");
-    check(new URL(page.url()).pathname === BASE_PATH && await page.locator("#tool").isVisible(), "El botón de la 404 vuelve a la herramienta");
+    check(new URL(page.url()).pathname === BASE_PATH && (await page.locator(".tool-card").count()) >= 3, "El botón de la 404 lleva a la portada con las herramientas");
     await page.goto(base + "/en/faq.html");
     for (const a of await page.locator("header a, footer a").evaluateAll((els) => els.map((e) => e.href))) {
       check(new URL(a).pathname.startsWith(BASE_PATH), "Enlace de menú dentro de la ruta base: " + new URL(a).pathname);
@@ -254,7 +256,7 @@ function check(cond, msg) {
     const config = `window.SITE_CONFIG = { adsEnabled: true, adsenseClient: "ca-pub-1234567890123456", slots: { top: "111", result: "222", content: "", bottom: "444" } };`;
     const { ctx, external } = await newContext({ viewport: { width: 1280, height: 900 } }, { config });
     const page = await ctx.newPage();
-    await page.goto(base + "/");
+    await page.goto(base + TOOL);
     await page.waitForTimeout(300);
     check((await page.locator(".ad-slot.ad-on ins.adsbygoogle").count()) === 3, "Con anuncios activos se rellenan solo los huecos configurados (3)");
     check(await page.locator('.ad-slot[data-slot="content"]').isHidden(), "Un hueco sin ID sigue oculto");
@@ -266,7 +268,7 @@ function check(cond, msg) {
   if (process.env.REAL_LIB) {
     const { ctx, external } = await newContext({ viewport: { width: 1280, height: 900 } }, { lib: fs.readFileSync(process.env.REAL_LIB, "utf8") });
     const page = await ctx.newPage();
-    await page.goto(base + "/");
+    await page.goto(base + TOOL);
     await page.setInputFiles("#file-input", wavPath);
     await page.click("#start-btn");
     await page.waitForSelector('#status[data-kind="error"], #status[data-kind="ok"]', { timeout: 60000 });
