@@ -54,6 +54,7 @@ node tests/check-site.mjs          # SEO, enlaces rotos, rutas "/..." absolutas,
 node tests/unit-captions.mjs       # lógica de los subtítulos animados
 node tests/unit-luz.mjs            # periodos 2.0TD, lectura de CSV y cálculo de facturas
 npm i --no-save playwright mediabunny@1.60.0 axe-core
+bash tests/run-all.sh              # todo seguido; se detiene en el primer fallo
 node tests/e2e.cjs                 # transcriptor en Chromium, servido bajo basePath
 node tests/e2e-captions.cjs        # subtítulos animados: genera, exporta y revisa un vídeo real
 node tests/e2e-luz.cjs             # analizador de consumo eléctrico

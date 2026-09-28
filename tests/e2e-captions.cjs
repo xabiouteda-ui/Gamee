@@ -119,10 +119,10 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   await page.screenshot({ path: path.join(OUT, "subtitulos-escritorio.png"), fullPage: false });
 
   // Estilo «palabra a palabra»: una palabra por línea.
-  await page.click('[data-preset="pop"]');
+  await page.click('.preset[data-preset="pop"]');
   check((await page.locator(".line-row").count()) === 10, "El estilo «palabra a palabra» agrupa 1 palabra por línea");
   check((await page.inputValue("#st-words")) === "1", "El control de palabras por línea se sincroniza con el estilo");
-  await page.click('[data-preset="karaoke"]');
+  await page.click('.preset[data-preset="karaoke"]');
   check((await page.locator(".line-row").count()) === 4, "Volver a karaoke reagrupa en 4 líneas");
 
   // Editar una línea
@@ -153,7 +153,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   await page.check("#st-keys");
 
   // Plataforma: zona segura en la vista previa y posición dentro de ella
-  await page.click('[data-platform="tiktok"]');
+  await page.click('.chip[data-platform="tiktok"]');
   check(await page.locator("#safe-row").isVisible(), "Al elegir TikTok se ofrece ver la zona que tapa la app");
   check((await page.inputValue("#st-pos")) === "0.62", "La posición se coloca dentro de la zona segura de TikTok");
   await page.evaluate(() => { document.getElementById("video").currentTime = 0.35; });
@@ -164,12 +164,12 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     return d[0] > d[1] && d[3] > 20;
   });
   check(redTop, "La zona segura se marca en la vista previa");
-  await page.click('[data-preset="marker"]');
+  await page.click('.preset[data-preset="marker"]');
   await page.evaluate(() => window.__captions.draw());
   check((await yellowInOverlay(page)) > 200, "Estilo «Marcador»: caja amarilla en la palabra activa");
-  await page.click('[data-preset="neon"]');
-  await page.click('[data-preset="progressive"]');
-  await page.click('[data-preset="karaoke"]');
+  await page.click('.preset[data-preset="neon"]');
+  await page.click('.preset[data-preset="progressive"]');
+  await page.click('.preset[data-preset="karaoke"]');
   check((await page.locator(".preset").count()) === 8, "8 estilos disponibles");
   await page.screenshot({ path: path.join(OUT, "subtitulos-tiktok.png"), fullPage: false });
 
@@ -291,11 +291,11 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await page.goto(srv.base + dir + "subtitulos-podcast.html");
     await page.setInputFiles("#file-input", videoFile);
     await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
-    check((await page.getAttribute('[data-preset="classic"]', "aria-pressed")) === "true", "subtitulos-podcast: estilo clásico preseleccionado");
+    check((await page.getAttribute('.preset[data-preset="classic"]', "aria-pressed")) === "true", "subtitulos-podcast: estilo clásico preseleccionado");
     await page.goto(srv.base + dir + "subtitulos-tiktok.html");
     await page.setInputFiles("#file-input", videoFile);
     await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
-    check((await page.getAttribute('[data-platform="tiktok"]', "aria-pressed")) === "true" && (await page.inputValue("#st-pos")) === "0.62", "subtitulos-tiktok: TikTok y su zona segura activados al abrir el estudio");
+    check((await page.getAttribute('.chip[data-platform="tiktok"]', "aria-pressed")) === "true" && (await page.inputValue("#st-pos")) === "0.62", "subtitulos-tiktok: TikTok y su zona segura activados al abrir el estudio");
     await ctx.close();
   }
 
@@ -307,7 +307,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await page.setInputFiles("#file-input", videoFile);
     await page.setInputFiles("#subs-input", { name: "subs.srt", mimeType: "application/x-subrip", buffer: Buffer.from("1\n00:00:00,500 --> 00:00:02,000\nPrimera línea del archivo\n\n2\n00:00:02,500 --> 00:00:04,000\nSegunda línea\n") });
     await page.waitForSelector("#studio:not([hidden])");
-    check((await page.getAttribute('[data-preset="classic"]', "aria-pressed")) === "true", "En «incrustar» se usa el estilo clásico por defecto");
+    check((await page.getAttribute('.preset[data-preset="classic"]', "aria-pressed")) === "true", "En «incrustar» se usa el estilo clásico por defecto");
     const lines = await page.locator(".line-row input").evaluateAll((els) => els.map((e) => e.value));
     check(lines.join(" | ") === "Primera línea del archivo | Segunda línea", "Carga las líneas del SRT: " + lines.join(" | "));
     await ctx.close();

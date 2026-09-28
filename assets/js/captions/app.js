@@ -388,7 +388,7 @@ function syncControls() {
   els.emojis.checked = state.autoEmojis;
   els.crop.checked = state.crop;
   els.safe.checked = state.safe;
-  for (const b of document.querySelectorAll("[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
+  for (const b of document.querySelectorAll(".chip[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
   for (const b of els.presets.querySelectorAll(".preset")) b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
 }
 
@@ -602,7 +602,7 @@ function init() {
 
   els.exportBtn.onclick = exportVideo;
   els.exportCancel.onclick = () => state.exporting?.cancel();
-  document.querySelectorAll("[data-platform]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".chip[data-platform]").forEach((b) => b.addEventListener("click", () => {
     state.platform = b.dataset.platform;
     store.set("platform", state.platform);
     if (PLATFORMS[state.platform] && state.preset !== "classic") state.style.pos = PLATFORMS[state.platform].pos;
