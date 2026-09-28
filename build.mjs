@@ -9,7 +9,14 @@ import { STRINGS, AUDIO_LANGUAGES } from "./assets/js/i18n.js";
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
 const site = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
-const siteUrl = (process.env.SITE_URL || site.siteUrl).replace(/\/+$/, "");
+// URL pública = origen + ruta base. La ruta base permite publicar en una subcarpeta
+// (p. ej. usuario.github.io/game/) o en la raíz de un dominio propio ("/").
+// Solo se usa para URLs absolutas (canonical, hreflang, sitemap, Open Graph, 404);
+// los enlaces internos, CSS, JS y el worker usan siempre rutas relativas.
+const siteOrigin = (process.env.SITE_ORIGIN || site.siteOrigin).replace(/\/+$/, "");
+const basePath = ("/" + (process.env.BASE_PATH || site.basePath || "/") + "/").replace(/\/{2,}/g, "/");
+if (!/^https?:\/\/[^/]+$/.test(siteOrigin)) throw new Error(`siteOrigin no válido: "${siteOrigin}" (ej.: https://usuario.github.io)`);
+const siteUrl = siteOrigin + basePath.replace(/\/$/, "");
 
 // Lee config.js (el mismo archivo que usa el navegador) para generar ads.txt.
 const sandbox = { window: {} };

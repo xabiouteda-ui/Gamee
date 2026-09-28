@@ -31,7 +31,7 @@ Necesitas Node.js 18 o superior. No hay dependencias que instalar.
 
 ```bash
 node build.mjs            # genera _site/
-npx serve _site           # o: python3 -m http.server -d _site 8080
+npx serve _site           # las rutas son relativas: funciona también desde la raíz
 ```
 
 Abre la dirección que te indique y prueba con cualquier audio. La primera transcripción descarga el modelo
@@ -40,8 +40,8 @@ Abre la dirección que te indique y prueba con cualquier audio. La primera trans
 Pruebas:
 
 ```bash
-node tests/check-site.mjs          # SEO, enlaces rotos, JSON-LD, formatos de exportación
-npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium
+node tests/check-site.mjs          # SEO, enlaces rotos, rutas "/..." absolutas, JSON-LD, exportación
+npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium, servido bajo basePath
 ```
 
 ## Publicar en GitHub Pages
@@ -50,15 +50,28 @@ npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium
 2. En GitHub: **Settings → Pages → Build and deployment → Source: "GitHub Actions"**.
 3. Cada push a `main` ejecuta `.github/workflows/deploy.yml`: genera la web, pasa las comprobaciones y la publica.
    También puedes lanzarlo a mano en **Actions → Publicar en GitHub Pages → Run workflow**.
-4. La web queda en `https://TU_USUARIO.github.io/NOMBRE_DEL_REPO/`.
+4. La web queda en `https://TU_USUARIO.github.io/NOMBRE_DEL_REPO/` (GitHub respeta mayúsculas y minúsculas del
+   nombre del repositorio).
 
 ### Antes de publicar de verdad
 
 - Rellena `site.config.json`: `ownerName`, `ownerId`, `ownerAddress` y `contactEmail` aparecen en el aviso legal,
   la privacidad y el contacto. **AdSense rechaza webs con datos de contacto de relleno.**
-- `siteUrl` se usa para canonical, sitemap y Open Graph. El workflow ya usa automáticamente la URL de GitHub
-  Pages; si usas un dominio propio, crea la variable `SITE_URL` en **Settings → Secrets and variables → Actions →
-  Variables** (por ejemplo `https://www.tudominio.com`) o cambia `siteUrl`.
+- **URL pública y ruta base** (`site.config.json`):
+  ```json
+  "siteOrigin": "https://xabiouteda-ui.github.io",
+  "basePath": "/game/"
+  ```
+  Juntos forman la URL pública (`https://xabiouteda-ui.github.io/game/`), que se usa **solo** para las URLs
+  absolutas: canonical, hreflang, sitemap, Open Graph y la página 404. Todo lo demás (enlaces entre páginas, CSS,
+  JS, el worker, imágenes) usa rutas relativas, así que la web funciona igual en una subcarpeta o en la raíz. Las
+  pruebas fallan si alguna página, CSS o JS usa una ruta que empiece por `/`.
+- **Importante:** `basePath` debe coincidir con el nombre del repositorio. Este repositorio se llama `Gamee`, así que
+  GitHub Pages lo publicará en `/Gamee/`. Para usar `/game/`, renombra el repositorio a `game` (**Settings →
+  General → Repository name**) o cambia `basePath` a `"/Gamee/"`. Si no coinciden, el workflow muestra un aviso
+  (la web funciona, pero canonical y sitemap apuntarían a otra URL y Google no la indexaría bien).
+- También puedes cambiarlos sin tocar código con las variables `SITE_ORIGIN` y `BASE_PATH` en **Settings → Secrets
+  and variables → Actions → Variables**.
 
 ### Dominio propio (recomendado para AdSense)
 
@@ -68,8 +81,12 @@ así que para monetizar necesitas un dominio (unos 10 €/año, es el único cos
 1. En **Settings → Pages → Custom domain** escribe tu dominio y guarda.
 2. En tu proveedor de dominio crea los registros DNS que indica GitHub (CNAME a `TU_USUARIO.github.io`
    para `www`, o registros A para el dominio raíz) y activa **Enforce HTTPS**.
-3. Crea la variable `SITE_URL` con tu dominio (ver arriba) y vuelve a publicar.
+3. En `site.config.json` pon `"siteOrigin": "https://www.tudominio.com"` y `"basePath": "/"` (o las variables
+   `SITE_ORIGIN` y `BASE_PATH`) y vuelve a publicar.
 4. Da de alta el dominio en Google Search Console y envía `https://tudominio.com/sitemap.xml`.
+
+Mientras la web esté en una subcarpeta de `github.io`, `robots.txt` y `ads.txt` no están en la raíz del dominio y
+los buscadores los ignoran: envía el sitemap a mano en Search Console (`https://xabiouteda-ui.github.io/game/sitemap.xml`).
 
 ## Activar los anuncios (Google AdSense)
 

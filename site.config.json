@@ -1,6 +1,7 @@
 {
   "siteName": "Transcribe Libre",
-  "siteUrl": "https://example.github.io/transcribe-libre",
+  "siteOrigin": "https://xabiouteda-ui.github.io",
+  "basePath": "/game/",
   "ownerName": "[TU NOMBRE O RAZÓN SOCIAL]",
   "ownerId": "[TU NIF/DNI]",
   "ownerAddress": "[TU DIRECCIÓN POSTAL]",

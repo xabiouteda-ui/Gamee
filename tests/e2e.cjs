@@ -59,13 +59,22 @@ function makeWav(seconds = 75, rate = 44100) {
   return buf;
 }
 
+// La web se sirve bajo la misma ruta base que en producción (p. ej. /game/), leída del canonical de la
+// portada. Cualquier petición fuera de esa ruta es un error: significa que algo usa rutas "/..." absolutas.
+const PUBLIC_URL = fs.readFileSync(path.join(SITE, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
+const BASE_PATH = new URL(PUBLIC_URL).pathname; // "/game/" o "/"
+const outsideBase = [];
+
 function serve() {
   const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".xml": "application/xml", ".txt": "text/plain" };
+  const notFound = (res) => { res.writeHead(404, { "Content-Type": types[".html"] }); res.end(fs.readFileSync(path.join(SITE, "404.html"))); };
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    if (!p.startsWith(BASE_PATH)) { outsideBase.push(p); return notFound(res); }
+    p = "/" + p.slice(BASE_PATH.length);
     if (p.endsWith("/")) p += "index.html";
     const file = path.join(SITE, p);
-    if (!file.startsWith(SITE) || !fs.existsSync(file)) { res.writeHead(404); res.end(fs.readFileSync(path.join(SITE, "404.html"))); return; }
+    if (!file.startsWith(SITE) || !fs.existsSync(file)) return notFound(res);
     res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream" });
     res.end(fs.readFileSync(file));
   });
@@ -83,17 +92,24 @@ function check(cond, msg) {
   const wavPath = path.join(OUT, "prueba.wav");
   fs.writeFileSync(wavPath, makeWav());
   const server = await serve();
-  const base = `http://127.0.0.1:${server.address().port}`;
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const base = origin + BASE_PATH.replace(/\/$/, ""); // p. ej. http://127.0.0.1:1234/game
+  console.log(`Sirviendo _site/ en ${base}/ (URL pública: ${PUBLIC_URL})`);
   const browser = await chromium.launch();
 
   async function newContext(opts = {}, { lib = MOCK_LIB, config = null } = {}) {
     const ctx = await browser.newContext({ acceptDownloads: true, ...opts });
     const external = [];
-    await ctx.route("**/*", (route) => {
+    await ctx.route("**/*", async (route) => {
       const url = route.request().url();
       if (url === LIB_URL) return route.fulfill({ contentType: "text/javascript", body: lib, headers: { "Access-Control-Allow-Origin": "*" } });
       if (config && url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: config });
-      if (url.startsWith(base)) return route.continue();
+      if (url.startsWith(origin)) return route.continue();
+      // URLs absolutas a la web pública (canonical, 404…) se sirven desde el servidor local.
+      if (url.startsWith(PUBLIC_URL)) {
+        return fetch(base + "/" + url.slice(PUBLIC_URL.length))
+          .then(async (r) => route.fulfill({ status: r.status, contentType: r.headers.get("content-type") || undefined, body: Buffer.from(await r.arrayBuffer()) }));
+      }
       external.push(url);
       return route.abort();
     });
@@ -216,12 +232,20 @@ function check(cond, msg) {
     check((await page.textContent("#start-btn")).trim() === "Transcribe", "La versión inglesa tiene la interfaz en inglés");
     check((await page.inputValue("#opt-language")) === "en", "En inglés el idioma por defecto es inglés");
     await page.click("header a.lang");
-    check(new URL(page.url()).pathname === "/", "El selector de idioma lleva a la versión española");
+    check(new URL(page.url()).pathname === BASE_PATH, "El selector de idioma lleva a la versión española dentro de " + BASE_PATH);
     await page.goto(base + "/preguntas-frecuentes.html");
     const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').first().textContent());
     check(ld["@type"] === "FAQPage" && ld.mainEntity.length >= 10, `FAQ con datos estructurados (${ld.mainEntity?.length} preguntas)`);
     const res = await page.goto(base + "/no-existe");
     check(res.status() === 404 && (await page.textContent("h1")).includes("no encontrada"), "Página 404 propia");
+    const styled = await page.evaluate(() => getComputedStyle(document.querySelector(".site-header")).borderBottomStyle);
+    check(styled === "solid", "La 404 carga el CSS aunque se sirva desde otra ruta");
+    await page.click(".hero .btn-primary");
+    check(new URL(page.url()).pathname === BASE_PATH && await page.locator("#tool").isVisible(), "El botón de la 404 vuelve a la herramienta");
+    await page.goto(base + "/en/faq.html");
+    for (const a of await page.locator("header a, footer a").evaluateAll((els) => els.map((e) => e.href))) {
+      check(new URL(a).pathname.startsWith(BASE_PATH), "Enlace de menú dentro de la ruta base: " + new URL(a).pathname);
+    }
     await ctx.close();
   }
 
@@ -252,6 +276,9 @@ function check(cond, msg) {
     console.log("  (sin acceso a internet el modelo no se descarga; mensaje mostrado: " + msg + ")");
     await ctx.close();
   }
+
+  const stray = outsideBase.filter((p) => p !== "/no-existe");
+  check(stray.length === 0, `Ninguna petición fuera de ${BASE_PATH}` + (stray.length ? ": " + [...new Set(stray)].join(", ") : ""));
 
   await browser.close();
   server.close();

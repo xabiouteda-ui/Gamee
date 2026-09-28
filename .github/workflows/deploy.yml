@@ -28,13 +28,25 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      # Si defines la variable SITE_URL en Settings → Secrets and variables → Actions → Variables
-      # (p. ej. https://www.tudominio.com), se usa para canonical, sitemap y Open Graph.
-      # Si no, se usa la URL que GitHub Pages asigna al repositorio.
+      # La URL pública sale de site.config.json (siteOrigin + basePath). Para cambiarla sin tocar el código,
+      # define las variables SITE_ORIGIN y/o BASE_PATH en Settings → Secrets and variables → Actions → Variables.
       - name: Generar la web
         run: node build.mjs
         env:
-          SITE_URL: ${{ vars.SITE_URL || steps.pages.outputs.base_url }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
+
+      # Aviso (no bloquea) si la URL configurada no coincide con la que GitHub Pages asigna a este repositorio.
+      - name: Comprobar URL base
+        env:
+          PAGES_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          SITE=$(sed -n 's/.*canonical" href="\([^"]*\)".*/\1/p' _site/index.html)
+          echo "URL configurada: $SITE"
+          echo "URL de GitHub Pages: $PAGES_URL/"
+          if [ "${SITE%/}" != "${PAGES_URL%/}" ]; then
+            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, el nombre del repositorio o el dominio propio."
+          fi
 
       - name: Comprobaciones
         run: node tests/check-site.mjs

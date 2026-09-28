@@ -64,7 +64,7 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 
 21. **GitHub Actions con `actions/deploy-pages`**: el workflow ejecuta `node build.mjs`, sube `_site/` y lo publica.
     Se ejecuta al hacer push a `main` y manualmente. No hace falta rama `gh-pages`.
-22. **URL base configurable** (`siteUrl` en `site.config.json`) para canonical, sitemap y Open Graph. Todos los enlaces
+22. **URL base configurable** (`siteOrigin` + `basePath` en `site.config.json`, ver decisión 29) para canonical, sitemap y Open Graph. Todos los enlaces
     internos son relativos, así que funciona tanto en `usuario.github.io/repo/` como en un dominio propio.
 
 ## Añadidas durante el desarrollo
@@ -88,3 +88,10 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     el script de AdSense para que funcionen los anuncios automáticos.
 28. **Comprobaciones en el workflow:** `tests/check-site.mjs` (sin dependencias) se ejecuta antes de publicar y
     bloquea la publicación si hay enlaces rotos, títulos/descripciones fuera de rango o JSON-LD inválido.
+29. **Publicación en subcarpeta (`https://xabiouteda-ui.github.io/game/`).** La URL pública se divide en
+    `siteOrigin` y `basePath` en `site.config.json` (también sobrescribibles con las variables `SITE_ORIGIN` y
+    `BASE_PATH` de Actions). Solo las URLs absolutas (canonical, hreflang, sitemap, Open Graph, 404) la usan; el
+    resto de rutas son relativas. `check-site.mjs` falla si hay rutas que empiezan por `/` en HTML, CSS o JS, o URLs
+    del dominio sin la ruta base; la prueba e2e sirve la web bajo `basePath` y falla si se pide algo fuera de ella.
+    El workflow ya no toma la URL de GitHub Pages automáticamente (la del repo `Gamee` sería `/Gamee/`): usa la
+    configurada y avisa si no coinciden.

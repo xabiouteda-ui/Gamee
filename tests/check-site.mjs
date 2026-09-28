@@ -67,7 +67,38 @@ for (const file of htmlFiles) {
   check(!html.includes("googlesyndication"), `${rel}: el HTML no debe cargar AdSense directamente`);
 }
 
-// 4. Archivos auxiliares.
+// 4. Publicación en subcarpeta (p. ej. usuario.github.io/game/): nada puede usar rutas absolutas "/...".
+const cfg = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
+const home = readFileSync(join(SITE, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
+check(home.endsWith("/"), `La URL canónica de la portada debe acabar en "/": ${home}`);
+if (!process.env.SITE_ORIGIN && !process.env.BASE_PATH) {
+  const expected = cfg.siteOrigin.replace(/\/+$/, "") + ("/" + cfg.basePath + "/").replace(/\/{2,}/g, "/");
+  check(home === expected, `La portada debe tener canonical ${expected} y tiene ${home}`);
+}
+for (const file of walk(SITE).filter((f) => /\.(html|css|js|xml|txt)$/.test(f))) {
+  const rel = file.slice(SITE.length + 1);
+  const text = readFileSync(file, "utf8");
+  const rootRel = [
+    ...text.matchAll(/(?:href|src|action|content)\s*=\s*["']\/(?!\/)[^"']*["']/g),
+    ...text.matchAll(/url\(\s*["']?\/(?!\/)[^)]*\)/g),
+    ...text.matchAll(/new (?:Worker|URL)\(\s*["'`]\/(?!\/)/g),
+    ...text.matchAll(/import\s*\(?\s*["']\/(?!\/)/g),
+    ...text.matchAll(/from\s+["']\/(?!\/)/g),
+  ].map((m) => m[0]);
+  check(!rootRel.length, `${rel}: usa rutas absolutas desde la raíz (fallan en una subcarpeta): ${rootRel.slice(0, 3).join(" | ")}`);
+  // Toda URL absoluta a nuestro dominio debe incluir la ruta base.
+  for (const m of text.matchAll(/(?:href|content|<loc>)="?(https?:\/\/[^"<\s]+)/g)) {
+    const u = m[1];
+    if (u.startsWith(cfg.siteOrigin) || u.startsWith(new URL(home).origin)) {
+      check(u.startsWith(home), `${rel}: URL absoluta sin la ruta base → ${u}`);
+    }
+  }
+}
+for (const m of readFileSync(join(SITE, "sitemap.xml"), "utf8").matchAll(/(?:<loc>|href=")([^<"]+)/g)) {
+  check(m[1].startsWith(home), `sitemap.xml: URL fuera de la ruta base → ${m[1]}`);
+}
+
+// 5. Archivos auxiliares.
 check(existsSync(join(SITE, "sitemap.xml")), "Falta sitemap.xml");
 check(existsSync(join(SITE, "robots.txt")), "Falta robots.txt");
 check(existsSync(join(SITE, ".nojekyll")), "Falta .nojekyll");
