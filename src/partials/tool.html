@@ -1,0 +1,70 @@
+<section class="tool card" id="tool" aria-label="{{t.start}}">
+  <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-hint">
+    <svg class="drop-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a1 1 0 0 1 2 0 5 5 0 0 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21a1 1 0 1 1-2 0v-2.07A7 7 0 0 1 5 12Z"/></svg>
+    <strong>{{t.dropTitle}}</strong>
+    <span id="drop-hint" class="muted">{{t.dropHint}}</span>
+    <input type="file" id="file-input" accept="audio/*,video/*,.opus,.ogg,.oga,.m4a,.aac,.flac,.wav,.mp3,.mp4,.mov,.webm,.mkv,.3gp,.amr" hidden>
+  </div>
+
+  <div class="file-box" id="file-box" hidden>
+    <div class="file-head">
+      <span class="file-name" id="file-name"></span>
+      <button type="button" class="btn-link" id="change-btn">{{t.changeFile}}</button>
+    </div>
+    <audio id="player" controls preload="metadata"></audio>
+  </div>
+  <p class="warn" id="warn" hidden></p>
+
+  <div class="record-row">
+    <span class="muted">{{t.or}}</span>
+    <button type="button" class="btn btn-ghost" id="record-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg><span>{{t.record}}</span></button>
+    <span class="record-time" id="record-time" hidden></span>
+  </div>
+
+  <div class="options">
+    <label>{{t.language}}
+      <select id="opt-language">
+        {{languageOptions}}
+      </select>
+    </label>
+    <label>{{t.quality}}
+      <select id="opt-quality">
+        <option value="tiny">{{t.qTiny}}</option>
+        <option value="base" selected>{{t.qBase}}</option>
+        <option value="small">{{t.qSmall}}</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="opt-translate"> {{t.translate}}</label>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-primary" id="start-btn" disabled>{{t.start}}</button>
+    <button type="button" class="btn btn-ghost" id="cancel-btn" hidden>{{t.cancel}}</button>
+  </div>
+  <p class="privacy-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1 14-4-4 1.4-1.4 2.6 2.6 5.6-5.6L18 9l-7 7Z"/></svg>{{t.privacyNote}}</p>
+
+  <div class="status" id="status" hidden aria-live="polite">
+    <p id="status-text"></p>
+    <progress id="bar" max="100"></progress>
+    <p class="device muted" id="device" hidden></p>
+  </div>
+</section>
+
+<div class="ad-slot" data-slot="result"></div>
+
+<section class="result card" id="result" hidden aria-labelledby="result-title">
+  <div class="result-head">
+    <h2 id="result-title">{{t.result}}</h2>
+    <span class="muted" id="word-count"></span>
+  </div>
+  <p class="muted small">{{t.resultHint}}</p>
+  <label class="check small"><input type="checkbox" id="opt-times" checked> {{t.showTimes}}</label>
+  <div class="segments" id="segments"></div>
+  <div class="result-actions">
+    <button type="button" class="btn btn-primary" id="copy-btn"><span>{{t.copy}}</span></button>
+    <button type="button" class="btn btn-ghost" data-export="txt">{{t.download}} TXT</button>
+    <button type="button" class="btn btn-ghost" data-export="srt">{{t.download}} SRT</button>
+    <button type="button" class="btn btn-ghost" data-export="vtt">{{t.download}} VTT</button>
+    <button type="button" class="btn-link" id="new-btn">{{t.newFile}}</button>
+  </div>
+</section>
