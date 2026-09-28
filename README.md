@@ -60,16 +60,15 @@ npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium,
 - **URL pública y ruta base** (`site.config.json`):
   ```json
   "siteOrigin": "https://xabiouteda-ui.github.io",
-  "basePath": "/game/"
+  "basePath": "/Gamee/"
   ```
-  Juntos forman la URL pública (`https://xabiouteda-ui.github.io/game/`), que se usa **solo** para las URLs
+  Juntos forman la URL pública (`https://xabiouteda-ui.github.io/Gamee/`), que se usa **solo** para las URLs
   absolutas: canonical, hreflang, sitemap, Open Graph y la página 404. Todo lo demás (enlaces entre páginas, CSS,
   JS, el worker, imágenes) usa rutas relativas, así que la web funciona igual en una subcarpeta o en la raíz. Las
   pruebas fallan si alguna página, CSS o JS usa una ruta que empiece por `/`.
-- **Importante:** `basePath` debe coincidir con el nombre del repositorio. Este repositorio se llama `Gamee`, así que
-  GitHub Pages lo publicará en `/Gamee/`. Para usar `/game/`, renombra el repositorio a `game` (**Settings →
-  General → Repository name**) o cambia `basePath` a `"/Gamee/"`. Si no coinciden, el workflow muestra un aviso
-  (la web funciona, pero canonical y sitemap apuntarían a otra URL y Google no la indexaría bien).
+- **Importante:** `basePath` debe coincidir exactamente con el nombre del repositorio (mayúsculas incluidas). Si
+  renombras el repositorio, cambia también `basePath`. Si no coinciden, el workflow muestra un aviso (la web
+  funciona, pero canonical y sitemap apuntarían a otra URL y Google no la indexaría bien).
 - También puedes cambiarlos sin tocar código con las variables `SITE_ORIGIN` y `BASE_PATH` en **Settings → Secrets
   and variables → Actions → Variables**.
 
@@ -86,7 +85,7 @@ así que para monetizar necesitas un dominio (unos 10 €/año, es el único cos
 4. Da de alta el dominio en Google Search Console y envía `https://tudominio.com/sitemap.xml`.
 
 Mientras la web esté en una subcarpeta de `github.io`, `robots.txt` y `ads.txt` no están en la raíz del dominio y
-los buscadores los ignoran: envía el sitemap a mano en Search Console (`https://xabiouteda-ui.github.io/game/sitemap.xml`).
+los buscadores los ignoran: envía el sitemap a mano en Search Console (`https://xabiouteda-ui.github.io/Gamee/sitemap.xml`).
 
 ## Activar los anuncios (Google AdSense)
 
