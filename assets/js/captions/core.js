@@ -12,9 +12,10 @@ function weight(word) {
 
 // Convierte segmentos {start,end,text,words?} en una lista plana de palabras {text,start,end}.
 // Si un segmento no trae tiempos por palabra, se reparten proporcionalmente a su longitud.
-export function segmentsToWords(segments) {
+// Con { keepCues: true } cada palabra recuerda su segmento para no mezclar líneas de un SRT importado.
+export function segmentsToWords(segments, { keepCues = false } = {}) {
   const out = [];
-  for (const seg of segments) {
+  for (const [cue, seg] of segments.entries()) {
     if (seg.words && seg.words.length) {
       for (const w of seg.words) if (w.text.trim()) out.push({ text: w.text.trim(), start: w.start, end: w.end });
       continue;
@@ -26,7 +27,7 @@ export function segmentsToWords(segments) {
     let t = seg.start;
     for (const tok of tokens) {
       const d = (dur * weight(tok)) / total;
-      out.push({ text: tok, start: t, end: t + d });
+      out.push(keepCues ? { text: tok, start: t, end: t + d, cue } : { text: tok, start: t, end: t + d });
       t += d;
     }
   }
@@ -34,11 +35,17 @@ export function segmentsToWords(segments) {
 }
 
 // Agrupa palabras en líneas cortas (lo que se ve en pantalla a la vez).
-export function groupWords(words, { maxWords = 3, maxChars = 22, maxGap = 0.7 } = {}) {
+export function groupWords(words, { maxWords = 3, maxChars = Math.max(14, maxWords * 8), maxGap = 0.7 } = {}) {
   const lines = [];
   let cur = null;
   for (const w of words) {
     const prev = cur?.words.at(-1);
+    if (w.cue != null) {
+      // Líneas de un SRT importado: se respetan tal cual.
+      if (!cur || prev.cue !== w.cue) { cur = { words: [] }; lines.push(cur); }
+      cur.words.push({ ...w });
+      continue;
+    }
     const chars = cur ? cur.words.reduce((a, x) => a + x.text.length + 1, 0) + w.text.length : 0;
     const breakHere = !cur
       || cur.words.length >= maxWords
@@ -69,7 +76,9 @@ export function groupWords(words, { maxWords = 3, maxChars = 22, maxGap = 0.7 } 
 // Sustituye el texto de una línea editada por el usuario, repartiendo su tiempo entre las nuevas palabras.
 export function retimeLine(line, newText) {
   const speechEnd = line.words.at(-1)?.end ?? line.end;
+  const cue = line.words[0]?.cue;
   const words = newText.trim() ? segmentsToWords([{ start: line.start, end: speechEnd, text: newText }]) : [];
+  if (cue != null) for (const w of words) w.cue = cue;
   return { ...line, words, text: words.map((w) => w.text).join(" ") };
 }
 

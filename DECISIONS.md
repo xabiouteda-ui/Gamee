@@ -107,3 +107,23 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     consumo eléctrico con comparador de tarifas a partir del CSV (4,05). Se descarta "limpiar la voz" porque con
     modelos autocontenidos (RNNoise) el resultado sería peor que alternativas gratis existentes, y DeepFilterNet
     solo está empaquetado con el modelo en el CDN de un tercero.
+33. **Subtítulos animados: arquitectura.** Mismo worker de Whisper que Transcribe Libre (nuevo modo por palabra con
+    `onnx-community/whisper-base_timestamped`, el único multilingüe con marcas por palabra confirmado). Si el modelo
+    no devuelve tiempos por palabra, el worker vuelve al modo por frases y la página reparte el tiempo entre las
+    palabras según su longitud (y lo avisa). El vídeo se crea con **Mediabunny 1.60 (MPL-2.0)** desde jsDelivr:
+    descodifica, dibujamos cada fotograma + subtítulos en un canvas y lo vuelve a codificar con WebCodecs.
+34. **Formato de salida:** MP4 con el primer códec que el navegador pueda codificar (H.264 → HEVC → VP9 → AV1) y,
+    si ninguno, WebM. En Chrome normal sale H.264; en el Chromium de las pruebas sale VP9+Opus dentro de MP4 (probado).
+    Vídeos de más de 1920 px se reducen a 1080p para exportar rápido. La rotación se aplica a los fotogramas.
+35. **Fuentes propias (OFL) servidas desde el sitio** (Montserrat 900, Anton, Bangers, ~60 KB): así el vídeo final
+    se ve igual en todos los dispositivos y no dependemos de Google Fonts (sin terceros extra en privacidad).
+36. **Nombres de plataformas en el contenido.** Se nombran de forma descriptiva (Reels, TikTok, Shorts) porque es
+    lo que la gente busca y tú lo pediste en la fase 4; sin logos ni aspecto de afiliación, con aviso en el aviso
+    legal y en la página de plataformas. Sustituye a la decisión 3 para el texto (no para logos).
+37. **SRT importado:** sus líneas se respetan tal cual (no se reparten en grupos de N palabras) hasta que el usuario
+    mueve el control «Palabras por línea». En la página «incrustar» el estilo por defecto es «Clásico».
+38. **En móvil también se usa por defecto el modo palabra a palabra** (≈80 MB): el efecto karaoke es el valor
+    principal y los vídeos cortos se procesan rápido; el usuario puede elegir «Rápida».
+39. **Pruebas nuevas:** `tests/unit-captions.mjs` (Node, sin dependencias, también en el workflow) y
+    `tests/e2e-captions.cjs`, que genera un vídeo real en Chromium, simula solo el reconocimiento de voz, exporta
+    con Mediabunny real y comprueba en los fotogramas del MP4 resultante que los subtítulos están grabados.

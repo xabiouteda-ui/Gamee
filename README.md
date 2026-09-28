@@ -41,7 +41,10 @@ Pruebas:
 
 ```bash
 node tests/check-site.mjs          # SEO, enlaces rotos, rutas "/..." absolutas, JSON-LD, exportación
-npm i --no-save playwright && node tests/e2e.cjs   # flujo completo en Chromium, servido bajo basePath
+node tests/unit-captions.mjs       # lógica de los subtítulos animados
+npm i --no-save playwright mediabunny@1.60.0
+node tests/e2e.cjs                 # transcriptor en Chromium, servido bajo basePath
+node tests/e2e-captions.cjs        # subtítulos animados: genera, exporta y revisa un vídeo real
 ```
 
 ## Publicar en GitHub Pages

@@ -50,7 +50,7 @@ function readPages() {
   const pages = [];
   for (const lang of ["es", "en"]) {
     const dir = join(ROOT, "src/pages", lang);
-    for (const f of readdirSync(dir).filter((f) => f.endsWith(".html")).sort()) {
+    for (const f of readdirSync(dir, { recursive: true }).filter((f) => f.endsWith(".html")).sort()) {
       const raw = readFileSync(join(dir, f), "utf8");
       const m = raw.match(/^<!--\s*(\{[\s\S]*?\})\s*-->\s*/);
       if (!m) throw new Error(`Falta la cabecera JSON en ${lang}/${f}`);

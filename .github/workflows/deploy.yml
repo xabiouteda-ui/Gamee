@@ -49,7 +49,9 @@ jobs:
           fi
 
       - name: Comprobaciones
-        run: node tests/check-site.mjs
+        run: |
+          node tests/check-site.mjs
+          node tests/unit-captions.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:
