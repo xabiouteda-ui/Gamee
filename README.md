@@ -53,6 +53,7 @@ Pruebas:
 node tests/check-site.mjs          # SEO, enlaces rotos, rutas "/..." absolutas, JSON-LD, exportación
 node tests/unit-captions.mjs       # lógica de los subtítulos animados
 node tests/unit-luz.mjs            # periodos 2.0TD, lectura de CSV y cálculo de facturas
+node tests/unit-monetizacion.mjs   # afiliados, patrocinados, placas, licencias Pro, Word y Telegram
 npm i --no-save playwright mediabunny@1.60.0 axe-core
 bash tests/run-all.sh              # todo seguido; se detiene en el primer fallo
 node tests/e2e.cjs                 # transcriptor en Chromium, servido bajo basePath
@@ -149,6 +150,68 @@ tráfico orgánico e indexación en Search Console, y no pulses tus propios anun
   `"tool"` puede ser `true` (transcriptor), `"captions"` o `"luz"`.
   Usa `"alt": "en/otra.html"` para enlazar la versión en otro idioma (hreflang) y `"faqSchema": true` para generar
   datos estructurados de preguntas frecuentes a partir de los `<details>`.
+
+## Monetización (todo desactivado por defecto)
+
+Además de AdSense hay cinco vías preparadas. Ninguna se ve ni hace peticiones a terceros hasta que la activas.
+Cómo se explica al público: página `/como-ganamos-dinero.html` (enlazada en el pie).
+
+### Enlaces de afiliado (`data/afiliados.json`)
+
+Recomendaciones de texto que salen **solo en la pantalla de resultado** (tras exportar un vídeo con subtítulos y tras
+transcribir), con la etiqueta «Enlace de afiliado» y `rel="sponsored nofollow"`. Para activar una: date de alta en
+su programa de afiliados, pega tu enlace en `"url"` (con `https://`), pon `"enabled": true` en esa entrada y
+`"enabled": true` arriba del todo. Puedes cambiar los textos o añadir entradas copiando una (`"where"`:
+`"subtitulos"` y/o `"transcripcion"`).
+
+### Ofertas de luz patrocinadas (`data/ofertas.json`)
+
+Si una comercializadora te paga por contrato: en su tarifa pon `"sponsored": true` y `"affiliateUrl": "https://…"`,
+y arriba `"sponsoredEnabled": true`. Se marca como «Patrocinado» y aparece en el hueco «Ofertas patrocinadas» con
+**su puesto real por precio**: nunca sube en la lista (lo exige la ley de consumidores). El bloque de placas solares
+usa los parámetros de `"solar"` en el mismo archivo.
+
+### Versión Pro de pago único (`data/pro.json`)
+
+1. Crea las claves: `node scripts/pro-keys.mjs init`. Guarda `pro-private-key.json` en un sitio seguro (gestor de
+   contraseñas): **no se sube a git** (está en `.gitignore`). La clave pública queda en `data/pro.json`.
+2. Crea el producto en **Paddle** o **Stripe (Managed Payments)** como pago único y copia su enlace de pago en
+   `"checkoutUrl"`; en `"provider"` pon `"paddle"` o `"stripe"`. Ellos cobran y gestionan el IVA de la UE.
+3. Pon el precio que decidas en `"price"` (texto, p. ej. `"24 €, IVA incluido"`) y `"enabled": true`. Commit y push:
+   `/pro.html` pasa a indexarse y las funciones Pro aparecen (bloqueadas) en las herramientas.
+4. Por cada venta, genera una clave con `node scripts/pro-keys.mjs issue` y envíasela al comprador. Él la pega en
+   `/pro.html` y queda activada en su navegador.
+
+Pro desbloquea: fuentes propias, kit de marca guardado, estilos «Titular» y «Suave», exportación hasta 4K, varios
+vídeos seguidos, exportar la transcripción a Word y el crédito quitado por defecto. Todo lo gratis sigue gratis.
+
+### Crédito «Hecho con Herramientas Libres»
+
+Pequeña marca en la esquina superior de los vídeos exportados, activada por defecto y que cualquiera puede quitar con
+una casilla. Con dominio propio añade el dominio automáticamente.
+
+### Canal de Telegram «Precio de la luz mañana»
+
+`.github/workflows/telegram.yml` publica cada día a las 20:40 (hora de Madrid) las horas más baratas y más caras de
+mañana. Para activarlo:
+
+1. En Telegram, habla con **@BotFather** → `/newbot` → elige nombre y usuario. Te da un **token** (`123456:ABC…`).
+2. Crea un **canal** público (p. ej. `@precioluzmanana`) y añade tu bot como **administrador** con permiso para
+   publicar mensajes.
+3. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**:
+   - `TELEGRAM_BOT_TOKEN` = el token del paso 1.
+   - `TELEGRAM_CHAT_ID` = el nombre del canal con `@` (p. ej. `@precioluzmanana`). Para un canal privado usa su
+     identificador numérico (empieza por `-100`).
+4. Pruébalo en **Actions → Precio de la luz mañana en Telegram → Run workflow** (a partir de las 20:30, cuando REE
+   ya ha publicado los precios de mañana).
+
+Sin los secretos el workflow termina bien sin publicar nada. Los horarios programados solo funcionan en `main`.
+
+### Widget «precio de la luz hoy»
+
+Página `/luz/widget-precio-luz.html` con la vista previa y el código para copiar (un `iframe` a
+`/widget/luz-hoy.html` + un enlace de atribución a la página de precios). Opción `?tema=claro|oscuro`. Usa
+`data/pvpc-hoy.json` (≈1 KB, lo genera el build) para no descargar el año entero en webs ajenas.
 
 ## Límites conocidos
 

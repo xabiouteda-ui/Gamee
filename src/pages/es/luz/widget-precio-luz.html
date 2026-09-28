@@ -1,0 +1,43 @@
+<!--{
+  "slug": "luz/widget-precio-luz.html",
+  "script": "assets/js/luz/widget-page.js",
+  "title": "Widget gratis del precio de la luz hoy para tu web",
+  "description": "Inserta gratis en tu web o blog el precio de la luz de hoy por horas (PVPC), actualizado cada día con datos de Red Eléctrica. Copia y pega el código."
+}-->
+<section class="hero">
+  <h1>Widget gratis: precio de la luz hoy</h1>
+  <p class="lead">Pon en tu web, blog o periódico digital el precio de la luz de hoy hora a hora. Se actualiza solo cada día con los datos de Red Eléctrica. Gratis, sin registro y sin cookies.</p>
+</section>
+
+<div class="widget-demo">
+  <section class="card">
+    <h2>Así se ve</h2>
+    <iframe id="widget-preview" src="{{root}}widget/luz-hoy.html" title="Precio de la luz hoy" width="100%" height="330" loading="lazy"></iframe>
+  </section>
+  <section class="card">
+    <h2>Copia el código</h2>
+    <form class="widget-opts" id="widget-opts">
+      <label>Tema
+        <select id="w-tema">
+          <option value="">Automático (el del sistema del visitante)</option>
+          <option value="claro">Claro</option>
+          <option value="oscuro">Oscuro</option>
+        </select>
+      </label>
+    </form>
+    <label class="sr-only" for="widget-code">Código para insertar</label>
+    <textarea id="widget-code" class="widget-code" rows="7" readonly data-widget="{{siteUrl}}/widget/luz-hoy.html" data-page="{{siteUrl}}/luz/precio-luz-hoy.html"></textarea>
+    <p><button type="button" class="btn btn-primary" id="widget-copy">Copiar código</button> <span class="muted small" id="widget-copied" aria-live="polite"></span></p>
+  </section>
+</div>
+
+<article class="content">
+  <h2>Condiciones de uso</h2>
+  <ul>
+    <li>Es gratis, también en webs comerciales y medios de comunicación.</li>
+    <li>Mantén el enlace de la fuente que va debajo del widget.</li>
+    <li>El widget no usa cookies ni recoge datos de tus visitantes. Solo carga un archivo pequeño con los precios del día.</li>
+    <li>Los precios son los de la tarifa regulada (PVPC 2.0TD, península), en €/kWh sin impuestos, publicados por Red Eléctrica.</li>
+  </ul>
+  <p>¿Quieres ver el gráfico completo de hoy y de mañana? Está en <a href="{{root}}luz/precio-luz-hoy.html">precio de la luz hoy por horas</a>. ¿Necesitas otro formato o datos para un artículo? Escríbenos desde <a href="{{root}}contacto.html">contacto</a>.</p>
+</article>

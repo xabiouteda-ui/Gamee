@@ -262,3 +262,15 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     páginas y quitarlo empeoraría el producto gratis; se puede revisar con datos.
 74. **Pagos:** enlace de pago de Paddle o Stripe (Managed Payments) en `checkoutUrl`: son «merchant of record» y
     se ocupan del IVA de la UE. La web no toca datos de tarjeta. Privacidad actualizada (es y en).
+75. **Telegram a las 20:40 de Madrid:** los `cron` de GitHub van en UTC y no entienden el horario de verano, así
+    que hay dos (18:40 y 19:40 UTC) y un primer paso que compara `github.event.schedule` con el desfase real de
+    Madrid para publicar solo una vez (aunque GitHub retrase el cron). El script pide a REE solo el día de mañana
+    (a esa hora `data/pvpc.json` de la web aún no está actualizado: el despliegue diario es a las 19:35 UTC) y
+    reintenta 4 veces cada 5 min si aún no están. Sin secretos, sin precios o si Telegram rechaza el mensaje:
+    aviso en el registro y termina en verde. El token nunca se imprime. Probado con un servidor local que simula
+    REE y Telegram (`tests/unit-monetizacion.mjs`); no se ha probado con un bot real.
+76. **Widget con iframe** (no un script que se ejecute en la web ajena): más seguro para quien lo inserta y no
+    puede romper su página. Página `/widget/luz-hoy.html` «desnuda» (sin menú ni anuncios, `noindex`, fuera del
+    sitemap) con CSS propio de 2 KB y un JSON de 4 días (`data/pvpc-hoy.json`) en vez de los ~400 días; si no
+    existe, usa `pvpc.json`. El enlace de atribución va **fuera** del iframe en el código para copiar (dentro de un
+    iframe no cuenta para buscadores) y también dentro del widget. Tema claro/oscuro/automático. Sin cookies.

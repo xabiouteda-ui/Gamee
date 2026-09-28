@@ -8,6 +8,10 @@ import { sampleRows, periodOf, RULES } from "../assets/js/luz/core.js";
 import { parseKey, verifyKey } from "../assets/js/pro.js";
 import { newKeyPair, issueKey } from "../scripts/pro-keys.mjs";
 import { toDOCX, crc32 } from "../assets/js/docx.js";
+import { buildMessage } from "../scripts/telegram-pvpc.mjs";
+import { dayStats } from "../assets/js/luz/pvpc.js";
+import { createServer } from "node:http";
+import { execFile } from "node:child_process";
 
 let n = 0;
 const test = async (name, fn) => { await fn(); n++; console.log("✓ " + name); };
@@ -125,6 +129,70 @@ await test("Word: ZIP válido (firmas y CRC) con el texto escapado", () => {
   }
   assert.deepEqual(names, ["[Content_Types].xml", "_rels/.rels", "word/document.xml"]);
   assert.ok(doc.includes("Hola &lt;mundo&gt; &amp; «ñandú»") && doc.includes("[0:05] ") && doc.includes(">Acta<"));
+});
+
+// Precios de un día de prueba: baratos de 2 a 5, caros de 19 a 21.
+const PRICES = Array.from({ length: 24 }, (_, h) => (h >= 2 && h <= 4 ? 0.05 + h / 1000 : h >= 19 && h <= 21 ? 0.25 + h / 1000 : 0.12));
+
+await test("Telegram: mensaje con horas más baratas, más caras, mejor franja y enlace", () => {
+  const st = dayStats({ days: { "2026-09-29": PRICES } }, "2026-09-29");
+  const msg = buildMessage(st, "https://ejemplo.es/luz/precio-luz-hoy.html?a=1&b=2");
+  assert.match(msg, /Precio de la luz mañana, martes, 29 de septiembre/);
+  assert.match(msg, /Más baratas:<\/b> 02:00–03:00 \(0,052\), 03:00–04:00 \(0,053\), 04:00–05:00 \(0,054\)/);
+  assert.match(msg, /Más caras:<\/b> 19:00–20:00 \(0,269\), 20:00–21:00 \(0,270\), 21:00–22:00 \(0,271\)/);
+  assert.match(msg, /Mejor franja de 3 h:<\/b> 02:00–05:00/);
+  assert.ok(msg.includes('href="https://ejemplo.es/luz/precio-luz-hoy.html?a=1&amp;b=2"'), "URL escapada en HTML");
+  assert.ok(msg.length < 4096, "cabe en un mensaje de Telegram");
+});
+
+// Ejecuta el script contra un servidor local que simula REE y Telegram.
+async function runTelegram(env, { reeStatus = 200 } = {}) {
+  const sent = [];
+  const srv = createServer((req, res) => {
+    if (req.url.startsWith("/ree")) {
+      const date = new URL(req.url, "http://x").searchParams.get("start_date").slice(0, 10);
+      if (reeStatus !== 200) { res.writeHead(reeStatus); return res.end(); }
+      const values = PRICES.map((p, h) => ({ value: p * 1000, datetime: `${date}T${String(h).padStart(2, "0")}:00:00.000+02:00` }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ included: [{ type: "PVPC", attributes: { title: "PVPC", values } }] }));
+    }
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => { sent.push({ url: req.url, body: JSON.parse(body) }); res.writeHead(200, { "Content-Type": "application/json" }); res.end('{"ok":true}'); });
+  });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  const out = await new Promise((resolve) => execFile(process.execPath, ["scripts/telegram-pvpc.mjs"], {
+    cwd: new URL("..", import.meta.url).pathname,
+    env: { PATH: process.env.PATH, REE_API: base + "/ree", TELEGRAM_API: base, RETRY_MS: "10", ...env },
+  }, (err, stdout) => resolve({ code: err?.code ?? 0, stdout })));
+  srv.close();
+  return { ...out, sent };
+}
+
+await test("Telegram: sin secretos no publica y no falla", async () => {
+  const r = await runTelegram({});
+  assert.equal(r.code, 0);
+  assert.equal(r.sent.length, 0);
+  assert.match(r.stdout, /Faltan los secretos/);
+});
+
+await test("Telegram: con secretos publica el precio de mañana en el canal", async () => {
+  const r = await runTelegram({ TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_CHAT_ID: "@canal" });
+  assert.equal(r.code, 0);
+  assert.equal(r.sent.length, 1);
+  assert.equal(r.sent[0].url, "/bot123:abc/sendMessage");
+  assert.equal(r.sent[0].body.chat_id, "@canal");
+  assert.equal(r.sent[0].body.parse_mode, "HTML");
+  assert.match(r.sent[0].body.text, /Más baratas/);
+  assert.ok(!r.stdout.includes("123:abc"), "el token no aparece en el registro");
+});
+
+await test("Telegram: si REE no tiene los precios, avisa y termina bien", async () => {
+  const r = await runTelegram({ TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_CHAT_ID: "@canal" }, { reeStatus: 500 });
+  assert.equal(r.code, 0);
+  assert.equal(r.sent.length, 0);
+  assert.match(r.stdout, /No hay precios del PVPC/);
 });
 
 console.log(`\n${n} pruebas de monetización correctas.`);

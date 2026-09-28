@@ -422,3 +422,10 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .pro-price { font-size: 1.6rem; font-weight: 800; margin: 4px 0 12px; }
 .pro-activate { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .pro-activate input { flex: 1 1 280px; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+
+/* Página del widget de la luz */
+.widget-demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 20px 0; }
+.widget-demo h2 { margin-top: 0; }
+.widget-demo iframe { border: 0; max-width: 420px; display: block; }
+.widget-opts label { display: grid; gap: 4px; margin-bottom: 10px; }
+.widget-code { width: 100%; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); resize: vertical; }

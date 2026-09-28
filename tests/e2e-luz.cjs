@@ -164,6 +164,36 @@ function makeCsv() {
     await ctx.close();
   }
 
+  // 7c. Widget «precio de la luz hoy» para otras webs
+  {
+    const { ctx, external } = await newContext(browser, srv, { viewport: { width: 420, height: 330 } }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    await page.goto(srv.base + "/widget/luz-hoy.html");
+    await page.waitForSelector(".w-price");
+    check(/^\d,\d{3}$/.test(await page.textContent(".w-price")) && /Ahora \(\d\d–\d\d h\)/.test(await page.textContent(".w-label")), "Widget: precio de la hora actual (" + (await page.textContent(".w-price")) + ")");
+    check((await page.locator("#w-chart span").count()) === 24 && (await page.locator("#w-chart span.now").count()) === 1, "Widget: gráfico de 24 horas con la hora actual marcada");
+    check(/Más barata: \d\d–\d\d h/.test(await page.textContent("#w-extremes")), "Widget: hora más barata y más cara");
+    check((await page.getAttribute(".w-foot a", "href")).endsWith("luz/precio-luz-hoy.html") && (await page.getAttribute(".w-foot a", "target")) === "_blank", "Widget: enlace de atribución que abre la web");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    check(overflow <= 0, "Widget: cabe en 420 px sin scroll horizontal");
+    await page.screenshot({ path: path.join(OUT, "widget-luz.png") });
+    await page.goto(srv.base + "/widget/luz-hoy.html?tema=oscuro");
+    await page.waitForSelector(".w-price");
+    check((await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(23, 23, 31)", "Widget: tema oscuro con ?tema=oscuro");
+    await page.screenshot({ path: path.join(OUT, "widget-luz-oscuro.png") });
+    check(external.length === 0 && errs.length === 0, "Widget: sin peticiones a terceros ni errores");
+    // Página con el código para copiar
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(srv.base + "/luz/widget-precio-luz.html");
+    const code = await page.inputValue("#widget-code");
+    check(code.includes('<iframe src="https://') && code.includes("/widget/luz-hoy.html") && /<a href="https:\/\/[^"]+\/luz\/precio-luz-hoy\.html">/.test(code), "Página del widget: código con iframe y enlace de atribución absolutos");
+    await page.selectOption("#w-tema", "oscuro");
+    check((await page.inputValue("#widget-code")).includes("?tema=oscuro"), "Página del widget: el código cambia con el tema");
+    await ctx.close();
+  }
+
   // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });

@@ -14,7 +14,10 @@ const CDN = {
 
 function localMediabunny() {
   if (process.env.MEDIABUNNY_LIB) return process.env.MEDIABUNNY_LIB;
-  try { return require.resolve("mediabunny/dist/bundles/mediabunny.min.mjs"); } catch { return null; }
+  try { return require.resolve("mediabunny/dist/bundles/mediabunny.min.mjs"); } catch {}
+  // Las versiones recientes de mediabunny no exponen esa ruta en "exports": se busca el archivo directamente.
+  const direct = path.join(__dirname, "..", "node_modules", "mediabunny", "dist", "bundles", "mediabunny.min.mjs");
+  return fs.existsSync(direct) ? direct : null;
 }
 
 function serve() {

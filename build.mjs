@@ -197,6 +197,28 @@ function appSchema(page, url) {
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
+// Página «desnuda» para insertar en otras webs con un iframe (widget): sin cabecera, menú, pie ni anuncios.
+function bareLayout(page, url, root) {
+  const body = page.body.replace(/\{\{root\}\}/g, root).replace(/\{\{siteUrl\}\}/g, siteUrl);
+  return `<!doctype html>
+<html lang="${page.lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(page.title)}</title>
+<meta name="description" content="${esc(page.description)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="noindex">
+${page.style ? `<link rel="stylesheet" href="${root}${page.style}">` : ""}
+</head>
+<body>
+${body.trim()}
+${page.script ? `<script type="module" src="${root}${page.script}"></script>` : ""}
+</body>
+</html>
+`;
+}
+
 function layout(page, pagesBySlug) {
   const lang = page.lang;
   const ui = UI[lang];
@@ -208,6 +230,7 @@ function layout(page, pagesBySlug) {
   const alt = page.alt != null ? pagesBySlug.get(page.alt) : null;
   const altUrl = alt ? `${siteUrl}/${alt.slug.replace(/index\.html$/, "")}` : null;
   const L = LINKS[lang];
+  if (page.bare) return bareLayout(page, url, root);
 
   const schemas = [];
   const tool = toolOf(page);
@@ -234,6 +257,7 @@ function layout(page, pagesBySlug) {
     .replace("{{pvpcAverages}}", () => pvpcAverages())
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
+    .replace(/\{\{siteUrl\}\}/g, siteUrl)
     .replace(/\{\{moneyHref\}\}/g, () => href(L.money))
     .replace(/\{\{proHref\}\}/g, () => href("pro.html"))
     .replace(/\{\{root\}\}/g, root);
@@ -313,6 +337,13 @@ function build() {
   // Datos de las herramientas (tarifas de luz a mano; data/pvpc.json lo genera scripts/fetch-pvpc.mjs en Actions).
   if (existsSync(join(ROOT, "data"))) cpSync(join(ROOT, "data"), join(OUT, "data"), { recursive: true, filter: (src) => !/\/\./.test(src.slice(ROOT.length)) });
   writeFileSync(join(OUT, ".nojekyll"), "");
+  // Versión ligera del PVPC para el widget (de ayer a pasado mañana): ~1 KB en vez de todo el año.
+  if (existsSync(join(ROOT, "data", "pvpc.json"))) {
+    const pv = JSON.parse(readFileSync(join(ROOT, "data", "pvpc.json"), "utf8"));
+    const keep = [-1, 0, 1, 2].map((d) => madridDate(d));
+    const days = Object.fromEntries(keep.filter((d) => pv.days?.[d]).map((d) => [d, pv.days[d]]));
+    writeFileSync(join(OUT, "data", "pvpc-hoy.json"), JSON.stringify({ updated: pv.updated, source: pv.source, days }));
+  }
 
   const pages = readPages();
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
@@ -322,7 +353,7 @@ function build() {
     writeFileSync(dest, layout(p, bySlug));
   }
 
-  const indexable = pages.filter((p) => !p.noindex && !(p.proPage && !proOn));
+  const indexable = pages.filter((p) => !p.noindex && !p.bare && !(p.proPage && !proOn));
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${indexable.map((p) => {

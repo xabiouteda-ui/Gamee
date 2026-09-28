@@ -2,6 +2,49 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
+## Sesión 4 (28/09/2026) – monetización más allá de AdSense
+
+| Tarea del plan | Estado |
+|---|---|
+| 1. Afiliados en pantallas de resultado | ✅ (desactivados) |
+| 2. Pro de pago único con clave de licencia | ✅ (desactivado) |
+| 3. Crédito «Hecho con Herramientas Libres» | ✅ (activado, se puede quitar) |
+| 4. Luz: orden por precio, patrocinados, «Cómo ganamos dinero», placas solares | ✅ |
+| 5. Telegram: precio de mañana a las 20:40 | ✅ (falta crear el bot) |
+| 6. Widget «precio de la luz hoy» | ✅ |
+
+**Qué cambia para quien visita la web hoy (con todo lo de pago desactivado)**
+- Los vídeos exportados llevan un crédito pequeño «Hecho con Herramientas Libres» arriba; se quita con una casilla.
+- En la luz, tras analizar el CSV: bloque **«¿Te salen a cuenta las placas solares?»** con ahorro al año y años para
+  recuperar la inversión (orientativo, sin pedir datos). Nota de que la lista va ordenada por precio.
+- Página **«Cómo ganamos dinero»** en el pie de todas las páginas.
+- Página del **widget** (`/luz/widget-precio-luz.html`), enlazada desde «precio de la luz hoy».
+
+**Preparado pero apagado (se activa editando un archivo, ver README → «Monetización»)**
+- **Afiliados** (`data/afiliados.json`): doblaje/voz, clips, música, transcripción revisada, traducción. Sin enlaces.
+- **Ofertas patrocinadas** en la luz (`data/ofertas.json`): marcadas y sin cambiar de puesto.
+- **Pro** (`data/pro.json` + `scripts/pro-keys.mjs`): fuentes propias, kit de marca, 2 estilos extra, 4K, varios
+  vídeos seguidos, Word. Página `/pro.html` (sin indexar hasta que lo actives). **No he puesto precio**: lo decides tú.
+- **Telegram**: el workflow corre cada día y no publica nada hasta que existan los secretos.
+
+**Calidad:** `bash tests/run-all.sh` pasa entero (39 páginas, 4 unitarias, 4 e2e, accesibilidad claro/oscuro).
+Nuevo: `tests/unit-monetizacion.mjs` (12 pruebas) y casos e2e para afiliados, patrocinados, placas, crédito en el
+vídeo exportado, Pro (bloqueado, activado, kit de marca, fuente, lote de 2 vídeos, Word) y widget. También corregí
+una prueba de la luz que fallaba entre las 22:00 y las 24:00 UTC (la fecha de Madrid ya era la del día siguiente).
+
+**Qué tienes que hacer tú**
+1. **Revisar y fusionar el PR.**
+2. **Telegram:** crear el bot y el canal y poner los secretos `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` (README →
+   «Canal de Telegram»). Luego *Run workflow* una vez después de las 20:30.
+3. **Afiliados:** darte de alta en los programas que quieras y pegar tus enlaces en `data/afiliados.json`.
+4. **Pro, cuando quieras venderlo:** cuenta en Paddle o Stripe, `node scripts/pro-keys.mjs init`, precio y enlace de
+   pago en `data/pro.json`. Consulta a un gestor lo del alta de autónomo antes de cobrar.
+5. Revisar si te gustan los valores de las placas (`data/ofertas.json` → `solar`: 1.300 €/kWp, 0,06 €/kWh).
+
+**No probado aquí:** un bot real de Telegram (se probó contra un servidor que lo simula) ni un pago real.
+
+---
+
 ## Sesión 3 (28/09/2026) – luz en 1 clic, subtítulos para creadores, SEO
 
 | Tarea | Estado |

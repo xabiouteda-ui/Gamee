@@ -1,0 +1,38 @@
+/* Widget «precio de la luz hoy» (se inserta en otras webs con un iframe). Ligero y sin dependencias. */
+:root {
+  --bg: #ffffff; --text: #16161d; --muted: #5d5d6e; --border: #e2e2ec; --accent: #4f46e5;
+  --cheap: #0f7b4a; --mid: #9a5b00; --dear: #b42318; --bar: #c7c9e8; --bar-cheap: #34a36b; --now: #4f46e5;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #17171f; --text: #ececf3; --muted: #a3a3b5; --border: #2c2c3a; --accent: #a7a2ff;
+  --cheap: #4ade80; --mid: #fbbf24; --dear: #f87171; --bar: #3a3a52; --bar-cheap: #2f9e63; --now: #8b85ff;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171f; --text: #ececf3; --muted: #a3a3b5; --border: #2c2c3a; --accent: #a7a2ff;
+    --cheap: #4ade80; --mid: #fbbf24; --dear: #f87171; --bar: #3a3a52; --bar-cheap: #2f9e63; --now: #8b85ff;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+.w { padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; min-height: 100vh; display: flex; flex-direction: column; gap: 8px; }
+.w-title { font-size: 15px; margin: 0; }
+.w-date { color: var(--muted); font-weight: 400; }
+.w-now { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.w-now p { margin: 0; }
+.w-price { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.w-unit { color: var(--muted); }
+.w-level { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 9px; border: 1.5px solid currentColor; }
+.w-level.cheap { color: var(--cheap); } .w-level.mid { color: var(--mid); } .w-level.dear { color: var(--dear); }
+.w-label { width: 100%; color: var(--muted); font-size: 13px; }
+.w-chart { display: flex; align-items: flex-end; gap: 2px; height: 70px; }
+.w-chart span { flex: 1; background: var(--bar); border-radius: 2px 2px 0 0; min-height: 2px; }
+.w-chart span.cheap { background: var(--bar-cheap); }
+.w-chart span.now { background: var(--now); }
+.w-extremes { margin: 0; font-size: 13px; }
+.w-foot { margin: auto 0 0; font-size: 11.5px; color: var(--muted); }
+.w-foot a { color: var(--accent); }
+.w-empty { color: var(--muted); }
