@@ -6,7 +6,6 @@
   if (!cfg.adsEnabled || !/^ca-pub-\d+$/.test(client)) return;
 
   const slots = document.querySelectorAll(".ad-slot[data-slot]");
-  let used = 0;
   slots.forEach((el) => {
     const id = (cfg.slots || {})[el.dataset.slot];
     if (!id) return;
@@ -19,10 +18,8 @@
     ins.dataset.fullWidthResponsive = "true";
     el.appendChild(ins);
     el.classList.add("ad-on");
-    used++;
   });
-  if (!used) return;
-
+  // Sin bloques configurados se carga igualmente el script: así funcionan los "anuncios automáticos" de AdSense.
   const s = document.createElement("script");
   s.async = true;
   s.crossOrigin = "anonymous";

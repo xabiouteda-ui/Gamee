@@ -66,3 +66,25 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     Se ejecuta al hacer push a `main` y manualmente. No hace falta rama `gh-pages`.
 22. **URL base configurable** (`siteUrl` en `site.config.json`) para canonical, sitemap y Open Graph. Todos los enlaces
     internos son relativos, así que funciona tanto en `usuario.github.io/repo/` como en un dominio propio.
+
+## Añadidas durante el desarrollo
+
+23. **Detección automática de idioma propia.** Transformers.js 4.3 no detecta el idioma (si no se indica, asume
+    inglés), así que el worker genera un único token tras `<|startoftranscript|>` sobre los primeros 30 s y lo
+    traduce a código de idioma. Si falla, usa el idioma de la página. Por defecto el selector muestra el idioma de
+    la página (más preciso que la detección).
+24. **Proveedores nombrados solo en la política de privacidad.** GitHub Pages, jsDelivr, Hugging Face y Google
+    AdSense se nombran en privacidad porque el RGPD exige informar de quién recibe datos (IP); no se usan sus logos
+    ni se mencionan en el resto de la web.
+25. **Pruebas sin descargar modelos.** El entorno de desarrollo no tenía acceso a los CDN, así que la prueba
+    end-to-end sustituye Transformers.js por un simulador y comprueba todo lo demás con audio real (decodificación,
+    troceado, progreso, edición, exportación, cancelación, móvil, anuncios). Se comprobó aparte que la librería
+    real carga en el worker y pide el modelo correcto. La transcripción con el modelo real debe verificarse una vez
+    publicada (ver README).
+26. **Móvil primero en la portada:** en pantallas pequeñas se ocultan las etiquetas de ventajas y el enlace a FAQ
+    de la cabecera (sigue en el pie) para que la herramienta aparezca antes; el texto de la caja dice «Toca» en vez
+    de «Arrastra».
+27. **Anuncios automáticos compatibles:** si `adsEnabled` y el ID están puestos pero no hay bloques, se carga igual
+    el script de AdSense para que funcionen los anuncios automáticos.
+28. **Comprobaciones en el workflow:** `tests/check-site.mjs` (sin dependencias) se ejecuta antes de publicar y
+    bloquea la publicación si hay enlaces rotos, títulos/descripciones fuera de rango o JSON-LD inválido.
