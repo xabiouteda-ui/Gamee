@@ -13,7 +13,7 @@ const fmt = (s, vars = {}) => s.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? var
 const els = {
   tool: $("tool"), drop: $("drop"), fileInput: $("file-input"), fileBox: $("file-box"), fileName: $("file-name"),
   changeBtn: $("change-btn"), language: $("opt-language"), quality: $("opt-quality"), startBtn: $("start-btn"),
-  cancelBtn: $("cancel-btn"), subsBtn: $("subs-btn"), subsInput: $("subs-input"), status: $("status"),
+  cancelBtn: $("cancel-btn"), translate: $("opt-translate"), subsBtn: $("subs-btn"), subsInput: $("subs-input"), status: $("status"),
   statusText: $("status-text"), bar: $("bar"), device: $("device"), studio: $("studio"), stage: $("stage"),
   video: $("video"), overlay: $("overlay"), presets: $("presets"), lines: $("lines"), exportBtn: $("export-btn"),
   srtBtn: $("srt-btn"), downloadLink: $("download-link"), exportStatus: $("export-status"),
@@ -161,7 +161,7 @@ function onWorkerMessage({ data: m }) {
       const audio = pendingAudio;
       pendingAudio = null;
       state.worker.postMessage({
-        type: "transcribe", audio, language: els.language.value, fallbackLanguage: LANG, task: "transcribe",
+        type: "transcribe", audio, language: els.language.value, fallbackLanguage: LANG, task: els.translate.checked ? "translate" : "transcribe",
         words: els.quality.value === "base-words",
       }, [audio.buffer]);
       break;
@@ -193,7 +193,7 @@ function onWorkerMessage({ data: m }) {
 }
 
 function lockInputs(lock) {
-  for (const el of [els.changeBtn, els.language, els.quality, els.subsBtn]) el.disabled = lock;
+  for (const el of [els.changeBtn, els.language, els.quality, els.subsBtn, els.translate]) el.disabled = lock;
 }
 
 function finish() {
@@ -526,8 +526,14 @@ function init() {
   state.autoKeys = store.get("autoKeys") !== "0";
   state.autoEmojis = store.get("autoEmojis") === "1";
   const p = store.get("preset");
-  if (els.tool.dataset.mode === "burn") applyPreset("classic", false);
+  // Cada página puede preseleccionar plataforma, estilo o traducción (p. ej. «subtítulos para TikTok»).
+  const d = els.tool.dataset;
+  if (PLATFORMS[d.platform]) state.platform = d.platform;
+  if (d.mode === "translate") els.translate.checked = true;
+  if (d.mode === "burn") applyPreset("classic", false);
+  else if (PRESETS[d.preset]) applyPreset(d.preset, false);
   else if (p && PRESETS[p]) applyPreset(p, false);
+  if (PLATFORMS[state.platform] && state.preset !== "classic") state.style.pos = PLATFORMS[state.platform].pos;
 
   els.drop.onclick = () => els.fileInput.click();
   els.drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); els.fileInput.click(); } };

@@ -275,6 +275,30 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await ctx.close();
   }
 
+  // ---------- 1d. Páginas por búsqueda: preselección de plataforma, estilo y traducción ----------
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, libs);
+    const page = await ctx.newPage();
+    const srt = { name: "s.srt", mimeType: "application/x-subrip", buffer: Buffer.from("1\n00:00:00,500 --> 00:00:02,000\nHola\n") };
+    for (const [slug, expect] of [["subtitulos-tiktok.html", "tiktok"], ["subtitulos-reels.html", "reels"], ["subtitulos-shorts.html", "shorts"]]) {
+      await page.goto(srv.base + dir + slug);
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      check((await page.getAttribute("#tool", "data-platform")) === expect, `${slug}: la herramienta viene configurada para ${expect}`);
+    }
+    await page.goto(srv.base + dir + "subtitulos-en-ingles.html");
+    check(await page.isChecked("#opt-translate"), "subtitulos-en-ingles: la traducción al inglés viene marcada");
+    await page.goto(srv.base + dir + "subtitulos-podcast.html");
+    await page.setInputFiles("#file-input", videoFile);
+    await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
+    check((await page.getAttribute('[data-preset="classic"]', "aria-pressed")) === "true", "subtitulos-podcast: estilo clásico preseleccionado");
+    await page.goto(srv.base + dir + "subtitulos-tiktok.html");
+    await page.setInputFiles("#file-input", videoFile);
+    await page.waitForSelector("#studio:not([hidden])", { timeout: 60000 });
+    check((await page.getAttribute('[data-platform="tiktok"]', "aria-pressed")) === "true" && (await page.inputValue("#st-pos")) === "0.62", "subtitulos-tiktok: TikTok y su zona segura activados al abrir el estudio");
+    await ctx.close();
+  }
+
   // ---------- 2. Incrustar un SRT existente ----------
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, libs);
@@ -308,7 +332,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, libs);
     const page = await ctx.newPage();
-    for (const p of [dir, dir + "incrustar-subtitulos.html", dir + "subtitulos-para-reels-tiktok-shorts.html", "/en/animated-captions/", "/en/animated-captions/burn-subtitles.html"]) {
+    for (const p of [dir, dir + "incrustar-subtitulos.html", dir + "subtitulos-para-reels-tiktok-shorts.html", dir + "subtitulos-tiktok.html", dir + "subtitulos-en-ingles.html", "/en/animated-captions/", "/en/animated-captions/burn-subtitles.html"]) {
       await page.goto(srv.base + p);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       check(overflow <= 0, `Móvil ${p}: sin scroll horizontal (${overflow}px)`);

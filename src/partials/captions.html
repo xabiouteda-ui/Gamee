@@ -1,4 +1,4 @@
-<section class="tool card" id="tool" aria-label="{{t.generate}}" data-mode="{{mode}}">
+<section class="tool card" id="tool" aria-label="{{t.generate}}" data-mode="{{mode}}" data-platform="{{platform}}" data-preset="{{preset}}">
   <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-hint">
     <svg class="drop-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.4l4 2.7a1 1 0 0 0 1.5-.8V7.5a1 1 0 0 0-1.5-.8L17 9.4V7a2 2 0 0 0-2-2H4Zm2 8h7v1.5H6V13Zm0-3h4v1.5H6V10Z"/></svg>
     <strong>{{t.dropTitle}}</strong>
@@ -26,6 +26,7 @@
         <option value="small">{{t.qSmall}}</option>
       </select>
     </label>
+    <label class="check"><input type="checkbox" id="opt-translate"> {{t.translateEn}}</label>
   </div>
 
   <div class="actions">

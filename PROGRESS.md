@@ -8,7 +8,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 |---|---|
 | 1. Luz: resultado en 1 clic con PVPC real y tarifas del mercado | ✅ |
 | 2. Subtítulos: presets para Shorts/Reels/TikTok, palabras clave, emojis, móvil, Safari | ✅ |
-| 3. SEO: páginas por búsqueda concreta | ⏳ |
+| 3. SEO: páginas por búsqueda concreta | ✅ |
 
 **1. Luz ✅**
 - Subes el CSV (o pulsas «ejemplo», o usas el **cálculo rápido** con kWh/mes + potencia + % en valle) y sale
@@ -27,6 +27,13 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
   (Marcador, Progresivo, Neón).
 - Exportación a 30 fps, con tiempo restante y **Cancelar**. Si el navegador no puede crear vídeo (iPhone antiguo),
   lo avisa y ofrece el SRT. No pude probar en un iPhone real: pruébalo tú.
+
+**3. SEO ✅ (8 páginas nuevas, 34 en total)**
+- Luz: **precio de la luz hoy por horas** (hoy y mañana, datos de REE, gráfico y mejor franja; se actualiza sola
+  cada día), **¿cuánto gasta un electrodoméstico?** (calculadora) y **PVPC o mercado libre** (con medias reales).
+- Subtítulos: **TikTok**, **Reels**, **Shorts** (cada una abre la herramienta ya configurada para esa app),
+  **subtítulos en inglés para un vídeo en español** (nueva opción de traducir) y **videopodcasts**.
+- Todas enlazadas entre sí, en el sitemap y con datos estructurados de preguntas frecuentes.
 
 **Qué tienes que hacer tú (nuevo)**
 - Tras fusionar, en *Actions* lanza «Publicar en GitHub Pages» a mano una vez y comprueba en el log el paso

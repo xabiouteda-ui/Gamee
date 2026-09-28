@@ -133,12 +133,14 @@ function pvpcAverages() {
   return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
 }
 
-function toolHtml(tool, lang, mode) {
+function toolHtml(tool, lang, page) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
     .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
-    .replace(/\{\{mode\}\}/g, esc(mode || ""))
+    .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
+    .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
+    .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
       if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
       return esc(t[k]);
@@ -207,7 +209,7 @@ function layout(page, pagesBySlug) {
     .map((c) => `<a class="tool-card" href="${href(L[c.tool])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${c.icon}"/></svg><strong>${esc(c[lang].title)}</strong><span>${esc(c[lang].text)}</span></a>`).join("\n");
 
   let body = page.body
-    .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page.mode) : ""))
+    .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page) : ""))
     .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)

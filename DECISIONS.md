@@ -207,3 +207,9 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 65. **«PVPC o mercado libre»**: tabla de diferencias + medias reales del PVPC del último año escritas en el build
     + el comparador incrustado. La página «descargar CSV por distribuidora» no se ha dividido en una por
     distribuidora: no hay pasos verificables de cada web; se documentan los formatos reales en la guía existente.
+66. **Páginas de subtítulos por búsqueda:** TikTok, Reels y Shorts (cada una con la plataforma y su zona segura ya
+    elegidas y consejos propios de esa app: botones laterales en TikTok, recorte de la miniatura en Reels, pasar de
+    vídeo largo horizontal a Short), «subtítulos en inglés para un vídeo en español» (nueva opción de traducir el
+    audio al inglés con Whisper) y «videopodcasts y entrevistas» (estilo clásico preseleccionado). No se crea una
+    página aparte para «subtítulos automáticos gratis sin marca de agua»: es la búsqueda principal de la portada
+    de la herramienta y otra página competiría con ella.
