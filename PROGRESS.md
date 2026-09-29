@@ -7,7 +7,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | Bloque | Estado |
 |---|---|
 | 0. Dominio herramientaslibres.es | ✅ |
-| 1. SEO técnico | ⏳ |
+| 1. SEO técnico | ✅ |
 | 2. Contenido de cola larga | ⏳ |
 | 3. Carpeta /marketing | ⏳ |
 | 4. Medición y AdSense | ⏳ |
@@ -16,6 +16,10 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
 `robots.txt` y `ads.txt` en la raíz. El aviso del workflow era porque Pages aún sirve **http**: activa
 *Settings → Pages → Enforce HTTPS*.
+
+**1. SEO técnico ✅** Resumen en `marketing/auditoria-seo.md`. Títulos más cortos y con una sola marca, migas de pan
+y «Guías relacionadas» en cada página, imagen para redes propia por página, sitemap con fechas reales, IndexNow
+automático, datos estructurados (Organization, BreadcrumbList, Dataset del PVPC).
 
 ---
 

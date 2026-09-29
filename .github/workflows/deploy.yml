@@ -22,7 +22,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Historial completo: el sitemap usa la fecha del último commit de cada página como lastmod.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -67,6 +70,7 @@ jobs:
           node tests/unit-captions.mjs
           node tests/unit-luz.mjs
           node tests/unit-monetizacion.mjs
+          node tests/unit-seo.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -82,3 +86,15 @@ jobs:
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Aviso a Bing y otros buscadores con IndexNow (Google no lo usa: para Google, el sitemap en Search Console).
+      # Tras un push, todas las URL; en el despliegue diario, solo las páginas con precios del día. Nunca falla.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Avisar a IndexNow
+        run: node scripts/indexnow.mjs ${{ github.event_name == 'schedule' && 'today' || 'all' }}
+        env:
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          BASE_PATH: ${{ vars.BASE_PATH }}

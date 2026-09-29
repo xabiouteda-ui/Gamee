@@ -286,3 +286,21 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 78. **`ads.txt` siempre en la raíz.** Sin ID de AdSense lleva solo un comentario (válido según la especificación de
     IAB); con ID, la línea de Google. `check-site` comprueba que existe, que `robots.txt` apunta al sitemap del
     dominio y que no queda ninguna URL de `github.io` en la web.
+79. **Marca única «Herramientas Libres».** 7 páginas del transcriptor seguían con el nombre antiguo «Transcribe
+    Libre» en el título: dividía la marca y no la busca nadie. Títulos ≤ 65 caracteres (Google corta hacia 60).
+80. **Enlazado interno automático:** cada página cuelga de una sección (luz, subtítulos, audio a texto) según su
+    carpeta. Llevan migas de pan visibles + `BreadcrumbList`, y un bloque «Guías relacionadas» con todas las demás
+    páginas de la sección (nombre corto en `"nav"` de la cabecera JSON). Así una página nueva queda enlazada desde
+    todas sus hermanas sin tocar las demás.
+81. **`lastmod` real** = fecha del último commit del archivo de la página (el workflow hace checkout completo);
+    las páginas con `"daily": true` (precios del día) usan la fecha de `data/pvpc.json` si es posterior.
+82. **IndexNow**: clave pública (no es secreta) en `site.config.json` → `/<clave>.txt`. `scripts/indexnow.mjs` lee el
+    sitemap ya publicado y avisa: todas las URL tras un push, solo las de lastmod de hoy en el despliegue diario.
+    Nunca rompe el workflow. Google no usa IndexNow: para Google basta el sitemap en Search Console.
+83. **Imágenes OG por página** generadas con Chromium (`scripts/og-images.mjs`) y guardadas en el repo (~75 KB
+    cada una). No se generan en el build para no meter un navegador en Actions; `check-site` falla si una página
+    indexable no tiene la suya, así que no se olvida.
+84. **`Dataset` de schema.org** para el PVPC con `isBasedOn` REE y descarga `data/pvpc.json`. No se declara
+    licencia: REE no la indica como tal en la API; se cita siempre la fuente.
+85. **Pruebas e2e de la luz sin depender de que exista `data/pvpc.json` en local**: simulan el fallo de REE con
+    una ruta 404. Antes fallaban si alguien descargaba los precios reales antes de probar.

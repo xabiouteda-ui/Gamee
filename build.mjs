@@ -1,6 +1,7 @@
 // Genera la web estática en _site/ a partir de src/ y assets/.
 // Sin dependencias: `node build.mjs`.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, readdirSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
@@ -195,6 +196,73 @@ function appSchema(page, url) {
   };
 }
 
+// Secciones del sitio: cada página de guía se agrupa con su herramienta para las migas de pan y el enlazado interno.
+const SECTIONS = {
+  es: { luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
+  en: { captions: { href: "en/animated-captions/", label: "Captions" }, transcribe: { href: "en/audio-to-text/", label: "Audio to text" } },
+};
+function sectionOf(page) {
+  if (page.section !== undefined) return page.section;
+  const dir = page.slug.includes("/") ? page.slug.replace(/^en\//, "").split("/")[0] : "";
+  if (dir === "luz") return "luz";
+  if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";
+  if (dir === "pasar-audio-a-texto" || dir === "audio-to-text") return "transcribe";
+  if (toolOf(page) === "transcribe") return "transcribe";
+  return null;
+}
+const stripTags = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+// Nombre corto de una página para enlaces: "nav" en la cabecera JSON o, si no, su <h1>.
+const navLabel = (p) => p.nav || stripTags(p.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || p.title.split(" | ")[0]);
+const isIndexable = (p) => !p.noindex && !p.bare && !(p.proPage && !proOn);
+
+// Fecha real de la última modificación (último commit que tocó el archivo). Sin git, la de site.config.json.
+function gitDate(file) {
+  try { return execFileSync("git", ["log", "-1", "--format=%cs", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null; } catch { return null; }
+}
+const PVPC_FILE = join(ROOT, "data", "pvpc.json");
+const pvpcUpdated = () => { try { return JSON.parse(readFileSync(PVPC_FILE, "utf8")).updated?.slice(0, 10) || null; } catch { return null; } };
+function lastmod(page) {
+  const dates = [gitDate(join("src/pages", page.lang, page.file)) || site.lastUpdated];
+  // Las páginas que muestran precios del día cambian cada día aunque no se toque su archivo.
+  if (page.daily && pvpcUpdated()) dates.push(pvpcUpdated());
+  return dates.sort().at(-1);
+}
+
+// Imagen para redes sociales: assets/img/og/<slug>.jpg si existe (scripts/og-images.mjs), si no la general.
+const ogName = (slug) => slug.replace(/\.html$/, "").replace(/(^|\/)index$/, "$1").replace(/\/$/, "").replace(/\//g, "--") || "index";
+function ogImage(page) {
+  const name = ogName(page.slug);
+  return existsSync(join(ROOT, "assets/img/og", name + ".jpg")) ? `assets/img/og/${name}.jpg` : "assets/img/og.jpg";
+}
+
+// Estadística GoatCounter (sin cookies). Desactivada mientras site.config.json → goatcounter esté vacío.
+function analyticsTag() {
+  const code = String(site.goatcounter || "").trim();
+  if (!/^[a-z0-9-]+$/i.test(code)) return "";
+  return `<script data-goatcounter="https://${code}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`;
+}
+
+// Datos del PVPC como conjunto de datos (Google Dataset Search). Solo se declara si data/pvpc.json existe.
+function datasetSchema(page, url) {
+  let pv = null;
+  try { pv = JSON.parse(readFileSync(PVPC_FILE, "utf8")); } catch {}
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "Precio horario de la luz PVPC 2.0TD (península)",
+    description: "Precio de la energía de la tarifa regulada PVPC 2.0TD en España peninsular, hora a hora, en €/kWh sin impuestos. Se actualiza cada día con los datos publicados por Red Eléctrica (REE).",
+    url,
+    inLanguage: "es",
+    isAccessibleForFree: true,
+    keywords: ["precio de la luz", "PVPC", "tarifa regulada", "precio por horas", "España"],
+    creator: { "@type": "Organization", name: site.siteName, url: `${siteUrl}/` },
+    isBasedOn: "https://www.ree.es/es/datos/mercados",
+    spatialCoverage: { "@type": "Place", name: "España peninsular" },
+    ...(pv?.from && pv?.to ? { temporalCoverage: `${pv.from}/${pv.to}`, dateModified: pv.updated } : {}),
+    distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${siteUrl}/data/pvpc.json` }],
+  };
+}
+
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
 // Página «desnuda» para insertar en otras webs con un iframe (widget): sin cabecera, menú, pie ni anuncios.
@@ -239,6 +307,24 @@ function layout(page, pagesBySlug) {
   if (page.slug.endsWith("index.html") || page.slug === "index.html") {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
+  if (page.slug === "index.html" || page.slug === "en/index.html") {
+    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-180.png`, ...(site.telegram ? { sameAs: [site.telegram] } : {}) });
+  }
+  if (page.dataset) schemas.push(datasetSchema(page, url));
+
+  // Migas de pan (visibles y en datos estructurados) para las páginas que cuelgan de una herramienta.
+  const section = sectionOf(page);
+  const secInfo = section && SECTIONS[lang]?.[section];
+  const crumbs = [];
+  if (secInfo && page.slug !== secInfo.href + "index.html" && !page.absolute) {
+    crumbs.push([ui.home, href(L.home), `${siteUrl}/`], [secInfo.label, href(secInfo.href), `${siteUrl}/${secInfo.href}`], [navLabel(page), null, url]);
+    schemas.push({
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: crumbs.map(([name, , item], i) => ({ "@type": "ListItem", position: i + 1, name, item })),
+    });
+  }
+  // Enlazado interno: el resto de guías de la misma sección.
+  const guides = section ? [...pagesBySlug.values()].filter((p) => p !== page && p.lang === lang && isIndexable(p) && sectionOf(p) === section) : [];
 
   const here = page.slug.replace(/index\.html$/, "");
   const nav = (key, label, section = false) => {
@@ -284,7 +370,10 @@ ${hreflang}
 <meta property="og:title" content="${esc(page.title)}">
 <meta property="og:description" content="${esc(page.description)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${siteUrl}/assets/img/og.jpg">
+<meta property="og:image" content="${siteUrl}/${ogImage(page)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(navLabel(page))}">
 <meta property="og:locale" content="${lang === "es" ? "es_ES" : "en_US"}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
@@ -305,7 +394,9 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
 </header>
 <div class="wrap"><div class="ad-slot" data-slot="top"></div></div>
 <main id="main" class="wrap">
+${crumbs.length ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
 ${body.trim()}
+${guides.length ? `<nav class="guides" aria-labelledby="guides-title"><h2 id="guides-title">${lang === "es" ? "Guías relacionadas" : "Related guides"}</h2><ul>${guides.map((p) => `<li><a href="${href(p.slug.replace(/index\.html$/, ""))}">${esc(navLabel(p))}</a></li>`).join("")}</ul></nav>` : ""}
 ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
 <div class="wrap"><div class="ad-slot" data-slot="bottom"></div></div>
@@ -321,6 +412,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
     <p class="muted small">© ${new Date().getFullYear()} ${esc(site.siteName)} · ${ui.footerNote}</p>
   </div>
 </footer>
+${analyticsTag()}
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
 ${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
@@ -353,7 +445,7 @@ function build() {
     writeFileSync(dest, layout(p, bySlug));
   }
 
-  const indexable = pages.filter((p) => !p.noindex && !p.bare && !(p.proPage && !proOn));
+  const indexable = pages.filter(isIndexable);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${indexable.map((p) => {
@@ -362,7 +454,7 @@ ${indexable.map((p) => {
     const links = alt
       ? `\n    <xhtml:link rel="alternate" hreflang="${p.lang}" href="${loc}"/>\n    <xhtml:link rel="alternate" hreflang="${alt.lang}" href="${siteUrl}/${alt.slug.replace(/index\.html$/, "")}"/>`
       : "";
-    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${site.lastUpdated}</lastmod>${links}\n  </url>`;
+    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod(p)}</lastmod>${links}\n  </url>`;
   }).join("\n")}
 </urlset>
 `;
@@ -370,6 +462,8 @@ ${indexable.map((p) => {
   writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`);
 
   const client = (adsCfg.adsenseClient || "").trim();
+  // IndexNow (Bing, Yandex, Seznam…): archivo con la clave en la raíz. El aviso lo envía scripts/indexnow.mjs.
+  if (/^[a-f0-9]{32}$/.test(site.indexNowKey || "")) writeFileSync(join(OUT, `${site.indexNowKey}.txt`), site.indexNowKey);
   // ads.txt siempre en la raíz. Sin ID de AdSense solo lleva un comentario (archivo válido, sin vendedores autorizados).
   writeFileSync(join(OUT, "ads.txt"), /^ca-pub-\d+$/.test(client)
     ? `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`

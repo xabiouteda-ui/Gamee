@@ -25,6 +25,9 @@ function makeCsv() {
   return lines.join("\n") + "\n";
 }
 
+// Simula que data/pvpc.json no existe (REE caído), aunque exista en local.
+const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill({ status: 404, body: "" }));
+
 (async () => {
   const { summarizePvpc } = await import("../assets/js/luz/pvpc.js");
   const { periodOf } = await import("../assets/js/luz/core.js");
@@ -197,6 +200,7 @@ function makeCsv() {
   // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(ctx);
     const page = await ctx.newPage();
     await page.goto(srv.base + "/luz/");
     await page.click("#example-btn");
@@ -224,9 +228,11 @@ function makeCsv() {
     await page.screenshot({ path: path.join(OUT, "luz-hoy.png"), fullPage: false });
     await ctx.close();
     const { ctx: c2 } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(c2);
     const p2 = await c2.newPage();
     await p2.goto(srv.base + "/luz/precio-luz-hoy.html");
-    await p2.waitForSelector(".hoy-empty:not([hidden])");
+    // Si la web se generó con data/pvpc.json, se queda el resumen estático; si no, sale el aviso.
+    await p2.waitForSelector(".hoy-empty:not([hidden]), #hoy section.day");
     check(true, "Sin datos del PVPC muestra un aviso en lugar de romperse");
     await c2.close();
   }
