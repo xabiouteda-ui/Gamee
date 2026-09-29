@@ -11,6 +11,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | 2. Contenido de cola larga | ✅ |
 | 3. Carpeta /marketing | ✅ |
 | 4. Medición y AdSense | ✅ (con tareas tuyas) |
+| 5. Extras | ⏳ |
 
 **0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
 El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
@@ -44,6 +45,9 @@ Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
      web así).
   2. En AdSense → *Privacidad y mensajes → Europa*: crear y publicar el mensaje de consentimiento (CMP de Google).
   3. Poner tu `ca-pub-…` y los IDs de bloque en `assets/js/config.js` y `adsEnabled: true` cuando te aprueben.
+
+**5. Extras** ✅ 5 páginas en inglés (karaoke, alternativa a CapCut, sin marca de agua, WhatsApp, clases grabadas),
+enlazadas con su versión en español. 53 páginas en total.
 
 ---
 

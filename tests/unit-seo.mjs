@@ -90,6 +90,18 @@ await test("Títulos únicos y descripciones únicas en todas las páginas index
   }
 });
 
+await test("hreflang recíproco: si A apunta a B como traducción, B apunta a A", () => {
+  const alts = new Map();
+  for (const { loc } of parseSitemap(read("sitemap.xml"))) {
+    const rel = loc.slice(site.siteOrigin.length + 1);
+    const html = read(!rel || rel.endsWith("/") ? rel + "index.html" : rel);
+    const others = [...html.matchAll(/<link rel="alternate" hreflang="(es|en)" href="([^"]+)">/g)].map((m) => m[2]).filter((u) => u !== loc);
+    alts.set(loc, others);
+  }
+  for (const [loc, others] of alts) for (const o of others) assert.ok((alts.get(o) || []).includes(loc), `${o} no enlaza de vuelta a ${loc}`);
+  assert.ok([...alts.values()].filter((o) => o.length).length >= 20, "hay páginas traducidas");
+});
+
 await test("AdSense y GoatCounter: apagados por defecto; al activarlos, hueco reservado y script sin cookies", async () => {
   const home = read("index.html");
   assert.ok(!home.includes("goatcounter"), "GoatCounter apagado por defecto");

@@ -342,3 +342,6 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     gratis, está certificada para TCF y se carga con el propio script de AdSense. La web no pone cookies propias.
     Texto de «Cómo ganamos dinero» corregido: decía que los anuncios «solo se cargan» si aceptas; lo correcto es
     que las cookies de publicidad solo se usan si aceptas.
+97. **Páginas en inglés** solo para las 5 búsquedas con más potencial fuera de España (karaoke, alternativa a
+    CapCut, sin marca de agua, audios de WhatsApp, clases grabadas), con hreflang recíproco (nueva prueba). La
+    luz no se traduce: solo sirve en España.
