@@ -199,7 +199,15 @@ details > div { padding-bottom: 8px; }
 
 /* Anuncios: sin espacio mientras están desactivados */
 .ad-slot { display: none; }
-.ad-slot.ad-on { display: block; margin: 20px 0; min-height: 100px; text-align: center; }
+/* Alto fijo por hueco: el espacio se reserva antes de que llegue el anuncio (sin CLS). */
+.ad-slot.ad-on { display: block; margin: 20px 0; text-align: center; overflow: hidden; min-height: 100px; }
+.ad-slot.ad-on ins.adsbygoogle { display: inline-block; width: 100%; height: 100px; }
+.ad-slot.ad-on[data-slot="content"], .ad-slot.ad-on[data-slot="result"] { min-height: 250px; }
+.ad-slot.ad-on[data-slot="content"] ins.adsbygoogle, .ad-slot.ad-on[data-slot="result"] ins.adsbygoogle { height: 250px; }
+@media (min-width: 768px) {
+  .ad-slot.ad-on[data-slot="top"], .ad-slot.ad-on[data-slot="bottom"] { min-height: 90px; }
+  .ad-slot.ad-on[data-slot="top"] ins.adsbygoogle, .ad-slot.ad-on[data-slot="bottom"] ins.adsbygoogle { height: 90px; }
+}
 
 /* Móvil: la herramienta lo antes posible en pantalla */
 @media (max-width: 560px) {

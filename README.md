@@ -121,6 +121,30 @@ node tests/e2e-a11y.cjs            # accesibilidad (axe-core) de todas las pági
 Consejos para la aprobación: rellena los datos del titular, publica en un dominio propio, espera a tener algo de
 tráfico orgánico e indexación en Search Console, y no pulses tus propios anuncios.
 
+Los huecos tienen **alto fijo** (100/90 px arriba y abajo, 250 px en mitad del texto y bajo la herramienta) y se
+reservan desde el HTML en cuanto tienen ID: el anuncio no desplaza la página (CLS 0). Crea en AdSense bloques
+**adaptables** normales; el alto lo pone la web.
+
+## Estadísticas de visitas (GoatCounter, sin cookies)
+
+1. Crea una cuenta en https://www.goatcounter.com/ y elige un código, p. ej. `herramientaslibres`. El plan alojado
+   es gratis para webs **no comerciales**; cuando la web gane dinero con anuncios, sus condiciones piden un plan
+   de pago (unos pocos dólares al mes según fuentes consultadas el 29/09/2026: compruébalo en su web).
+2. Ponlo en `site.config.json` → `"goatcounter": "herramientaslibres"` y publica. Vacío = desactivado.
+3. Tus estadísticas quedan en `https://herramientaslibres.goatcounter.com`. No usa cookies, así que no necesita
+   aviso de consentimiento; la política de privacidad ya lo menciona.
+
+## Canal de Telegram e IndexNow
+
+- El enlace al canal (`site.config.json` → `telegram`) sale en todas las páginas de luz.
+- `indexNowKey` (en `site.config.json`) es una clave pública: el build publica `/<clave>.txt` y el workflow avisa a
+  Bing y otros buscadores tras cada publicación (`scripts/indexnow.mjs`). No hace falta cuenta.
+
+## Imágenes para redes sociales
+
+Cada página tiene su imagen en `assets/img/og/`. Si creas o renombras una página, ejecuta
+`node scripts/og-images.mjs` (necesita Playwright) y haz commit de las imágenes; las pruebas avisan si falta una.
+
 ## Cambiar textos, nombre o añadir páginas
 
 - **Nombre de la web:** `siteName` en `site.config.json` (y el texto de `assets/img/og.jpg` si quieres).

@@ -10,7 +10,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | 1. SEO técnico | ✅ |
 | 2. Contenido de cola larga | ✅ |
 | 3. Carpeta /marketing | ✅ |
-| 4. Medición y AdSense | ⏳ |
+| 4. Medición y AdSense | ✅ (con tareas tuyas) |
 
 **0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
 El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
@@ -33,6 +33,17 @@ automático, datos estructurados (Organization, BreadcrumbList, Dataset del PVPC
 **3. Marketing ✅** Todo en `marketing/` (empieza por `marketing/README.md`): plan de 8 semanas, foros, directorios
 con los formularios rellenos, 18 medios con contacto público y 2 emails, 10 guiones de Shorts, Product Hunt y
 Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
+
+**4. Medición y AdSense ✅**
+- **GoatCounter** listo y apagado: pon tu código en `site.config.json` → `goatcounter`. Sin cookies. Su plan gratis
+  es para webs no comerciales: con anuncios toca plan de pago (pocos $/mes; compruébalo).
+- **Huecos de anuncios sin saltos** (alto fijo y reservado desde el HTML). ads.txt en la raíz.
+- Checklist AdSense: páginas legales ✅, contenido en cada herramienta ✅ (todas >450 palabras), huecos sin CLS ✅,
+  dominio propio ✅. **Te toca:**
+  1. Rellenar en `site.config.json` tu nombre, NIF, dirección y email (hoy hay «[TU NOMBRE…]»: AdSense rechaza la
+     web así).
+  2. En AdSense → *Privacidad y mensajes → Europa*: crear y publicar el mensaje de consentimiento (CMP de Google).
+  3. Poner tu `ca-pub-…` y los IDs de bloque en `assets/js/config.js` y `adsEnabled: true` cuando te aprueben.
 
 ---
 

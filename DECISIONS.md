@@ -331,3 +331,14 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     Energía) son para clientes y Octopus limita a quien los usa para ganar dinero en público.
 93. **Capturas de marketing generadas sin precios de prueba** (`scripts/marketing-assets.mjs`): las de la luz
     muestran el comparador vacío; las del estudio se deben hacer sobre la web publicada con datos reales.
+94. **GoatCounter** (sin cookies, sin aviso de consentimiento) activable con `site.config.json` → `goatcounter`.
+    Vacío = no se carga nada. Se menciona en la privacidad como «solo si está activado». Ojo: su plan alojado
+    gratis es para webs no comerciales (anotado en README y PROGRESS).
+95. **Huecos de anuncios sin CLS:** alto fijo por hueco (100 px móvil / 90 px escritorio arriba y abajo, 250 px en
+    el contenido y bajo la herramienta) con ancho adaptable, sin `data-ad-format="auto"` (que elegía el alto al
+    vuelo y movía la página). Con AdSense activo y un ID en el hueco, el build pone `ad-on` en el HTML para
+    reservar el espacio desde el primer pintado.
+96. **Consentimiento UE con la CMP de Google** (Privacidad y mensajes de AdSense), no con un banner propio: es
+    gratis, está certificada para TCF y se carga con el propio script de AdSense. La web no pone cookies propias.
+    Texto de «Cómo ganamos dinero» corregido: decía que los anuncios «solo se cargan» si aceptas; lo correcto es
+    que las cookies de publicidad solo se usan si aceptas.

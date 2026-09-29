@@ -14,7 +14,8 @@ import { RULES } from "./assets/js/luz/core.js";
 import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const OUT = join(ROOT, "_site");
+// SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
+const OUT = process.env.SITE_OUT || join(ROOT, "_site");
 const site = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
 // URL pública = origen + ruta base. La ruta base permite publicar en una subcarpeta
 // (p. ej. usuario.github.io/game/) o en la raíz de un dominio propio ("/").
@@ -27,7 +28,7 @@ const siteUrl = siteOrigin + basePath.replace(/\/$/, "");
 
 // Lee config.js (el mismo archivo que usa el navegador) para generar ads.txt.
 const sandbox = { window: {} };
-vm.runInNewContext(readFileSync(join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
+vm.runInNewContext(readFileSync(process.env.ADS_CONFIG || join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
 const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 // Versión Pro (data/pro.json): desactivada por defecto. Con ella desactivada, /pro.html no se indexa.
@@ -302,7 +303,7 @@ function ogImage(page) {
 
 // Estadística GoatCounter (sin cookies). Desactivada mientras site.config.json → goatcounter esté vacío.
 function analyticsTag() {
-  const code = String(site.goatcounter || "").trim();
+  const code = String(process.env.GOATCOUNTER ?? site.goatcounter ?? "").trim();
   if (!/^[a-z0-9-]+$/i.test(code)) return "";
   return `<script data-goatcounter="https://${code}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`;
 }
@@ -326,6 +327,13 @@ function datasetSchema(page, url) {
     ...(pv?.from && pv?.to ? { temporalCoverage: `${pv.from}/${pv.to}`, dateModified: pv.updated } : {}),
     distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${siteUrl}/data/pvpc.json` }],
   };
+}
+
+// Hueco de anuncio. Si AdSense está activado y el hueco tiene ID, se reserva su alto desde el HTML (clase ad-on):
+// así no hay salto de contenido (CLS) cuando llega el anuncio. Sin anuncios, el hueco no ocupa nada.
+function adSlot(slot) {
+  const on = adsCfg.adsEnabled === true && /^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) && !!(adsCfg.slots || {})[slot];
+  return `<div class="ad-slot${on ? " ad-on" : ""}" data-slot="${slot}"></div>`;
 }
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -402,7 +410,8 @@ function layout(page, pagesBySlug) {
 
   let body = page.body
     .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page) : ""))
-    .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
+    .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => adSlot(s))
+    .replace(/<div class="ad-slot" data-slot="(\w+)"><\/div>/g, (_, s) => adSlot(s))
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
@@ -458,7 +467,7 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
     ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>
 </header>
-<div class="wrap"><div class="ad-slot" data-slot="top"></div></div>
+<div class="wrap">${adSlot("top")}</div>
 <main id="main" class="wrap">
 ${crumbs.length ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
 ${body.trim()}
@@ -466,7 +475,7 @@ ${section === "luz" && site.telegram ? `<aside class="tg-cta" aria-label="Canal 
 ${guides.length ? `<nav class="guides" aria-labelledby="guides-title"><h2 id="guides-title">${lang === "es" ? "Guías relacionadas" : "Related guides"}</h2><ul>${guides.map((p) => `<li><a href="${href(p.slug.replace(/index\.html$/, ""))}">${esc(navLabel(p))}</a></li>`).join("")}</ul></nav>` : ""}
 ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
-<div class="wrap"><div class="ad-slot" data-slot="bottom"></div></div>
+<div class="wrap">${adSlot("bottom")}</div>
 <footer class="site-footer">
   <div class="wrap">
     <nav aria-label="${lang === "es" ? "Legal" : "Legal"}">

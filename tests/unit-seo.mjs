@@ -90,4 +90,24 @@ await test("Títulos únicos y descripciones únicas en todas las páginas index
   }
 });
 
+await test("AdSense y GoatCounter: apagados por defecto; al activarlos, hueco reservado y script sin cookies", async () => {
+  const home = read("index.html");
+  assert.ok(!home.includes("goatcounter"), "GoatCounter apagado por defecto");
+  assert.ok(!/class="ad-slot ad-on"/.test(home), "Sin anuncios, ningún hueco reservado");
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "hl-"));
+  writeFileSync(join(dir, "config.js"), `window.SITE_CONFIG = { adsEnabled: true, adsenseClient: "ca-pub-1234567890123456", slots: { top: "1", result: "", content: "3", bottom: "" } };`);
+  await new Promise((resolve, reject) => execFile(process.execPath, ["build.mjs"], {
+    cwd: ROOT, env: { ...process.env, SITE_OUT: join(dir, "site"), ADS_CONFIG: join(dir, "config.js"), GOATCOUNTER: "micodigo" },
+  }, (err) => (err ? reject(err) : resolve())));
+  const html = readFileSync(join(dir, "site", "luz/precio-luz-hoy.html"), "utf8");
+  assert.match(html, /<div class="ad-slot ad-on" data-slot="top">/);
+  assert.match(html, /<div class="ad-slot ad-on" data-slot="content">/);
+  assert.match(html, /<div class="ad-slot" data-slot="bottom">/, "hueco sin ID: no se reserva");
+  assert.match(html, /<script data-goatcounter="https:\/\/micodigo\.goatcounter\.com\/count" async src="https:\/\/gc\.zgo\.at\/count\.js"><\/script>/);
+  assert.match(readFileSync(join(dir, "site", "ads.txt"), "utf8"), /^google\.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0$/m);
+  rmSync(dir, { recursive: true, force: true });
+});
+
 console.log(`${n} pruebas de SEO correctas.`);
