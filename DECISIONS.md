@@ -274,3 +274,15 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     sitemap) con CSS propio de 2 KB y un JSON de 4 días (`data/pvpc-hoy.json`) en vez de los ~400 días; si no
     existe, usa `pvpc.json`. El enlace de atribución va **fuera** del iframe en el código para copiar (dentro de un
     iframe no cuenta para buscadores) y también dentro del widget. Tema claro/oscuro/automático. Sin cookies.
+
+## Sesión 5 (29/09/2026): dominio propio, SEO y marketing
+
+77. **Dominio `https://herramientaslibres.es` con `basePath` "/"** en `site.config.json` (y las variables de
+    Actions). El último despliegue manual (28/09) falló porque `check-site` comparaba la portada con el antiguo
+    `github.io/Gamee/`; al cambiar el archivo, vuelve a pasar. El aviso del workflow saltaba porque GitHub Pages
+    devuelve `http://herramientaslibres.es` (HTTPS aún no obligatorio): ahora compara sin el esquema y, si solo
+    falta HTTPS, deja una nota en vez de un aviso. Sin archivo `CNAME`: con despliegue por Actions GitHub lo ignora
+    y el dominio se guarda en Settings → Pages.
+78. **`ads.txt` siempre en la raíz.** Sin ID de AdSense lleva solo un comentario (válido según la especificación de
+    IAB); con ID, la línea de Google. `check-site` comprueba que existe, que `robots.txt` apunta al sitemap del
+    dominio y que no queda ninguna URL de `github.io` en la web.

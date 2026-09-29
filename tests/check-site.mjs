@@ -114,6 +114,14 @@ for (const file of htmlFiles) {
 check(existsSync(join(SITE, "sitemap.xml")), "Falta sitemap.xml");
 check(existsSync(join(SITE, "robots.txt")), "Falta robots.txt");
 check(existsSync(join(SITE, ".nojekyll")), "Falta .nojekyll");
+check(existsSync(join(SITE, "ads.txt")), "Falta ads.txt en la raíz");
+check(readFileSync(join(SITE, "robots.txt"), "utf8").includes(`Sitemap: ${home}sitemap.xml`), "robots.txt debe apuntar al sitemap del dominio");
+// Con dominio propio no debe quedar ninguna URL de github.io en la web publicada.
+if (!/github\.io/.test(home)) {
+  for (const file of walk(SITE).filter((f) => /\.(html|css|js|xml|txt|json)$/.test(f) && !f.includes("/data/"))) {
+    check(!readFileSync(file, "utf8").includes("github.io"), `${file.slice(SITE.length + 1)}: contiene una URL de github.io`);
+  }
+}
 const sitemap = readFileSync(join(SITE, "sitemap.xml"), "utf8");
 check(!sitemap.includes("404"), "La página 404 no debe estar en el sitemap");
 for (const p of ["privacidad.html", "aviso-legal.html", "contacto.html", "preguntas-frecuentes.html", "en/privacy.html"]) {

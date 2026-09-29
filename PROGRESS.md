@@ -2,6 +2,23 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
+## Sesión 5 (29/09/2026) – dominio, SEO y marketing (en curso)
+
+| Bloque | Estado |
+|---|---|
+| 0. Dominio herramientaslibres.es | ✅ |
+| 1. SEO técnico | ⏳ |
+| 2. Contenido de cola larga | ⏳ |
+| 3. Carpeta /marketing | ⏳ |
+| 4. Medición y AdSense | ⏳ |
+
+**0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
+El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
+`robots.txt` y `ads.txt` en la raíz. El aviso del workflow era porque Pages aún sirve **http**: activa
+*Settings → Pages → Enforce HTTPS*.
+
+---
+
 ## Sesión 4 (28/09/2026) – monetización más allá de AdSense
 
 | Tarea del plan | Estado |

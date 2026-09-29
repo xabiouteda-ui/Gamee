@@ -370,9 +370,10 @@ ${indexable.map((p) => {
   writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`);
 
   const client = (adsCfg.adsenseClient || "").trim();
-  if (/^ca-pub-\d+$/.test(client)) {
-    writeFileSync(join(OUT, "ads.txt"), `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
-  }
+  // ads.txt siempre en la raíz. Sin ID de AdSense solo lleva un comentario (archivo válido, sin vendedores autorizados).
+  writeFileSync(join(OUT, "ads.txt"), /^ca-pub-\d+$/.test(client)
+    ? `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`
+    : `# ${site.siteName}: añade tu ID de AdSense en assets/js/config.js y se generará la línea de Google.\n`);
   console.log(`Generadas ${pages.length} páginas en _site/ (URL base: ${siteUrl})${existsSync(join(OUT, "ads.txt")) ? " + ads.txt" : ""}`);
 }
 

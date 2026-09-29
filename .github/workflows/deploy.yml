@@ -54,8 +54,11 @@ jobs:
           SITE=$(sed -n 's/.*canonical" href="\([^"]*\)".*/\1/p' _site/index.html)
           echo "URL configurada: $SITE"
           echo "URL de GitHub Pages: $PAGES_URL/"
-          if [ "${SITE%/}" != "${PAGES_URL%/}" ]; then
-            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, el nombre del repositorio o el dominio propio."
+          # Se compara sin el esquema: con dominio propio, GitHub Pages devuelve http:// hasta que se marca «Enforce HTTPS».
+          if [ "$(echo "${SITE%/}" | sed 's#^https\?://##')" != "$(echo "${PAGES_URL%/}" | sed 's#^https\?://##')" ]; then
+            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, las variables SITE_ORIGIN/BASE_PATH o el dominio propio."
+          elif [ "${PAGES_URL#https://}" = "$PAGES_URL" ]; then
+            echo "::notice::GitHub Pages sirve el dominio sin HTTPS obligatorio. Activa Settings → Pages → Enforce HTTPS."
           fi
 
       - name: Comprobaciones
