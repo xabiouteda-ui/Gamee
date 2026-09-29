@@ -345,3 +345,11 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
 97. **Páginas en inglés** solo para las 5 búsquedas con más potencial fuera de España (karaoke, alternativa a
     CapCut, sin marca de agua, audios de WhatsApp, clases grabadas), con hreflang recíproco (nueva prueba). La
     luz no se traduce: solo sirve en España.
+98. **Reencuadre 9:16 siguiendo la cara, opcional** (casilla «Seguir la cara», apagada por defecto y recordada):
+    MediaPipe Face Detector (Apache-2.0) desde jsDelivr y el modelo BlazeFace de corto alcance servido desde
+    `assets/models/` (230 KB). Busca la cara unas 2 veces por segundo (máx. 240 muestras) en una copia oculta del
+    vídeo, sigue la más grande, rellena huecos con la posición más cercana, media móvil y zona muerta del 5 % para
+    que no «baile». Si en el fotograma entero no ve ninguna (planos abiertos), prueba en tres cuadrados. Sin caras
+    o si falla la carga: recorte centrado, con aviso. Probado con la librería real y una foto en Chromium; en CI se
+    usa un detector simulado. **MediaPipe envía cada minuto estadísticas de uso a odml.pa.googleapis.com**: se
+    bloquea esa petición (la librería deja de intentarlo) y se explica en Privacidad.

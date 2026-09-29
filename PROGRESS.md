@@ -48,6 +48,8 @@ Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
 
 **5. Extras** ✅ 5 páginas en inglés (karaoke, alternativa a CapCut, sin marca de agua, WhatsApp, clases grabadas),
 enlazadas con su versión en español. 53 páginas en total.
+Subtítulos: al pasar un vídeo horizontal a 9:16 hay una casilla nueva **«Seguir la cara»**: el recorte se mueve con
+quien habla (se analiza en el navegador; sin subir el vídeo).
 
 ---
 

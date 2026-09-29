@@ -468,3 +468,5 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
 .heat-months { grid-template-columns: 34px repeat(24, minmax(10px, 1fr)); }
 .study-findings li { margin-bottom: 8px; }
 .gasto-form label .muted { font-weight: 400; }
+#follow-row { margin: 0 0 4px 1.6em; }
+#follow-status { display: block; font-size: 0.85em; }

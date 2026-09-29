@@ -359,3 +359,69 @@ export function drawCredit(ctx, W, H, text, safe = null) {
   return { x, y, w, h };
 }
 
+
+// ---------- Reencuadre a 9:16 siguiendo la cara ----------
+
+// Momentos del vídeo en los que se busca la cara: cada `step` s, como mucho `max` muestras.
+export function faceSampleTimes(duration, step = 0.5, max = 240) {
+  if (!(duration > 0)) return [0];
+  const s = Math.max(step, duration / max);
+  const out = [];
+  for (let t = 0; t < duration; t += s) out.push(+t.toFixed(3));
+  return out;
+}
+
+// De las caras detectadas (cajas en píxeles) se sigue la más grande: suele ser quien habla.
+export function mainFaceX(detections) {
+  let best = null;
+  for (const d of detections || []) {
+    const b = d.boundingBox;
+    if (b && (!best || b.width * b.height > best.width * best.height)) best = b;
+  }
+  return best ? best.originX + best.width / 2 : null;
+}
+
+// Muestras {t, x} (centro de la cara en píxeles o null si no hay cara) → recorrido suave del recorte.
+// Devuelve [{t, p}] con p entre 0 (recorte pegado a la izquierda) y 1 (a la derecha); null si no hay caras.
+// Sin cara se mantiene la última posición conocida; una media móvil quita los tirones del detector y una zona
+// muerta evita que la imagen «baile» cuando la persona apenas se mueve.
+export function smoothFaceTrack(samples, vw, cw, { win = 3, dead = 0.05 } = {}) {
+  const room = vw - cw;
+  if (!samples.length || room <= 0) return null;
+  const known = samples.map((s, i) => (s.x == null ? -1 : i)).filter((i) => i >= 0);
+  if (!known.length) return null;
+  const filled = samples.map((s, i) => {
+    if (s.x != null) return s.x;
+    let best = known[0];
+    for (const k of known) if (Math.abs(k - i) < Math.abs(best - i)) best = k;
+    return samples[best].x;
+  });
+  const half = Math.floor(win / 2);
+  const avg = filled.map((_, i) => {
+    const a = Math.max(0, i - half), b = Math.min(filled.length - 1, i + half);
+    let sum = 0;
+    for (let j = a; j <= b; j++) sum += filled[j];
+    return sum / (b - a + 1);
+  });
+  const dz = dead * vw;
+  let cur = avg[0];
+  return samples.map((s, i) => {
+    const d = avg[i] - cur;
+    if (Math.abs(d) > dz) cur += d - Math.sign(d) * dz;
+    const sx = Math.min(room, Math.max(0, cur - cw / 2));
+    return { t: s.t, p: +(sx / room).toFixed(4) };
+  });
+}
+
+// Posición del recorte en el instante t (interpolada entre muestras).
+export function cropAt(track, t) {
+  if (!track || !track.length) return 0.5;
+  if (t <= track[0].t) return track[0].p;
+  for (let i = 1; i < track.length; i++) {
+    if (t <= track[i].t) {
+      const a = track[i - 1], b = track[i];
+      return a.p + ((b.p - a.p) * (t - a.t)) / (b.t - a.t);
+    }
+  }
+  return track[track.length - 1].p;
+}
