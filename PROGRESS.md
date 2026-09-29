@@ -9,7 +9,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | 0. Dominio herramientaslibres.es | ✅ |
 | 1. SEO técnico | ✅ |
 | 2. Contenido de cola larga | ✅ |
-| 3. Carpeta /marketing | ⏳ |
+| 3. Carpeta /marketing | ✅ |
 | 4. Medición y AdSense | ⏳ |
 
 **0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
@@ -29,6 +29,10 @@ automático, datos estructurados (Organization, BreadcrumbList, Dataset del PVPC
 - Subtítulos: **karaoke**, **alternativa gratis a CapCut**, **sin marca de agua**; «Reels» ahora es «cómo poner
   subtítulos a un Reel».
 - Transcripción: las páginas de WhatsApp y de clases grabadas ya existían; les he ajustado título y H1.
+
+**3. Marketing ✅** Todo en `marketing/` (empieza por `marketing/README.md`): plan de 8 semanas, foros, directorios
+con los formularios rellenos, 18 medios con contacto público y 2 emails, 10 guiones de Shorts, Product Hunt y
+Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
 
 ---
 

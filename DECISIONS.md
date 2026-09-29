@@ -323,3 +323,11 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     se remite a la web oficial para lo demás.
 90. **Canal de Telegram** (`site.config.json` → `telegram`) enlazado en un recuadro al final de todas las páginas de
     luz y en `sameAs` de la organización.
+91. **Carpeta `/marketing` solo con material para pegar**: nada se ha publicado fuera del repo. Contactos de
+    prensa y URLs/condiciones de directorios y afiliados verificados con búsquedas el 29/09/2026 y marcados para
+    comprobar; donde el medio no publica un email general, se da su formulario. No se incluyen comparadores de
+    luz en prensa (competencia). No se dan cifras de tráfico objetivo (no hay base para estimarlas).
+92. **Octopus Energy por Awin, no por su plan de referidos**: los planes «invita a un amigo» (Octopus, Gana
+    Energía) son para clientes y Octopus limita a quien los usa para ganar dinero en público.
+93. **Capturas de marketing generadas sin precios de prueba** (`scripts/marketing-assets.mjs`): las de la luz
+    muestran el comparador vacío; las del estudio se deben hacer sobre la web publicada con datos reales.
