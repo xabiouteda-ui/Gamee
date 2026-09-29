@@ -359,3 +359,5 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     excedentes se perderían por el tope de la compensación simplificada, con la batería virtual como alternativa
     (sin nombrar comercializadoras ni precios). No añado baterías físicas ni orientaciones este/oeste: harían falta
     cifras de coste y rendimiento que no he podido contrastar hoy.
+100. **Paro al terminar el bloque 5** en vez de ampliar el backlog: la sesión ha sido larga (el contexto se ha
+     compactado una vez) y prefiero no pasarme del tope de 35 $. La PR queda lista para fusionar.

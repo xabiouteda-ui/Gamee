@@ -2,7 +2,7 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
-## Sesión 5 (29/09/2026) – dominio, SEO y marketing (en curso)
+## Sesión 5 (29/09/2026) – dominio, SEO y marketing (terminada: PR #4 lista para fusionar)
 
 | Bloque | Estado |
 |---|---|
