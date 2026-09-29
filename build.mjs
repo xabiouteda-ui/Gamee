@@ -10,6 +10,8 @@ import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
 import { STRINGS as LUZ_STRINGS } from "./assets/js/luz/i18n.js";
 import { dayStats } from "./assets/js/luz/pvpc.js";
 import { madridDate } from "./assets/js/luz/hoy.js";
+import { RULES } from "./assets/js/luz/core.js";
+import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, "_site");
@@ -107,6 +109,8 @@ const TOOLS = {
   gasto: { partial: "gasto.html", strings: LUZ_STRINGS, script: "assets/js/luz/gasto.js", category: "UtilitiesApplication" },
   luzhoy: { partial: "luz-hoy.html", strings: LUZ_STRINGS, script: "assets/js/luz/hoy.js", category: "UtilitiesApplication" },
   luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
+  coste: { partial: "coste.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
+  coche: { partial: "coche.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
 
@@ -120,13 +124,14 @@ function languageOptions(lang, autoLabel) {
 
 // Resumen estático de los precios del PVPC de hoy (el día en que se genera la web), para buscadores y para
 // quien no tenga JavaScript. En el navegador se sustituye por los datos más recientes y los gráficos.
-function pvpcSnapshot() {
+function pvpcSnapshot(mode) {
   const f = join(ROOT, "data", "pvpc.json");
   if (!existsSync(f)) return "";
   const pvpc = JSON.parse(readFileSync(f, "utf8"));
   const hh = (h) => `${String(h).padStart(2, "0")}:00`;
   const eur = (p) => p.toFixed(3).replace(".", ",") + " €/kWh";
-  return [["Hoy", 0], ["Mañana", 1]].map(([label, off]) => {
+  const order = mode === "manana" ? [["Mañana", 1], ["Hoy", 0]] : [["Hoy", 0], ["Mañana", 1]];
+  return order.map(([label, off]) => {
     const st = dayStats(pvpc, madridDate(off));
     if (!st) return "";
     const date = new Date(st.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
@@ -144,6 +149,65 @@ function pvpcAverages() {
   return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
 }
 
+// «Estudio: las horas más baratas de la luz»: cifras, gráficos SVG y tablas generados con data/pvpc.json.
+const STUDY_YEAR = 2026;
+const RAMP = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b"];
+function readPvpc() { try { return JSON.parse(readFileSync(PVPC_FILE, "utf8")); } catch { return null; } }
+function studyHtml() {
+  const pv = readPvpc();
+  const st = pv && computeStudy(pv, STUDY_YEAR, madridDate(0));
+  if (!st) return `<p class="status">Los datos del estudio se generan con los precios oficiales de Red Eléctrica en cada publicación de la web. Ahora mismo no están disponibles: vuelve a intentarlo más tarde.</p>`;
+  const e3 = (p) => p.toFixed(3).replace(".", ",");
+  const pct = (x) => `${Math.round(x * 100)} %`;
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const span = (h) => `${hh(h)}–${hh(h + 1)}`;
+  const d = (iso) => new Date(iso + "T12:00:00Z").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  // Gráfico de barras: precio medio de cada hora del día.
+  const W = 640, H = 240, L = 46, B = 26, TOP = 16, max = Math.max(...st.byHour) * 1.1, slot = (W - L - 6) / 24, bw = slot * 0.72;
+  const y = (v) => TOP + (H - TOP - B) * (1 - v / max);
+  let bars = "";
+  for (let k = 0; k <= 3; k++) { const v = (max * k) / 3; bars += `<line x1="${L}" x2="${W - 6}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="${k ? "grid" : "axis"}"/><text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="tick" text-anchor="end">${v.toFixed(2).replace(".", ",")}</text>`; }
+  st.byHour.forEach((p, h) => {
+    const x = L + slot * h + (slot - bw) / 2, top = y(p), r = Math.min(4, (H - B - top) / 2);
+    const cheap = st.cheapest3.includes(h);
+    bars += `<g class="bar"><title>${span(h)}: ${e3(p)} €/kWh de media${cheap ? " (de las 3 más baratas)" : ""}</title><path class="${cheap ? "seg-P3" : "seg-P1"}" d="M${x.toFixed(1)},${H - B} V${(top + r).toFixed(1)} Q${x.toFixed(1)},${top.toFixed(1)} ${(x + r).toFixed(1)},${top.toFixed(1)} H${(x + bw - r).toFixed(1)} Q${(x + bw).toFixed(1)},${top.toFixed(1)} ${(x + bw).toFixed(1)},${(top + r).toFixed(1)} V${H - B} Z"/></g>`;
+    if (h % 3 === 0) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" class="tick" text-anchor="middle">${h}</text>`;
+  });
+  const chart = `<figure class="study-fig"><svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Precio medio del PVPC por hora del día en ${STUDY_YEAR}"><text x="${L - 6}" y="10" class="tick" text-anchor="end">€/kWh</text>${bars}</svg>
+<figcaption><span class="legend"><span><i class="sw sw-P3"></i>Las 3 horas más baratas de media</span><span><i class="sw sw-P1"></i>Resto de horas</span></span> Precio medio de la energía del PVPC por hora del día (sin impuestos), del ${d(st.from)} al ${d(st.to)}. Fuente: Red Eléctrica.</figcaption></figure>`;
+  // Mapa de calor: mes × hora.
+  const hmax = Math.max(...st.months.flatMap((m) => m.hours)), hmin = Math.min(...st.months.flatMap((m) => m.hours));
+  const cell = (v) => RAMP[Math.min(RAMP.length - 1, Math.floor(((v - hmin) / (hmax - hmin || 1)) * (RAMP.length - 1)))];
+  const heat = `<figure class="study-fig"><div class="heat-wrap"><div class="heat heat-months" role="img" aria-label="Precio medio por mes y hora del día"><span></span>${Array.from({ length: 24 }, (_, h) => `<span class="heat-h">${h % 3 === 0 ? h : ""}</span>`).join("")}
+${st.months.map((m) => `<span class="heat-d">${m.name.slice(0, 3)}</span>${m.hours.map((v, h) => `<span class="cell" style="background:${cell(v)}" title="${m.name} ${span(h)}: ${e3(v)} €/kWh"></span>`).join("")}`).join("\n")}</div></div>
+<div class="heat-legend"><span>${e3(hmin)}</span><i style="background:linear-gradient(90deg,${RAMP.join(",")})"></i><span>${e3(hmax)} €/kWh</span></div>
+<figcaption>Precio medio de cada hora del día, mes a mes (más oscuro = más caro).</figcaption></figure>`;
+  const monthRows = st.months.map((m) => `<tr><td>${m.name[0].toUpperCase() + m.name.slice(1)}</td><td class="num">${e3(m.mean)}</td><td>${span(m.cheapest.h)} (${e3(m.cheapest.p)})</td><td>${span(m.dearest.h)} (${e3(m.dearest.p)})</td></tr>`).join("");
+  const hourRows = st.byHour.map((p, h) => `<tr><td>${span(h)}</td><td class="num">${e3(p)}</td><td class="num">${st.counts[h]}</td></tr>`).join("");
+  const saving = st.spread * 365 * (1 + RULES.electricityTax) * (1 + RULES.vat);
+  return `<div class="kpis study-kpis">
+  <div class="kpi"><span class="kpi-label">Hora más barata de media</span><strong class="kpi-value">${span(st.cheapest.h)}</strong><span class="kpi-sub">${e3(st.cheapest.p)} €/kWh</span></div>
+  <div class="kpi"><span class="kpi-label">Hora más cara de media</span><strong class="kpi-value">${span(st.dearest.h)}</strong><span class="kpi-sub">${e3(st.dearest.p)} €/kWh</span></div>
+  <div class="kpi"><span class="kpi-label">Diferencia</span><strong class="kpi-value">${Math.round((st.dearest.p / st.cheapest.p - 1) * 100)} %</strong><span class="kpi-sub">más cara la peor hora que la mejor</span></div>
+  <div class="kpi"><span class="kpi-label">Días analizados</span><strong class="kpi-value">${st.nDays}</strong><span class="kpi-sub">del ${d(st.from)} al ${d(st.to)}</span></div>
+</div>
+<h2>Las conclusiones</h2>
+<ul class="study-findings">
+  <li>De media, las tres horas más baratas de ${STUDY_YEAR} han sido <strong>${st.cheapest3.map(span).join(", ")}</strong>, y las tres más caras, <strong>${st.dearest3.map(span).join(", ")}</strong>.</li>
+  <li>La hora más barata de cada día cayó <strong>de madrugada (00:00–08:00) el ${pct(st.shareNight)} de los días</strong> y <strong>en horas de sol (10:00–18:00) el ${pct(st.shareSolar)}</strong>.</li>
+  <li>El precio medio fue de <strong>${e3(st.weekday)} €/kWh en laborables</strong> y de <strong>${e3(st.weekend)} €/kWh en fines de semana y festivos</strong> (media del año: ${e3(st.mean)} €/kWh, sin impuestos).</li>
+  <li>El día más barato fue el <strong>${d(st.cheapestDay.date)}</strong> (${e3(st.cheapestDay.mean)} €/kWh de media) y el más caro, el <strong>${d(st.dearestDay.date)}</strong> (${e3(st.dearestDay.mean)} €/kWh).</li>
+  <li>Mover <strong>1 kWh al día</strong> de la hora más cara a la más barata (de media) supone unos <strong>${saving.toFixed(0)} € al año</strong> con impuestos, en la tarifa regulada.</li>
+</ul>
+<h2>Precio medio por hora del día</h2>
+${chart}
+<details class="data-table"><summary>Ver la tabla: precio medio por hora y cuántos días fue la más barata</summary><div class="table-wrap"><table><thead><tr><th>Hora</th><th>€/kWh medio</th><th>Días que fue la más barata</th></tr></thead><tbody>${hourRows}</tbody></table></div></details>
+<h2>Mes a mes</h2>
+${heat}
+<div class="table-wrap"><table><thead><tr><th>Mes</th><th>€/kWh medio</th><th>Hora más barata (media)</th><th>Hora más cara (media)</th></tr></thead><tbody>${monthRows}</tbody></table></div>
+<p><a class="btn" href="{{root}}data/pvpc-${STUDY_YEAR}.csv" download>Descargar los datos (CSV, ${st.nDays * 24} filas)</a></p>`;
+}
+
 // Texto del crédito «Hecho con …» de los vídeos. Con dominio propio se añade (se lee bien en un vídeo);
 // una dirección larga de github.io, no.
 function creditText(lang) {
@@ -155,9 +219,10 @@ function toolHtml(tool, lang, page) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
-    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
+    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot(page.mode))
     .replace(/\{\{credit\}\}/g, () => esc(creditText(lang)))
     .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
+    .replace(/\{\{c\.(\w+)\}\}/g, (_, k) => esc(page.coste?.[k] ?? ""))
     .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
     .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
@@ -341,6 +406,7 @@ function layout(page, pagesBySlug) {
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
+    .replace("{{study}}", () => studyHtml())
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{siteUrl\}\}/g, siteUrl)
@@ -396,6 +462,7 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
 <main id="main" class="wrap">
 ${crumbs.length ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
 ${body.trim()}
+${section === "luz" && site.telegram ? `<aside class="tg-cta" aria-label="Canal de Telegram"><p><strong>Recibe cada tarde el precio de mañana.</strong> Las horas más baratas y más caras del día siguiente, en un mensaje a las 20:40. Gratis y sin registrarte en ninguna web.</p><a class="btn btn-primary" href="${esc(site.telegram)}" rel="noopener">Unirme al canal de Telegram</a></aside>` : ""}
 ${guides.length ? `<nav class="guides" aria-labelledby="guides-title"><h2 id="guides-title">${lang === "es" ? "Guías relacionadas" : "Related guides"}</h2><ul>${guides.map((p) => `<li><a href="${href(p.slug.replace(/index\.html$/, ""))}">${esc(navLabel(p))}</a></li>`).join("")}</ul></nav>` : ""}
 ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
@@ -437,6 +504,8 @@ function build() {
     writeFileSync(join(OUT, "data", "pvpc-hoy.json"), JSON.stringify({ updated: pv.updated, source: pv.source, days }));
   }
 
+  // Datos del estudio en CSV (para periodistas y quien quiera comprobar los cálculos).
+  { const pv = readPvpc(); if (pv) writeFileSync(join(OUT, "data", `pvpc-${STUDY_YEAR}.csv`), studyCSV(pv, STUDY_YEAR, madridDate(0))); }
   const pages = readPages();
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
   for (const p of pages) {

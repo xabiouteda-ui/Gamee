@@ -438,3 +438,25 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .guides { margin-top: 40px; }
 .guides ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; padding-left: 1.1em; margin: 0; }
 .guides li { padding: 2px 0; }
+
+/* Canal de Telegram (páginas de luz) */
+.tg-cta { margin-top: 36px; padding: 18px 20px; border-radius: var(--radius); background: var(--accent-soft); border: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.tg-cta p { margin: 0; flex: 1 1 320px; }
+
+/* Calculadoras de coste por hora */
+.kpi-good .kpi-value { color: var(--ok); }
+.kpi-bad .kpi-value { color: var(--warn); }
+.bar-cell { width: 45%; }
+.bar-cell i { display: block; height: 10px; border-radius: 5px; background: var(--accent); opacity: .55; }
+tr.is-best td { font-weight: 700; }
+tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
+.manana-pending { margin: 8px 0 16px; }
+
+/* Estudio de precios */
+.study-kpis { margin: 18px 0 8px; }
+.study-fig { margin: 12px 0 18px; }
+.study-fig figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; }
+.study-fig .legend { display: inline-flex; gap: 14px; margin-right: 8px; }
+.heat-months { grid-template-columns: 34px repeat(24, minmax(10px, 1fr)); }
+.study-findings li { margin-bottom: 8px; }
+.gasto-form label .muted { font-weight: 400; }

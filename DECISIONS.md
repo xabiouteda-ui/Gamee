@@ -304,3 +304,22 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     licencia: REE no la indica como tal en la API; se cita siempre la fuente.
 85. **Pruebas e2e de la luz sin depender de que exista `data/pvpc.json` en local**: simulan el fallo de REE con
     una ruta 404. Antes fallaban si alguien descargaba los precios reales antes de probar.
+86. **Sin páginas duplicadas.** Tres búsquedas pedidas ya tenían página: «a qué hora es más barata la luz hoy»
+    (`precio-luz-hoy`), «transcribir una clase grabada» (`transcribir-clases`) y «audio de WhatsApp»
+    (`transcribir-notas-de-voz`), y «cómo poner subtítulos a un Reel» (`subtitulos-reels`). En vez de crear otra
+    página que compita con ellas (canibalización), se han reorientado título, H1 y nombre a esa búsqueda.
+87. **Calculadoras «¿cuánto cuesta poner…?»** (lavadora, horno, aire, coche): una sola herramienta
+    (`assets/js/luz/coste.js`) con valores por página. Calcula el coste de empezar a cada hora con los precios
+    reales de hoy y de mañana (si ya están), con impuesto eléctrico e IVA, y el ahorro por uso y al año. Consumos
+    por defecto **orientativos y editables**: lavadora 0,9 kWh (rango 0,5–1,2 kWh habitual; el dato real, en la
+    etiqueta europea en kWh/100 ciclos), horno 1 kWh por uso (IDAE, horno mediano), aire 0,9 kW de media (mismo
+    valor que ya usaba la calculadora de electrodomésticos), coche 17 kWh/100 km con ~10 % de pérdidas de carga.
+88. **Estudio 2026** calculado en el build con `data/pvpc.json` (REE): los números y gráficos quedan en el HTML
+    (los ven buscadores y periodistas sin JS) y se actualizan cada día. Todas las frases se rellenan con cifras
+    calculadas, sin afirmaciones que no salgan de los datos. CSV descargable para que se pueda comprobar. Se
+    descartan días con horas sin precio (cambio de hora). Si no hay datos, la página lo dice en vez de inventar.
+89. **Alternativa a CapCut** sin cifras ni precios de CapCut: los planes cambian a menudo y las fuentes
+    (publicaciones de terceros, consultadas el 29/09/2026) no coinciden. Se dice lo que hace nuestra herramienta y
+    se remite a la web oficial para lo demás.
+90. **Canal de Telegram** (`site.config.json` → `telegram`) enlazado en un recuadro al final de todas las páginas de
+    luz y en `sameAs` de la organización.

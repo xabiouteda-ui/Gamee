@@ -252,6 +252,49 @@ const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill(
     await ctx.close();
   }
 
+  // 8d. Coste por hora de inicio (lavadora, horno, aire, coche), precio de mañana y Telegram
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    for (const p of ["/luz/cuanto-cuesta-poner-la-lavadora.html", "/luz/cuanto-cuesta-poner-el-horno.html", "/luz/cuanto-cuesta-poner-el-aire-acondicionado.html"]) {
+      await page.goto(srv.base + p);
+      await page.waitForSelector("#c-result .kpi");
+      const txt = await page.textContent("#c-result");
+      check(/Mejor momento/.test(txt) && /Ahorras eligiendo la mejor hora/.test(txt) && /(céntimos|€)/.test(txt), `${p}: muestra mejor hora, ahorro y coste`);
+      check((await page.locator("#c-result tbody tr").count()) >= 1, `${p}: tabla de coste por hora de inicio`);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      check(overflow <= 0, `${p}: sin scroll horizontal en móvil (${overflow}px)`);
+      check(/t\.me\/precioluzmanana/.test(await page.getAttribute(".tg-cta a", "href")), `${p}: enlace al canal de Telegram`);
+    }
+    // El aire se calcula por hora: 1 kW durante 2 h cuesta el doble que durante 1 h a igual precio.
+    await page.fill("#c-kwh", "1");
+    await page.fill("#c-hours", "2");
+    check(/2 kWh/.test(await page.textContent("#c-result")), "Aire: 1 kW × 2 h = 2 kWh");
+    await page.fill("#c-kwh", "0");
+    check(/Revisa los datos/.test(await page.textContent("#c-result")), "Datos no válidos: mensaje claro");
+    await page.goto(srv.base + "/luz/cargar-coche-electrico.html");
+    await page.waitForSelector("#c-result .kpi");
+    // 100 km × 17 kWh/100 km ÷ 0,9 = 18,9 kWh
+    check(/18,9 kWh/.test(await page.textContent("#c-result")) && /Coste cada 100 km/.test(await page.textContent("#c-result")), "Coche: kWh con pérdidas y coste cada 100 km");
+    await page.goto(srv.base + "/luz/precio-luz-manana.html");
+    await page.waitForSelector("#hoy section.day");
+    const first = await page.textContent("#hoy > :first-child");
+    check(/^Mañana/.test(first.trim()) || /aún no están publicados/.test(first), "Precio mañana: primero mañana (o aviso si aún no se ha publicado)");
+    check(errs.length === 0, "Páginas de coste y mañana sin errores: " + errs.join(" | "));
+    await ctx.close();
+  }
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(ctx);
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/cuanto-cuesta-poner-la-lavadora.html");
+    await page.waitForFunction(() => !/Calculando/.test(document.querySelector("#c-result").textContent));
+    check(/no tenemos los precios de hoy/.test(await page.textContent("#c-result")), "Sin datos del PVPC: la calculadora de coste lo avisa");
+    await ctx.close();
+  }
+
   // 9. Móvil y modo oscuro
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, withPvpc);

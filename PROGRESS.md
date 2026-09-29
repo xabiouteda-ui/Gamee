@@ -8,7 +8,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 |---|---|
 | 0. Dominio herramientaslibres.es | ✅ |
 | 1. SEO técnico | ✅ |
-| 2. Contenido de cola larga | ⏳ |
+| 2. Contenido de cola larga | ✅ |
 | 3. Carpeta /marketing | ⏳ |
 | 4. Medición y AdSense | ⏳ |
 
@@ -20,6 +20,15 @@ El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.jso
 **1. SEO técnico ✅** Resumen en `marketing/auditoria-seo.md`. Títulos más cortos y con una sola marca, migas de pan
 y «Guías relacionadas» en cada página, imagen para redes propia por página, sitemap con fechas reales, IndexNow
 automático, datos estructurados (Organization, BreadcrumbList, Dataset del PVPC).
+
+**2. Contenido ✅ (9 páginas nuevas, 48 en total)**
+- Luz: **precio de la luz mañana**, **¿cuánto cuesta poner la lavadora / el horno / el aire hoy?** (coste a cada
+  hora con los precios reales), **mejor hora para cargar el coche eléctrico** y el **estudio «las horas más
+  baratas de la luz en 2026»** (gráficos, tabla mes a mes y CSV; se rehace solo cada día). Todas con el recuadro
+  de Telegram.
+- Subtítulos: **karaoke**, **alternativa gratis a CapCut**, **sin marca de agua**; «Reels» ahora es «cómo poner
+  subtítulos a un Reel».
+- Transcripción: las páginas de WhatsApp y de clases grabadas ya existían; les he ajustado título y H1.
 
 ---
 

@@ -1,0 +1,43 @@
+<!--{
+  "slug": "luz/estudio-horas-mas-baratas-luz-2026.html",
+  "faqSchema": true,
+  "daily": true,
+  "dataset": true,
+  "nav": "Estudio: horas más baratas de 2026",
+  "title": "Estudio: las horas más baratas de la luz en 2026",
+  "description": "¿A qué hora ha sido más barata la luz en 2026? Análisis de todos los precios horarios del PVPC de Red Eléctrica, mes a mes, con gráficos y datos descargables."
+}-->
+<section class="hero">
+  <h1>Estudio: las horas más baratas de la luz en 2026</h1>
+  <p class="lead">Hemos analizado todos los precios horarios de la tarifa regulada (PVPC) publicados por Red Eléctrica en 2026 para responder a una pregunta sencilla: <strong>¿a qué hora compensa encender los electrodomésticos?</strong> Los datos se actualizan solos cada día.</p>
+</section>
+
+<article class="content">
+{{study}}
+
+  {{ad:content}}
+
+  <h2>Metodología</h2>
+  <ul>
+    <li><strong>Datos:</strong> precio horario de la energía del PVPC 2.0TD para el sistema peninsular, en €/kWh, tal y como lo publica Red Eléctrica en su API pública (apidatos.ree.es). Incluye peajes y cargos; <strong>no incluye</strong> impuesto eléctrico ni IVA, salvo en el cálculo de ahorro anual, donde se indican.</li>
+    <li><strong>Periodo:</strong> desde el 1 de enero de 2026 hasta el último día completo publicado. Se descartan los días con alguna hora sin precio (por ejemplo, el cambio de hora de marzo, que tiene 23 horas).</li>
+    <li><strong>Medias:</strong> media aritmética de cada hora del día sobre todos los días; no se ponderan por consumo. «Fines de semana y festivos» son los días que la tarifa trata como valle todo el día (sábados, domingos y festivos nacionales de fecha fija).</li>
+    <li><strong>Reproducible:</strong> puedes descargar el CSV con todos los precios usados y rehacer los cálculos. Si encuentras un error, escríbenos desde <a href="{{root}}contacto.html">contacto</a>.</li>
+  </ul>
+
+  <h2>Para medios y blogs</h2>
+  <p>Puedes citar y reproducir las cifras y los gráficos de este estudio <strong>citando la fuente con un enlace a esta página</strong> («Fuente: Herramientas Libres con datos de Red Eléctrica»). Si necesitas un gráfico en otro formato o un cálculo concreto para un artículo, escríbenos. Para tu web también tienes el <a href="{{root}}luz/widget-precio-luz.html">widget gratuito del precio de la luz de hoy</a>.</p>
+
+  <h2>¿Y hoy?</h2>
+  <p>Las medias sirven para crear hábitos, pero cada día es distinto. Consulta el <a href="{{root}}luz/precio-luz-hoy.html">precio de la luz hoy</a> y el de <a href="{{root}}luz/precio-luz-manana.html">mañana</a>, o calcula cuánto te cuesta poner <a href="{{root}}luz/cuanto-cuesta-poner-la-lavadora.html">la lavadora</a> o <a href="{{root}}luz/cargar-coche-electrico.html">cargar el coche</a> a cada hora.</p>
+
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿Estos datos valen si tengo una tarifa de mercado libre?</summary>
+    <div><p>Solo si es indexada al mercado. Con una tarifa de precio fijo pagas lo mismo a cualquier hora; con una de tres periodos, lo que cuenta es punta, llano y valle. Compara tu caso en <a href="{{root}}luz/pvpc-o-mercado-libre.html">PVPC o mercado libre</a>.</p></div>
+  </details>
+  <details>
+    <summary>¿Cada cuánto se actualiza el estudio?</summary>
+    <div><p>Cada día, cuando se vuelve a publicar la web con los precios nuevos de Red Eléctrica.</p></div>
+  </details>
+</article>

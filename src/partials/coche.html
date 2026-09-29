@@ -1,0 +1,24 @@
+<section class="tool card gasto" id="coste" aria-label="Calculadora de carga del coche eléctrico" data-mode="coche">
+  <div class="gasto-form">
+    <label>Kilómetros que quieres recuperar
+      <input type="number" id="c-km" min="1" max="1500" step="1" value="100" inputmode="numeric">
+    </label>
+    <label>Consumo del coche (kWh/100 km)
+      <input type="number" id="c-cons" min="5" max="40" step="0.1" value="17" inputmode="decimal">
+      <span class="muted small">Míralo en el ordenador de a bordo o en la ficha técnica.</span>
+    </label>
+    <label>Cómo cargas
+      <select id="c-power">
+        <option value="2.3">Enchufe normal (2,3 kW)</option>
+        <option value="3.7">Wallbox 16 A (3,7 kW)</option>
+        <option value="7.4" selected>Wallbox 32 A (7,4 kW)</option>
+        <option value="11">Wallbox trifásico (11 kW)</option>
+      </select>
+    </label>
+    <label>Cargas por semana
+      <input type="number" id="c-week" min="0" max="14" step="1" value="2" inputmode="numeric">
+    </label>
+  </div>
+  <div class="gasto-result" id="c-result" aria-live="polite"><p class="muted">Calculando con los precios de hoy…</p></div>
+  <noscript><p>Esta calculadora necesita JavaScript. Mientras, consulta la hora más barata en <a href="{{root}}luz/precio-luz-hoy.html">precio de la luz hoy</a>.</p></noscript>
+</section>

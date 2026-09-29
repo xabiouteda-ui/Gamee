@@ -1,0 +1,16 @@
+<section class="tool card gasto" id="coste" aria-label="Calculadora de coste por hora" data-mode="uso" data-per-hour="{{c.perHour}}">
+  <div class="gasto-form">
+    <label>{{c.kwhLabel}}
+      <input type="number" id="c-kwh" min="0.01" max="50" step="0.01" value="{{c.kwh}}" inputmode="decimal">
+      <span class="muted small">{{c.kwhHelp}}</span>
+    </label>
+    <label>{{c.hoursLabel}}
+      <input type="number" id="c-hours" min="0.25" max="24" step="0.25" value="{{c.hours}}" inputmode="decimal">
+    </label>
+    <label>Usos por semana
+      <input type="number" id="c-week" min="0" max="50" step="1" value="{{c.week}}" inputmode="numeric">
+    </label>
+  </div>
+  <div class="gasto-result" id="c-result" aria-live="polite"><p class="muted">Calculando con los precios de hoy…</p></div>
+  <noscript><p>Esta calculadora necesita JavaScript. Mientras, consulta la hora más barata en <a href="{{root}}luz/precio-luz-hoy.html">precio de la luz hoy</a>.</p></noscript>
+</section>

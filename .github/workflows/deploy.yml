@@ -71,6 +71,7 @@ jobs:
           node tests/unit-luz.mjs
           node tests/unit-monetizacion.mjs
           node tests/unit-seo.mjs
+          node tests/unit-luz-contenido.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:
