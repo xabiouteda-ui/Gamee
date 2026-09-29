@@ -21,7 +21,7 @@ const els = {
   headline: $("headline"), results: $("results"), kpis: $("kpis"), ranking: $("ranking"), verified: $("verified-note"),
   offers: $("offers"), pw1: $("pw1"), pw2: $("pw2"), addOffer: $("add-offer"), insights: $("insights"),
   sponsored: $("sponsored"), sponsoredList: $("sponsored-list"),
-  solar: $("solar"), solarSize: $("solar-size"), solarZone: $("solar-zone"), solarSaving: $("solar-saving"), solarResult: $("solar-result"), solarNote: $("solar-note"),
+  solar: $("solar"), solarSize: $("solar-size"), solarZone: $("solar-zone"), solarSaving: $("solar-saving"), solarResult: $("solar-result"), solarNote: $("solar-note"), solarCost: $("solar-cost"), solarSurplus: $("solar-surplus"), solarTips: $("solar-tips"), solarMonths: $("solar-months"),
   consumption: $("consumption"), charts: $("charts"), monthly: $("monthly"), heat: $("heat"), rulesNote: $("rules-note"), tip: $("tip"),
 };
 
@@ -382,7 +382,12 @@ function renderSolar(r) {
   if (!state.rows) return;
   const cfg = { ...SOLAR_DEFAULTS, ...(state.catalog?.solar || {}) };
   const ref = (r.find((x) => x.offer.id === state.current) || r[0]).offer;
-  const opts = { yearlyYield: cfg.yield[state.solarZone] ?? cfg.yield.centro, costPerKwp: cfg.costPerKwp, surplusPrice: cfg.surplusPrice, priceAt: priceFn(ref) };
+  // Precio instalado y de excedentes: los de data/ofertas.json salvo que la persona ponga los suyos.
+  const own = (k, min, max) => { const v = store.get(k); return typeof v === "number" && v >= min && v <= max ? v : null; };
+  const costPerKwp = own("solarCost", 300, 4000) ?? cfg.costPerKwp, surplusPrice = own("solarSurplus", 0, 0.5) ?? cfg.surplusPrice;
+  if (document.activeElement !== els.solarCost) els.solarCost.value = costPerKwp;
+  if (document.activeElement !== els.solarSurplus) els.solarSurplus.value = surplusPrice;
+  const opts = { yearlyYield: cfg.yield[state.solarZone] ?? cfg.yield.centro, costPerKwp, surplusPrice, priceAt: priceFn(ref) };
   const suggested = suggestSize(state.rows, opts, SOLAR_DEFAULTS.sizes);
   const est = state.solarKwp ? solarEstimate(state.rows, { ...opts, kwp: state.solarKwp }) : suggested;
   els.solarZone.value = state.solarZone;
@@ -390,7 +395,16 @@ function renderSolar(r) {
   els.solarSaving.textContent = fmt(T.solarSaving, { eur: eur(est.savingYear) });
   els.solarResult.textContent = fmt(T.solarResult, { kwp: num(est.kwp, 1), prod: num(est.production), self: num(est.selfShare * 100), cover: num(est.coverage * 100) }) + " "
     + (Number.isFinite(est.payback) && est.payback < 40 ? fmt(T.solarPayback, { cost: eur(est.cost), years: num(est.payback, est.payback < 10 ? 1 : 0) }) : fmt(T.solarNoPayback, { cost: eur(est.cost) }));
-  els.solarNote.textContent = fmt(T.solarNote, { cost: num(cfg.costPerKwp), surplus: num(cfg.surplusPrice, 2), offer: ref.name });
+  const tips = [fmt(T.solarSun, { p: num(est.sunShare * 100) })];
+  if (est.lostYear >= 5) tips.push(fmt(T.solarLost, { eur: eur(est.lostYear) }));
+  else if (surplusPrice > 0 && est.surplus > 0) tips.push(fmt(T.solarBest, { kwp: num(est.kwp, 1) }));
+  els.solarTips.replaceChildren(...tips.map((t) => Object.assign(document.createElement("li"), { textContent: t })));
+  els.solarMonths.replaceChildren(...est.months.map((m) => {
+    const tr = document.createElement("tr");
+    [`${MONTHS[Number(m.month.slice(5)) - 1]} ${m.month.slice(0, 4)}`, num(m.consumption), num(m.production), num(m.selfUse), num(m.surplusKwh)].forEach((v, j) => { const c = tr.insertCell(); c.textContent = v; if (j) c.className = "num"; });
+    return tr;
+  }));
+  els.solarNote.textContent = fmt(T.solarNote, { cost: num(costPerKwp), surplus: num(surplusPrice, 2), offer: ref.name });
 }
 
 function kpi(label, value, sub) {
@@ -647,6 +661,9 @@ function init() {
     });
   }
   els.solarSize.addEventListener("change", () => { state.solarKwp = Number(els.solarSize.value); renderAll(); });
+  for (const [el, key] of [[els.solarCost, "solarCost"], [els.solarSurplus, "solarSurplus"]]) {
+    el.addEventListener("change", () => { store.set(key, el.value === "" ? null : Number(el.value)); state.solarKwp = null; renderAll(); });
+  }
   els.solarZone.addEventListener("change", () => { state.solarZone = els.solarZone.value; store.set("solarZone", state.solarZone); state.solarKwp = null; renderAll(); });
   for (const ev of ["mousemove", "focusin"]) els.results.addEventListener(ev, tip);
   els.results.addEventListener("mouseleave", () => { els.tip.hidden = true; });

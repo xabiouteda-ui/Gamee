@@ -353,3 +353,9 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     o si falla la carga: recorte centrado, con aviso. Probado con la librería real y una foto en Chromium; en CI se
     usa un detector simulado. **MediaPipe envía cada minuto estadísticas de uso a odml.pa.googleapis.com**: se
     bloquea esa petición (la librería deja de intentarlo) y se explica en Privacidad.
+99. **Placas solares más completas** sin datos nuevos inventados: el precio por kWp y el de los excedentes se pueden
+    cambiar (se recuerdan en el navegador) y el texto dice que los de serie son orientativos; tabla mes a mes
+    (consumo, producción, usada al momento, excedentes); qué parte del consumo cae en horas de sol; y cuántos € de
+    excedentes se perderían por el tope de la compensación simplificada, con la batería virtual como alternativa
+    (sin nombrar comercializadoras ni precios). No añado baterías físicas ni orientaciones este/oeste: harían falta
+    cifras de coste y rendimiento que no he podido contrastar hoy.

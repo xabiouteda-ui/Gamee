@@ -80,9 +80,21 @@
           <option value="sur">{{t.zoneSur}}</option>
         </select>
       </label>
+      <label>{{t.solarCost}} <input type="number" id="solar-cost" min="300" max="4000" step="50" inputmode="numeric"></label>
+      <label>{{t.solarSurplus}} <input type="number" id="solar-surplus" min="0" max="0.5" step="0.01" inputmode="decimal"></label>
     </div>
     <p class="solar-saving" id="solar-saving"></p>
     <p id="solar-result"></p>
+    <ul class="solar-tips" id="solar-tips"></ul>
+    <details class="solar-months">
+      <summary>{{t.solarMonths}}</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>{{t.solarMonth}}</th><th class="num">{{t.solarUse}}</th><th class="num">{{t.solarProd}}</th><th class="num">{{t.solarSelf}}</th><th class="num">{{t.solarExport}}</th></tr></thead>
+          <tbody id="solar-months"></tbody>
+        </table>
+      </div>
+    </details>
     <p class="muted small" id="solar-note"></p>
   </section>
 

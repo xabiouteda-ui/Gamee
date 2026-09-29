@@ -11,7 +11,7 @@ Resumen para revisar desde el móvil. Lo más reciente, arriba.
 | 2. Contenido de cola larga | ✅ |
 | 3. Carpeta /marketing | ✅ |
 | 4. Medición y AdSense | ✅ (con tareas tuyas) |
-| 5. Extras | ⏳ |
+| 5. Extras | ✅ |
 
 **0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
 El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
@@ -50,6 +50,8 @@ Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
 enlazadas con su versión en español. 53 páginas en total.
 Subtítulos: al pasar un vídeo horizontal a 9:16 hay una casilla nueva **«Seguir la cara»**: el recorte se mueve con
 quien habla (se analiza en el navegador; sin subir el vídeo).
+Luz: el bloque de **placas solares** deja poner tu precio por kWp y el de tus excedentes, muestra el mes a mes,
+cuánto consumes en horas de sol y cuánto dinero de excedentes perderías si pones demasiada potencia.
 
 ---
 

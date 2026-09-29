@@ -470,3 +470,9 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
 .gasto-form label .muted { font-weight: 400; }
 #follow-row { margin: 0 0 4px 1.6em; }
 #follow-status { display: block; font-size: 0.85em; }
+.solar .contract input[type="number"] { width: 7em; }
+.solar-tips { margin: 8px 0; padding-left: 1.2em; }
+.solar-tips li { margin: 4px 0; }
+.solar-months { margin: 8px 0; }
+.solar-months summary { cursor: pointer; font-weight: 600; }
+.solar-months td:first-child { white-space: nowrap; }

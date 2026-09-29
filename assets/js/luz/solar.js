@@ -43,7 +43,7 @@ export function productionPerKwp(date, hour, yearlyYield) {
 // Devuelve cifras anualizadas: producción, autoconsumo, excedentes, ahorro (con impuestos), coste y retorno.
 export function solarEstimate(rows, { kwp, yearlyYield, costPerKwp, surplusPrice, priceAt }) {
   const days = new Set();
-  let production = 0, selfUse = 0, surplus = 0, consumption = 0, saved = 0;
+  let production = 0, selfUse = 0, surplus = 0, consumption = 0, saved = 0, sunKwh = 0;
   const month = new Map(); // compensación simplificada: el excedente solo descuenta hasta el coste de energía del mes
   for (const r of rows) {
     days.add(r.date);
@@ -54,15 +54,23 @@ export function solarEstimate(rows, { kwp, yearlyYield, costPerKwp, surplusPrice
     selfUse += used;
     surplus += prod - used;
     consumption += r.kwh;
+    if (prod > 0) sunKwh += r.kwh;
     saved += used * price;
     const key = r.date.slice(0, 7);
-    const mm = month.get(key) || { grid: 0, surplus: 0 };
+    const mm = month.get(key) || { month: key, grid: 0, surplus: 0, consumption: 0, production: 0, selfUse: 0, surplusKwh: 0 };
     mm.grid += (r.kwh - used) * price;
     mm.surplus += (prod - used) * surplusPrice;
+    mm.consumption += r.kwh;
+    mm.production += prod;
+    mm.selfUse += used;
+    mm.surplusKwh += prod - used;
     month.set(key, mm);
   }
-  let compensated = 0;
-  for (const mm of month.values()) compensated += Math.min(mm.grid, mm.surplus);
+  let compensated = 0, lost = 0;
+  for (const mm of month.values()) {
+    compensated += Math.min(mm.grid, mm.surplus);
+    lost += Math.max(0, mm.surplus - mm.grid);
+  }
   const k = days.size ? 365 / days.size : 0;
   const taxes = (1 + RULES.electricityTax) * (1 + RULES.vat);
   const savingYear = (saved + compensated) * taxes * k;
@@ -76,6 +84,10 @@ export function solarEstimate(rows, { kwp, yearlyYield, costPerKwp, surplusPrice
     selfShare: production ? selfUse / production : 0, // parte de lo producido que usas en el momento
     coverage: consumption ? selfUse / consumption : 0, // parte de tu consumo que cubren las placas
     savingYear,
+    // Excedentes que no se cobran: la compensación simplificada no baja de 0 la energía del mes (€ al año, con impuestos).
+    lostYear: lost * taxes * k,
+    sunShare: consumption ? sunKwh / consumption : 0, // parte de tu consumo que cae en horas de sol
+    months: [...month.values()].sort((a, b) => a.month.localeCompare(b.month)),
     cost,
     payback: savingYear > 0 ? cost / savingYear : Infinity,
   };

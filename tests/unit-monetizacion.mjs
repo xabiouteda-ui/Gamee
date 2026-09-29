@@ -74,6 +74,11 @@ await test("Placas: el autoconsumo no supera ni la producción ni el consumo; el
   const huge = solarEstimate(rows, { ...o, kwp: 50, surplusPrice: 5 });
   const maxSaving = rows.reduce((a, r) => a + r.kwh * price[periodOf(r.date, r.hour)], 0) * (1 + RULES.electricityTax) * (1 + RULES.vat);
   assert.ok(huge.savingYear <= maxSaving + 0.01);
+  // Mes a mes y excedentes perdidos: con placas enormes sobra energía que no se compensa.
+  assert.equal(small.months.length, 12);
+  assert.ok(Math.abs(small.months.reduce((a, m) => a + m.production, 0) - small.production) < 1e-6);
+  assert.ok(small.lostYear < 1 && huge.lostYear > 100, "solo se pierden excedentes cuando superan la energía comprada");
+  assert.ok(small.sunShare > 0.2 && small.sunShare < 1);
   const s = suggestSize(rows, o);
   assert.ok(s.kwp >= 1.5 && s.kwp <= 8 && Number.isFinite(s.payback));
 });

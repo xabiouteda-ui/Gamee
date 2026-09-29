@@ -77,6 +77,17 @@ const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill(
   check(/recomendada/.test(await page.locator("#solar-size option:checked").textContent()), "Placas solares: propone un tamaño recomendado");
   await page.selectOption("#solar-size", "8");
   check(saving !== (await page.textContent("#solar-saving")), "Placas solares: cambiar el tamaño recalcula");
+  await page.click(".solar-months summary");
+  await page.locator("#solar").screenshot({ path: path.join(OUT, "luz-placas.png") });
+  check(/horas de sol/.test(await page.textContent("#solar-tips")), "Placas solares: dice qué parte del consumo cae en horas de sol");
+  check((await page.locator("#solar-months tr").count()) >= 1, "Placas solares: tabla mes a mes");
+  const before = await page.textContent("#solar-saving");
+  await page.fill("#solar-surplus", "0");
+  await page.dispatchEvent("#solar-surplus", "change");
+  check(before !== (await page.textContent("#solar-saving")) && /0,00 €\/kWh/.test(await page.textContent("#solar-note")), "Placas solares: el precio de los excedentes se puede cambiar");
+  await page.fill("#solar-cost", "900");
+  await page.dispatchEvent("#solar-cost", "change");
+  check(/900 €\/kWp/.test(await page.textContent("#solar-note")) && (await page.evaluate(() => localStorage.getItem("tl.luz.solarCost"))) === "900", "Placas solares: tu precio por kWp se usa y se recuerda");
   await page.selectOption("#solar-zone", "sur");
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.solarZone")))) === "sur", "Placas solares: la zona se recuerda");
 
