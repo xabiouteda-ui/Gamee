@@ -199,7 +199,15 @@ details > div { padding-bottom: 8px; }
 
 /* Anuncios: sin espacio mientras están desactivados */
 .ad-slot { display: none; }
-.ad-slot.ad-on { display: block; margin: 20px 0; min-height: 100px; text-align: center; }
+/* Alto fijo por hueco: el espacio se reserva antes de que llegue el anuncio (sin CLS). */
+.ad-slot.ad-on { display: block; margin: 20px 0; text-align: center; overflow: hidden; min-height: 100px; }
+.ad-slot.ad-on ins.adsbygoogle { display: inline-block; width: 100%; height: 100px; }
+.ad-slot.ad-on[data-slot="content"], .ad-slot.ad-on[data-slot="result"] { min-height: 250px; }
+.ad-slot.ad-on[data-slot="content"] ins.adsbygoogle, .ad-slot.ad-on[data-slot="result"] ins.adsbygoogle { height: 250px; }
+@media (min-width: 768px) {
+  .ad-slot.ad-on[data-slot="top"], .ad-slot.ad-on[data-slot="bottom"] { min-height: 90px; }
+  .ad-slot.ad-on[data-slot="top"] ins.adsbygoogle, .ad-slot.ad-on[data-slot="bottom"] ins.adsbygoogle { height: 90px; }
+}
 
 /* Móvil: la herramienta lo antes posible en pantalla */
 @media (max-width: 560px) {
@@ -429,3 +437,42 @@ pre.code { background: var(--surface-2); border: 1px solid var(--border); border
 .widget-demo iframe { border: 0; max-width: 420px; display: block; }
 .widget-opts label { display: grid; gap: 4px; margin-bottom: 10px; }
 .widget-code { width: 100%; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); resize: vertical; }
+
+/* Migas de pan y guías relacionadas (enlazado interno) */
+.crumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; margin: 14px 0 0; padding: 0; font-size: .86rem; color: var(--muted); }
+.crumbs li + li::before { content: "›"; margin-right: 4px; }
+.crumbs a { color: var(--muted); }
+.crumbs + .hero { padding-top: 10px; }
+.guides { margin-top: 40px; }
+.guides ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; padding-left: 1.1em; margin: 0; }
+.guides li { padding: 2px 0; }
+
+/* Canal de Telegram (páginas de luz) */
+.tg-cta { margin-top: 36px; padding: 18px 20px; border-radius: var(--radius); background: var(--accent-soft); border: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.tg-cta p { margin: 0; flex: 1 1 320px; }
+
+/* Calculadoras de coste por hora */
+.kpi-good .kpi-value { color: var(--ok); }
+.kpi-bad .kpi-value { color: var(--warn); }
+.bar-cell { width: 45%; }
+.bar-cell i { display: block; height: 10px; border-radius: 5px; background: var(--accent); opacity: .55; }
+tr.is-best td { font-weight: 700; }
+tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
+.manana-pending { margin: 8px 0 16px; }
+
+/* Estudio de precios */
+.study-kpis { margin: 18px 0 8px; }
+.study-fig { margin: 12px 0 18px; }
+.study-fig figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; }
+.study-fig .legend { display: inline-flex; gap: 14px; margin-right: 8px; }
+.heat-months { grid-template-columns: 34px repeat(24, minmax(10px, 1fr)); }
+.study-findings li { margin-bottom: 8px; }
+.gasto-form label .muted { font-weight: 400; }
+#follow-row { margin: 0 0 4px 1.6em; }
+#follow-status { display: block; font-size: 0.85em; }
+.solar .contract input[type="number"] { width: 7em; }
+.solar-tips { margin: 8px 0; padding-left: 1.2em; }
+.solar-tips li { margin: 4px 0; }
+.solar-months { margin: 8px 0; }
+.solar-months summary { cursor: pointer; font-weight: 600; }
+.solar-months td:first-child { white-space: nowrap; }

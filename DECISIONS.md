@@ -274,3 +274,90 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     sitemap) con CSS propio de 2 KB y un JSON de 4 días (`data/pvpc-hoy.json`) en vez de los ~400 días; si no
     existe, usa `pvpc.json`. El enlace de atribución va **fuera** del iframe en el código para copiar (dentro de un
     iframe no cuenta para buscadores) y también dentro del widget. Tema claro/oscuro/automático. Sin cookies.
+
+## Sesión 5 (29/09/2026): dominio propio, SEO y marketing
+
+77. **Dominio `https://herramientaslibres.es` con `basePath` "/"** en `site.config.json` (y las variables de
+    Actions). El último despliegue manual (28/09) falló porque `check-site` comparaba la portada con el antiguo
+    `github.io/Gamee/`; al cambiar el archivo, vuelve a pasar. El aviso del workflow saltaba porque GitHub Pages
+    devuelve `http://herramientaslibres.es` (HTTPS aún no obligatorio): ahora compara sin el esquema y, si solo
+    falta HTTPS, deja una nota en vez de un aviso. Sin archivo `CNAME`: con despliegue por Actions GitHub lo ignora
+    y el dominio se guarda en Settings → Pages.
+78. **`ads.txt` siempre en la raíz.** Sin ID de AdSense lleva solo un comentario (válido según la especificación de
+    IAB); con ID, la línea de Google. `check-site` comprueba que existe, que `robots.txt` apunta al sitemap del
+    dominio y que no queda ninguna URL de `github.io` en la web.
+79. **Marca única «Herramientas Libres».** 7 páginas del transcriptor seguían con el nombre antiguo «Transcribe
+    Libre» en el título: dividía la marca y no la busca nadie. Títulos ≤ 65 caracteres (Google corta hacia 60).
+80. **Enlazado interno automático:** cada página cuelga de una sección (luz, subtítulos, audio a texto) según su
+    carpeta. Llevan migas de pan visibles + `BreadcrumbList`, y un bloque «Guías relacionadas» con todas las demás
+    páginas de la sección (nombre corto en `"nav"` de la cabecera JSON). Así una página nueva queda enlazada desde
+    todas sus hermanas sin tocar las demás.
+81. **`lastmod` real** = fecha del último commit del archivo de la página (el workflow hace checkout completo);
+    las páginas con `"daily": true` (precios del día) usan la fecha de `data/pvpc.json` si es posterior.
+82. **IndexNow**: clave pública (no es secreta) en `site.config.json` → `/<clave>.txt`. `scripts/indexnow.mjs` lee el
+    sitemap ya publicado y avisa: todas las URL tras un push, solo las de lastmod de hoy en el despliegue diario.
+    Nunca rompe el workflow. Google no usa IndexNow: para Google basta el sitemap en Search Console.
+83. **Imágenes OG por página** generadas con Chromium (`scripts/og-images.mjs`) y guardadas en el repo (~75 KB
+    cada una). No se generan en el build para no meter un navegador en Actions; `check-site` falla si una página
+    indexable no tiene la suya, así que no se olvida.
+84. **`Dataset` de schema.org** para el PVPC con `isBasedOn` REE y descarga `data/pvpc.json`. No se declara
+    licencia: REE no la indica como tal en la API; se cita siempre la fuente.
+85. **Pruebas e2e de la luz sin depender de que exista `data/pvpc.json` en local**: simulan el fallo de REE con
+    una ruta 404. Antes fallaban si alguien descargaba los precios reales antes de probar.
+86. **Sin páginas duplicadas.** Tres búsquedas pedidas ya tenían página: «a qué hora es más barata la luz hoy»
+    (`precio-luz-hoy`), «transcribir una clase grabada» (`transcribir-clases`) y «audio de WhatsApp»
+    (`transcribir-notas-de-voz`), y «cómo poner subtítulos a un Reel» (`subtitulos-reels`). En vez de crear otra
+    página que compita con ellas (canibalización), se han reorientado título, H1 y nombre a esa búsqueda.
+87. **Calculadoras «¿cuánto cuesta poner…?»** (lavadora, horno, aire, coche): una sola herramienta
+    (`assets/js/luz/coste.js`) con valores por página. Calcula el coste de empezar a cada hora con los precios
+    reales de hoy y de mañana (si ya están), con impuesto eléctrico e IVA, y el ahorro por uso y al año. Consumos
+    por defecto **orientativos y editables**: lavadora 0,9 kWh (rango 0,5–1,2 kWh habitual; el dato real, en la
+    etiqueta europea en kWh/100 ciclos), horno 1 kWh por uso (IDAE, horno mediano), aire 0,9 kW de media (mismo
+    valor que ya usaba la calculadora de electrodomésticos), coche 17 kWh/100 km con ~10 % de pérdidas de carga.
+88. **Estudio 2026** calculado en el build con `data/pvpc.json` (REE): los números y gráficos quedan en el HTML
+    (los ven buscadores y periodistas sin JS) y se actualizan cada día. Todas las frases se rellenan con cifras
+    calculadas, sin afirmaciones que no salgan de los datos. CSV descargable para que se pueda comprobar. Se
+    descartan días con horas sin precio (cambio de hora). Si no hay datos, la página lo dice en vez de inventar.
+89. **Alternativa a CapCut** sin cifras ni precios de CapCut: los planes cambian a menudo y las fuentes
+    (publicaciones de terceros, consultadas el 29/09/2026) no coinciden. Se dice lo que hace nuestra herramienta y
+    se remite a la web oficial para lo demás.
+90. **Canal de Telegram** (`site.config.json` → `telegram`) enlazado en un recuadro al final de todas las páginas de
+    luz y en `sameAs` de la organización.
+91. **Carpeta `/marketing` solo con material para pegar**: nada se ha publicado fuera del repo. Contactos de
+    prensa y URLs/condiciones de directorios y afiliados verificados con búsquedas el 29/09/2026 y marcados para
+    comprobar; donde el medio no publica un email general, se da su formulario. No se incluyen comparadores de
+    luz en prensa (competencia). No se dan cifras de tráfico objetivo (no hay base para estimarlas).
+92. **Octopus Energy por Awin, no por su plan de referidos**: los planes «invita a un amigo» (Octopus, Gana
+    Energía) son para clientes y Octopus limita a quien los usa para ganar dinero en público.
+93. **Capturas de marketing generadas sin precios de prueba** (`scripts/marketing-assets.mjs`): las de la luz
+    muestran el comparador vacío; las del estudio se deben hacer sobre la web publicada con datos reales.
+94. **GoatCounter** (sin cookies, sin aviso de consentimiento) activable con `site.config.json` → `goatcounter`.
+    Vacío = no se carga nada. Se menciona en la privacidad como «solo si está activado». Ojo: su plan alojado
+    gratis es para webs no comerciales (anotado en README y PROGRESS).
+95. **Huecos de anuncios sin CLS:** alto fijo por hueco (100 px móvil / 90 px escritorio arriba y abajo, 250 px en
+    el contenido y bajo la herramienta) con ancho adaptable, sin `data-ad-format="auto"` (que elegía el alto al
+    vuelo y movía la página). Con AdSense activo y un ID en el hueco, el build pone `ad-on` en el HTML para
+    reservar el espacio desde el primer pintado.
+96. **Consentimiento UE con la CMP de Google** (Privacidad y mensajes de AdSense), no con un banner propio: es
+    gratis, está certificada para TCF y se carga con el propio script de AdSense. La web no pone cookies propias.
+    Texto de «Cómo ganamos dinero» corregido: decía que los anuncios «solo se cargan» si aceptas; lo correcto es
+    que las cookies de publicidad solo se usan si aceptas.
+97. **Páginas en inglés** solo para las 5 búsquedas con más potencial fuera de España (karaoke, alternativa a
+    CapCut, sin marca de agua, audios de WhatsApp, clases grabadas), con hreflang recíproco (nueva prueba). La
+    luz no se traduce: solo sirve en España.
+98. **Reencuadre 9:16 siguiendo la cara, opcional** (casilla «Seguir la cara», apagada por defecto y recordada):
+    MediaPipe Face Detector (Apache-2.0) desde jsDelivr y el modelo BlazeFace de corto alcance servido desde
+    `assets/models/` (230 KB). Busca la cara unas 2 veces por segundo (máx. 240 muestras) en una copia oculta del
+    vídeo, sigue la más grande, rellena huecos con la posición más cercana, media móvil y zona muerta del 5 % para
+    que no «baile». Si en el fotograma entero no ve ninguna (planos abiertos), prueba en tres cuadrados. Sin caras
+    o si falla la carga: recorte centrado, con aviso. Probado con la librería real y una foto en Chromium; en CI se
+    usa un detector simulado. **MediaPipe envía cada minuto estadísticas de uso a odml.pa.googleapis.com**: se
+    bloquea esa petición (la librería deja de intentarlo) y se explica en Privacidad.
+99. **Placas solares más completas** sin datos nuevos inventados: el precio por kWp y el de los excedentes se pueden
+    cambiar (se recuerdan en el navegador) y el texto dice que los de serie son orientativos; tabla mes a mes
+    (consumo, producción, usada al momento, excedentes); qué parte del consumo cae en horas de sol; y cuántos € de
+    excedentes se perderían por el tope de la compensación simplificada, con la batería virtual como alternativa
+    (sin nombrar comercializadoras ni precios). No añado baterías físicas ni orientaciones este/oeste: harían falta
+    cifras de coste y rendimiento que no he podido contrastar hoy.
+100. **Paro al terminar el bloque 5** en vez de ampliar el backlog: la sesión ha sido larga (el contexto se ha
+     compactado una vez) y prefiero no pasarme del tope de 35 $. La PR queda lista para fusionar.

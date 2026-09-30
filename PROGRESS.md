@@ -2,6 +2,59 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
+## Sesión 5 (29/09/2026) – dominio, SEO y marketing (terminada: PR #4 lista para fusionar)
+
+| Bloque | Estado |
+|---|---|
+| 0. Dominio herramientaslibres.es | ✅ |
+| 1. SEO técnico | ✅ |
+| 2. Contenido de cola larga | ✅ |
+| 3. Carpeta /marketing | ✅ |
+| 4. Medición y AdSense | ✅ (con tareas tuyas) |
+| 5. Extras | ✅ |
+
+**0. Dominio ✅** Todo (canonical, sitemap, OG, 404, widget, crédito, Telegram) usa `https://herramientaslibres.es`.
+El despliegue manual del 28/09 **falló** por la URL antigua en `site.config.json`: se arregla al fusionar esta PR.
+`robots.txt` y `ads.txt` en la raíz. El aviso del workflow era porque Pages aún sirve **http**: activa
+*Settings → Pages → Enforce HTTPS*.
+
+**1. SEO técnico ✅** Resumen en `marketing/auditoria-seo.md`. Títulos más cortos y con una sola marca, migas de pan
+y «Guías relacionadas» en cada página, imagen para redes propia por página, sitemap con fechas reales, IndexNow
+automático, datos estructurados (Organization, BreadcrumbList, Dataset del PVPC).
+
+**2. Contenido ✅ (9 páginas nuevas, 48 en total)**
+- Luz: **precio de la luz mañana**, **¿cuánto cuesta poner la lavadora / el horno / el aire hoy?** (coste a cada
+  hora con los precios reales), **mejor hora para cargar el coche eléctrico** y el **estudio «las horas más
+  baratas de la luz en 2026»** (gráficos, tabla mes a mes y CSV; se rehace solo cada día). Todas con el recuadro
+  de Telegram.
+- Subtítulos: **karaoke**, **alternativa gratis a CapCut**, **sin marca de agua**; «Reels» ahora es «cómo poner
+  subtítulos a un Reel».
+- Transcripción: las páginas de WhatsApp y de clases grabadas ya existían; les he ajustado título y H1.
+
+**3. Marketing ✅** Todo en `marketing/` (empieza por `marketing/README.md`): plan de 8 semanas, foros, directorios
+con los formularios rellenos, 18 medios con contacto público y 2 emails, 10 guiones de Shorts, Product Hunt y
+Show HN, Telegram y afiliados. Logo y capturas en `marketing/assets/`.
+
+**4. Medición y AdSense ✅**
+- **GoatCounter** listo y apagado: pon tu código en `site.config.json` → `goatcounter`. Sin cookies. Su plan gratis
+  es para webs no comerciales: con anuncios toca plan de pago (pocos $/mes; compruébalo).
+- **Huecos de anuncios sin saltos** (alto fijo y reservado desde el HTML). ads.txt en la raíz.
+- Checklist AdSense: páginas legales ✅, contenido en cada herramienta ✅ (todas >450 palabras), huecos sin CLS ✅,
+  dominio propio ✅. **Te toca:**
+  1. Rellenar en `site.config.json` tu nombre, NIF, dirección y email (hoy hay «[TU NOMBRE…]»: AdSense rechaza la
+     web así).
+  2. En AdSense → *Privacidad y mensajes → Europa*: crear y publicar el mensaje de consentimiento (CMP de Google).
+  3. Poner tu `ca-pub-…` y los IDs de bloque en `assets/js/config.js` y `adsEnabled: true` cuando te aprueben.
+
+**5. Extras** ✅ 5 páginas en inglés (karaoke, alternativa a CapCut, sin marca de agua, WhatsApp, clases grabadas),
+enlazadas con su versión en español. 53 páginas en total.
+Subtítulos: al pasar un vídeo horizontal a 9:16 hay una casilla nueva **«Seguir la cara»**: el recorte se mueve con
+quien habla (se analiza en el navegador; sin subir el vídeo).
+Luz: el bloque de **placas solares** deja poner tu precio por kWp y el de tus excedentes, muestra el mes a mes,
+cuánto consumes en horas de sol y cuánto dinero de excedentes perderías si pones demasiada potencia.
+
+---
+
 ## Sesión 4 (28/09/2026) – monetización más allá de AdSense
 
 | Tarea del plan | Estado |

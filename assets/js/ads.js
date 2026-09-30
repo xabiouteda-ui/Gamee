@@ -11,11 +11,9 @@
     if (!id) return;
     const ins = document.createElement("ins");
     ins.className = "adsbygoogle";
-    ins.style.display = "block";
+    // Tamaño fijo por hueco (lo pone style.css): ancho adaptable y alto exacto, así el anuncio no mueve la página.
     ins.dataset.adClient = client;
     ins.dataset.adSlot = id;
-    ins.dataset.adFormat = "auto";
-    ins.dataset.fullWidthResponsive = "true";
     el.appendChild(ins);
     el.classList.add("ad-on");
   });

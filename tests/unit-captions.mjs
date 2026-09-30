@@ -1,6 +1,6 @@
 // Pruebas unitarias de la lógica de subtítulos (Node, sin dependencias): `node tests/unit-captions.mjs`.
 import assert from "node:assert/strict";
-import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, activeLine } from "../assets/js/captions/core.js";
+import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, activeLine, faceSampleTimes, mainFaceX, smoothFaceTrack, cropAt } from "../assets/js/captions/core.js";
 
 // Reparto de tiempos por palabra: orden, dentro del segmento y proporcional a la longitud.
 const w = segmentsToWords([{ start: 0, end: 3, text: "Hola a todos. Bienvenidos al canal de hoy" }]);
@@ -41,5 +41,22 @@ assert.equal(retimeLine(cues[0], "Corta").words[0].cue, 0, "editar conserva la l
 const srt = linesToSRT(L, true);
 assert.ok(srt.startsWith("1\n00:00:00,000 --> "));
 assert.ok(srt.includes("\nHOLA A TODOS.\n"));
+
+// Reencuadre siguiendo la cara (vídeo 1920×1080 → recorte de 608 px de ancho).
+assert.equal(faceSampleTimes(3).length, 6);
+assert.equal(faceSampleTimes(600).length, 240, "vídeos largos: como mucho 240 muestras");
+assert.equal(mainFaceX([{ boundingBox: { originX: 0, width: 10, height: 10 } }, { boundingBox: { originX: 1000, width: 200, height: 200 } }]), 1100, "sigue la cara más grande");
+assert.equal(mainFaceX([]), null);
+assert.equal(smoothFaceTrack([{ t: 0, x: null }], 1920, 608), null, "sin caras no hay recorrido (recorte centrado)");
+const still = smoothFaceTrack([0, 0.5, 1, 1.5].map((t, i) => ({ t, x: 1500 + (i % 2) * 40 })), 1920, 608);
+assert.ok(still.every((s) => s.p === still[0].p), "una cara casi quieta no hace bailar el recorte");
+assert.ok(still[0].p > 0.8, "el recorte se va a la derecha, donde está la cara");
+const edge = smoothFaceTrack([{ t: 0, x: 1910 }, { t: 1, x: 10 }], 1920, 608, { win: 1 });
+assert.deepEqual(edge.map((s) => s.p), [1, 0], "nunca se sale del vídeo");
+const gaps = smoothFaceTrack([{ t: 0, x: null }, { t: 1, x: 400 }, { t: 2, x: null }], 1920, 608, { win: 1, dead: 0 });
+assert.ok(gaps.every((s) => s.p === gaps[1].p), "sin cara se mantiene la posición más cercana");
+assert.equal(cropAt([{ t: 0, p: 0 }, { t: 2, p: 1 }], 1), 0.5, "interpola entre muestras");
+assert.equal(cropAt([{ t: 0, p: 0.2 }], 9), 0.2);
+assert.equal(cropAt(null, 3), 0.5, "sin recorrido, centrado");
 
 console.log("✓ Pruebas unitarias de subtítulos correctas.");

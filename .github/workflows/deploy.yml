@@ -22,7 +22,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Historial completo: el sitemap usa la fecha del último commit de cada página como lastmod.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -54,8 +57,11 @@ jobs:
           SITE=$(sed -n 's/.*canonical" href="\([^"]*\)".*/\1/p' _site/index.html)
           echo "URL configurada: $SITE"
           echo "URL de GitHub Pages: $PAGES_URL/"
-          if [ "${SITE%/}" != "${PAGES_URL%/}" ]; then
-            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, el nombre del repositorio o el dominio propio."
+          # Se compara sin el esquema: con dominio propio, GitHub Pages devuelve http:// hasta que se marca «Enforce HTTPS».
+          if [ "$(echo "${SITE%/}" | sed 's#^https\?://##')" != "$(echo "${PAGES_URL%/}" | sed 's#^https\?://##')" ]; then
+            echo "::warning::La URL configurada ($SITE) no coincide con la de GitHub Pages ($PAGES_URL/). Revisa siteOrigin/basePath en site.config.json, las variables SITE_ORIGIN/BASE_PATH o el dominio propio."
+          elif [ "${PAGES_URL#https://}" = "$PAGES_URL" ]; then
+            echo "::notice::GitHub Pages sirve el dominio sin HTTPS obligatorio. Activa Settings → Pages → Enforce HTTPS."
           fi
 
       - name: Comprobaciones
@@ -64,6 +70,8 @@ jobs:
           node tests/unit-captions.mjs
           node tests/unit-luz.mjs
           node tests/unit-monetizacion.mjs
+          node tests/unit-seo.mjs
+          node tests/unit-luz-contenido.mjs
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -79,3 +87,15 @@ jobs:
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Aviso a Bing y otros buscadores con IndexNow (Google no lo usa: para Google, el sitemap en Search Console).
+      # Tras un push, todas las URL; en el despliegue diario, solo las páginas con precios del día. Nunca falla.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Avisar a IndexNow
+        run: node scripts/indexnow.mjs ${{ github.event_name == 'schedule' && 'today' || 'all' }}
+        env:
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          BASE_PATH: ${{ vars.BASE_PATH }}

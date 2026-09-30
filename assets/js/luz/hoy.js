@@ -98,13 +98,27 @@ async function init() {
   let pvpc = null;
   try { const r = await fetch(new URL("../../../data/pvpc.json", import.meta.url)); if (r.ok) pvpc = await r.json(); } catch {}
   const today = dayStats(pvpc, madridDate(0));
-  if (!today) {
+  const tomorrow = dayStats(pvpc, madridDate(1));
+  // Página «precio de la luz mañana»: primero mañana; si aún no se ha publicado, se avisa y se enseña hoy.
+  const manana = out.dataset.mode === "manana";
+  if (!today && !(manana && tomorrow)) {
     if (!out.querySelector(".day")) out.querySelector(".hoy-empty").hidden = false;
     return;
   }
-  const blocks = [block(today, "Hoy")];
-  const tomorrow = dayStats(pvpc, madridDate(1));
-  if (tomorrow) blocks.push(block(tomorrow, "Mañana"));
+  const blocks = [];
+  if (manana) {
+    if (tomorrow) blocks.push(block(tomorrow, "Mañana"));
+    else {
+      const p = document.createElement("p");
+      p.className = "status manana-pending";
+      p.textContent = "Los precios de mañana aún no están publicados: Red Eléctrica los da a conocer cada tarde hacia las 20:15. Mientras, estos son los de hoy.";
+      blocks.push(p);
+    }
+    if (today) blocks.push(block(today, "Hoy"));
+  } else {
+    blocks.push(block(today, "Hoy"));
+    if (tomorrow) blocks.push(block(tomorrow, "Mañana"));
+  }
   out.replaceChildren(...blocks);
   const upd = $("hoy-updated");
   if (upd) upd.textContent = `Datos de Red Eléctrica actualizados el ${new Date(pvpc.updated).toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "short", timeStyle: "short" })}.`;

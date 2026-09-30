@@ -34,6 +34,15 @@ export async function pipeline(task, model, opts) {
   return fn;
 }`;
 
+// Detector de caras simulado: siempre ve una cara en el 85 % derecho del fotograma.
+const mockFaces = `
+export const FilesetResolver = { forVisionTasks: async () => ({}) };
+export class FaceDetector {
+  static async createFromOptions() { return new FaceDetector(); }
+  detect(v) { return { detections: [{ boundingBox: { originX: v.videoWidth * 0.85 - 20, originY: 50, width: 40, height: 40 } }] }; }
+  close() {}
+}`;
+
 // Crea en el navegador un WebM de 6 s (360×640, VP8 + Opus) con un tono como "voz".
 async function makeVideo(page, w = 360, h = 640, secs = 6) {
   return page.evaluate(async ([url, w, h, secs]) => {
@@ -80,7 +89,7 @@ const yellowInOverlay = (page) => page.evaluate(() => {
 (async () => {
   const mb = localMediabunny();
   if (!mb) { console.error("Falta mediabunny: npm i --no-save mediabunny@1.60.0 (o MEDIABUNNY_LIB=/ruta/mediabunny.min.mjs)"); process.exit(1); }
-  const libs = { [CDN.mediabunny]: fs.readFileSync(mb, "utf8"), [CDN.transformers]: mockLib(false) };
+  const libs = { [CDN.mediabunny]: fs.readFileSync(mb, "utf8"), [CDN.transformers]: mockLib(false), [CDN.faces]: mockFaces };
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await serve();
   const browser = await chromium.launch();
@@ -259,6 +268,15 @@ const yellowInOverlay = (page) => page.evaluate(() => {
     await page.check("#st-crop");
     const ar = await page.evaluate(() => getComputedStyle(document.getElementById("stage")).aspectRatio);
     check(/203 \/ 360/.test(ar), "La vista previa pasa a 9:16: " + ar);
+    check(await page.locator("#follow-row").isVisible(), "Al pasar a 9:16 se ofrece seguir la cara");
+    await page.check("#st-follow");
+    await page.waitForFunction(() => window.__captions.state.faceTrack, null, { timeout: 30000 });
+    const pos = await page.evaluate(() => [getComputedStyle(document.getElementById("video")).objectPosition, document.getElementById("follow-status").textContent]);
+    check(pos[0].startsWith("100%"), "El recorte se mueve hacia la cara (a la derecha): " + pos[0]);
+    check(/100 %/.test(pos[1]), "Dice en qué parte del vídeo ha encontrado la cara: " + pos[1]);
+    await page.uncheck("#st-follow");
+    check((await page.evaluate(() => getComputedStyle(document.getElementById("video")).objectPosition)).startsWith("50%"), "Sin seguir la cara, recorte centrado");
+    await page.check("#st-follow");
     await page.check("#st-emojis");
     const hasEmojiState = await page.evaluate(() => typeof window.__captions.state.autoEmojis === "boolean" && window.__captions.state.autoEmojis);
     check(hasEmojiState, "Se pueden activar los emojis automáticos");

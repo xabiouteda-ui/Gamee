@@ -10,6 +10,7 @@ const BASE_PATH = new URL(PUBLIC_URL).pathname;
 const CDN = {
   transformers: "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0/dist/transformers.min.js",
   mediabunny: "https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/dist/bundles/mediabunny.min.mjs",
+  faces: "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs",
 };
 
 function localMediabunny() {

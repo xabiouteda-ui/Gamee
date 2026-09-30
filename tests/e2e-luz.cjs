@@ -25,6 +25,9 @@ function makeCsv() {
   return lines.join("\n") + "\n";
 }
 
+// Simula que data/pvpc.json no existe (REE caído), aunque exista en local.
+const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill({ status: 404, body: "" }));
+
 (async () => {
   const { summarizePvpc } = await import("../assets/js/luz/pvpc.js");
   const { periodOf } = await import("../assets/js/luz/core.js");
@@ -74,6 +77,17 @@ function makeCsv() {
   check(/recomendada/.test(await page.locator("#solar-size option:checked").textContent()), "Placas solares: propone un tamaño recomendado");
   await page.selectOption("#solar-size", "8");
   check(saving !== (await page.textContent("#solar-saving")), "Placas solares: cambiar el tamaño recalcula");
+  await page.click(".solar-months summary");
+  await page.locator("#solar").screenshot({ path: path.join(OUT, "luz-placas.png") });
+  check(/horas de sol/.test(await page.textContent("#solar-tips")), "Placas solares: dice qué parte del consumo cae en horas de sol");
+  check((await page.locator("#solar-months tr").count()) >= 1, "Placas solares: tabla mes a mes");
+  const before = await page.textContent("#solar-saving");
+  await page.fill("#solar-surplus", "0");
+  await page.dispatchEvent("#solar-surplus", "change");
+  check(before !== (await page.textContent("#solar-saving")) && /0,00 €\/kWh/.test(await page.textContent("#solar-note")), "Placas solares: el precio de los excedentes se puede cambiar");
+  await page.fill("#solar-cost", "900");
+  await page.dispatchEvent("#solar-cost", "change");
+  check(/900 €\/kWp/.test(await page.textContent("#solar-note")) && (await page.evaluate(() => localStorage.getItem("tl.luz.solarCost"))) === "900", "Placas solares: tu precio por kWp se usa y se recuerda");
   await page.selectOption("#solar-zone", "sur");
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("tl.luz.solarZone")))) === "sur", "Placas solares: la zona se recuerda");
 
@@ -197,6 +211,7 @@ function makeCsv() {
   // 8. Sin datos del PVPC (p. ej. REE caído): funciona con el catálogo y lo avisa
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(ctx);
     const page = await ctx.newPage();
     await page.goto(srv.base + "/luz/");
     await page.click("#example-btn");
@@ -224,9 +239,11 @@ function makeCsv() {
     await page.screenshot({ path: path.join(OUT, "luz-hoy.png"), fullPage: false });
     await ctx.close();
     const { ctx: c2 } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(c2);
     const p2 = await c2.newPage();
     await p2.goto(srv.base + "/luz/precio-luz-hoy.html");
-    await p2.waitForSelector(".hoy-empty:not([hidden])");
+    // Si la web se generó con data/pvpc.json, se queda el resumen estático; si no, sale el aviso.
+    await p2.waitForSelector(".hoy-empty:not([hidden]), #hoy section.day");
     check(true, "Sin datos del PVPC muestra un aviso en lugar de romperse");
     await c2.close();
   }
@@ -243,6 +260,49 @@ function makeCsv() {
     const day = await page.textContent("#g-result .kpi:first-child");
     // 1,5 kW × 4 h = 6 kWh × 0,15 € × impuestos (1,0511 × 1,21) ≈ 1,14 €
     check(/6 kWh/.test(day) && /1,14/.test(day), "Radiador 1.500 W × 4 h = 6 kWh ≈ 1,14 € al día con impuestos: " + day.replace(/\s+/g, " "));
+    await ctx.close();
+  }
+
+  // 8d. Coste por hora de inicio (lavadora, horno, aire, coche), precio de mañana y Telegram
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    for (const p of ["/luz/cuanto-cuesta-poner-la-lavadora.html", "/luz/cuanto-cuesta-poner-el-horno.html", "/luz/cuanto-cuesta-poner-el-aire-acondicionado.html"]) {
+      await page.goto(srv.base + p);
+      await page.waitForSelector("#c-result .kpi");
+      const txt = await page.textContent("#c-result");
+      check(/Mejor momento/.test(txt) && /Ahorras eligiendo la mejor hora/.test(txt) && /(céntimos|€)/.test(txt), `${p}: muestra mejor hora, ahorro y coste`);
+      check((await page.locator("#c-result tbody tr").count()) >= 1, `${p}: tabla de coste por hora de inicio`);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      check(overflow <= 0, `${p}: sin scroll horizontal en móvil (${overflow}px)`);
+      check(/t\.me\/precioluzmanana/.test(await page.getAttribute(".tg-cta a", "href")), `${p}: enlace al canal de Telegram`);
+    }
+    // El aire se calcula por hora: 1 kW durante 2 h cuesta el doble que durante 1 h a igual precio.
+    await page.fill("#c-kwh", "1");
+    await page.fill("#c-hours", "2");
+    check(/2 kWh/.test(await page.textContent("#c-result")), "Aire: 1 kW × 2 h = 2 kWh");
+    await page.fill("#c-kwh", "0");
+    check(/Revisa los datos/.test(await page.textContent("#c-result")), "Datos no válidos: mensaje claro");
+    await page.goto(srv.base + "/luz/cargar-coche-electrico.html");
+    await page.waitForSelector("#c-result .kpi");
+    // 100 km × 17 kWh/100 km ÷ 0,9 = 18,9 kWh
+    check(/18,9 kWh/.test(await page.textContent("#c-result")) && /Coste cada 100 km/.test(await page.textContent("#c-result")), "Coche: kWh con pérdidas y coste cada 100 km");
+    await page.goto(srv.base + "/luz/precio-luz-manana.html");
+    await page.waitForSelector("#hoy section.day");
+    const first = await page.textContent("#hoy > :first-child");
+    check(/^Mañana/.test(first.trim()) || /aún no están publicados/.test(first), "Precio mañana: primero mañana (o aviso si aún no se ha publicado)");
+    check(errs.length === 0, "Páginas de coste y mañana sin errores: " + errs.join(" | "));
+    await ctx.close();
+  }
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } });
+    await noPvpc(ctx);
+    const page = await ctx.newPage();
+    await page.goto(srv.base + "/luz/cuanto-cuesta-poner-la-lavadora.html");
+    await page.waitForFunction(() => !/Calculando/.test(document.querySelector("#c-result").textContent));
+    check(/no tenemos los precios de hoy/.test(await page.textContent("#c-result")), "Sin datos del PVPC: la calculadora de coste lo avisa");
     await ctx.close();
   }
 

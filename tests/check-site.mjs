@@ -39,12 +39,13 @@ check(existsSync(SITE), "Falta _site/: ejecuta antes `node build.mjs`");
 const htmlFiles = walk(SITE).filter((f) => f.endsWith(".html"));
 check(htmlFiles.length >= 12, `Se esperaban al menos 12 páginas y hay ${htmlFiles.length}`);
 
+const home = readFileSync(join(SITE, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
 for (const file of htmlFiles) {
   const rel = file.slice(SITE.length + 1);
   const html = readFileSync(file, "utf8");
   const title = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? "";
   const desc = html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? "";
-  check(title.length >= 10 && title.length <= 70, `${rel}: título de ${title.length} caracteres (ideal 10–70)`);
+  check(title.length >= 10 && title.length <= 65, `${rel}: título de ${title.length} caracteres (ideal 10–65)`);
   check(desc.length >= 50 && desc.length <= 170, `${rel}: descripción de ${desc.length} caracteres (ideal 50–170)`);
   check((html.match(/<h1[\s>]/g) || []).length === 1, `${rel}: debe tener exactamente un <h1>`);
   check(/<link rel="canonical" href="https?:\/\//.test(html), `${rel}: falta canonical absoluto`);
@@ -63,13 +64,18 @@ for (const file of htmlFiles) {
       check(existsSync(target), `${rel}: enlace roto → ${url}`);
     }
   }
+  // Cada página indexable tiene su propia imagen para redes (node scripts/og-images.mjs) y existe.
+  const og = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+  if (og && /name="robots" content="index/.test(html)) {
+    check(!og.endsWith("/assets/img/og.jpg"), `${rel}: sin imagen propia para redes (ejecuta node scripts/og-images.mjs)`);
+    check(existsSync(join(SITE, og.slice(home.length))), `${rel}: la imagen para redes no existe → ${og}`);
+  }
   // Anuncios desactivados por defecto: no debe cargarse nada de AdSense en el HTML.
   check(!html.includes("googlesyndication"), `${rel}: el HTML no debe cargar AdSense directamente`);
 }
 
 // 4. Publicación en subcarpeta (p. ej. usuario.github.io/game/): nada puede usar rutas absolutas "/...".
 const cfg = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
-const home = readFileSync(join(SITE, "index.html"), "utf8").match(/<link rel="canonical" href="([^"]+)"/)[1];
 check(home.endsWith("/"), `La URL canónica de la portada debe acabar en "/": ${home}`);
 if (!process.env.SITE_ORIGIN && !process.env.BASE_PATH) {
   const expected = cfg.siteOrigin.replace(/\/+$/, "") + ("/" + cfg.basePath + "/").replace(/\/{2,}/g, "/");
@@ -114,6 +120,14 @@ for (const file of htmlFiles) {
 check(existsSync(join(SITE, "sitemap.xml")), "Falta sitemap.xml");
 check(existsSync(join(SITE, "robots.txt")), "Falta robots.txt");
 check(existsSync(join(SITE, ".nojekyll")), "Falta .nojekyll");
+check(existsSync(join(SITE, "ads.txt")), "Falta ads.txt en la raíz");
+check(readFileSync(join(SITE, "robots.txt"), "utf8").includes(`Sitemap: ${home}sitemap.xml`), "robots.txt debe apuntar al sitemap del dominio");
+// Con dominio propio no debe quedar ninguna URL de github.io en la web publicada.
+if (!/github\.io/.test(home)) {
+  for (const file of walk(SITE).filter((f) => /\.(html|css|js|xml|txt|json)$/.test(f) && !f.includes("/data/"))) {
+    check(!readFileSync(file, "utf8").includes("github.io"), `${file.slice(SITE.length + 1)}: contiene una URL de github.io`);
+  }
+}
 const sitemap = readFileSync(join(SITE, "sitemap.xml"), "utf8");
 check(!sitemap.includes("404"), "La página 404 no debe estar en el sitemap");
 for (const p of ["privacidad.html", "aviso-legal.html", "contacto.html", "preguntas-frecuentes.html", "en/privacy.html"]) {

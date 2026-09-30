@@ -1,6 +1,7 @@
 // Genera la web estática en _site/ a partir de src/ y assets/.
 // Sin dependencias: `node build.mjs`.
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, readdirSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
@@ -9,9 +10,12 @@ import { STRINGS as CAPTIONS_STRINGS } from "./assets/js/captions/i18n.js";
 import { STRINGS as LUZ_STRINGS } from "./assets/js/luz/i18n.js";
 import { dayStats } from "./assets/js/luz/pvpc.js";
 import { madridDate } from "./assets/js/luz/hoy.js";
+import { RULES } from "./assets/js/luz/core.js";
+import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const OUT = join(ROOT, "_site");
+// SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
+const OUT = process.env.SITE_OUT || join(ROOT, "_site");
 const site = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
 // URL pública = origen + ruta base. La ruta base permite publicar en una subcarpeta
 // (p. ej. usuario.github.io/game/) o en la raíz de un dominio propio ("/").
@@ -24,7 +28,7 @@ const siteUrl = siteOrigin + basePath.replace(/\/$/, "");
 
 // Lee config.js (el mismo archivo que usa el navegador) para generar ads.txt.
 const sandbox = { window: {} };
-vm.runInNewContext(readFileSync(join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
+vm.runInNewContext(readFileSync(process.env.ADS_CONFIG || join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
 const adsCfg = sandbox.window.SITE_CONFIG || {};
 
 // Versión Pro (data/pro.json): desactivada por defecto. Con ella desactivada, /pro.html no se indexa.
@@ -106,6 +110,8 @@ const TOOLS = {
   gasto: { partial: "gasto.html", strings: LUZ_STRINGS, script: "assets/js/luz/gasto.js", category: "UtilitiesApplication" },
   luzhoy: { partial: "luz-hoy.html", strings: LUZ_STRINGS, script: "assets/js/luz/hoy.js", category: "UtilitiesApplication" },
   luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
+  coste: { partial: "coste.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
+  coche: { partial: "coche.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
 
@@ -119,13 +125,14 @@ function languageOptions(lang, autoLabel) {
 
 // Resumen estático de los precios del PVPC de hoy (el día en que se genera la web), para buscadores y para
 // quien no tenga JavaScript. En el navegador se sustituye por los datos más recientes y los gráficos.
-function pvpcSnapshot() {
+function pvpcSnapshot(mode) {
   const f = join(ROOT, "data", "pvpc.json");
   if (!existsSync(f)) return "";
   const pvpc = JSON.parse(readFileSync(f, "utf8"));
   const hh = (h) => `${String(h).padStart(2, "0")}:00`;
   const eur = (p) => p.toFixed(3).replace(".", ",") + " €/kWh";
-  return [["Hoy", 0], ["Mañana", 1]].map(([label, off]) => {
+  const order = mode === "manana" ? [["Mañana", 1], ["Hoy", 0]] : [["Hoy", 0], ["Mañana", 1]];
+  return order.map(([label, off]) => {
     const st = dayStats(pvpc, madridDate(off));
     if (!st) return "";
     const date = new Date(st.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
@@ -143,6 +150,65 @@ function pvpcAverages() {
   return `Según los datos de Red Eléctrica (del ${d(from)} al ${d(to)}), el precio medio de la energía del PVPC en los últimos 12 meses fue de ${e(a.P1)} €/kWh en punta, ${e(a.P2)} €/kWh en llano y ${e(a.P3)} €/kWh en valle, sin impuestos. La diferencia entre punta y valle es lo que hace que convenga mover consumo a las horas baratas.`;
 }
 
+// «Estudio: las horas más baratas de la luz»: cifras, gráficos SVG y tablas generados con data/pvpc.json.
+const STUDY_YEAR = 2026;
+const RAMP = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b"];
+function readPvpc() { try { return JSON.parse(readFileSync(PVPC_FILE, "utf8")); } catch { return null; } }
+function studyHtml() {
+  const pv = readPvpc();
+  const st = pv && computeStudy(pv, STUDY_YEAR, madridDate(0));
+  if (!st) return `<p class="status">Los datos del estudio se generan con los precios oficiales de Red Eléctrica en cada publicación de la web. Ahora mismo no están disponibles: vuelve a intentarlo más tarde.</p>`;
+  const e3 = (p) => p.toFixed(3).replace(".", ",");
+  const pct = (x) => `${Math.round(x * 100)} %`;
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const span = (h) => `${hh(h)}–${hh(h + 1)}`;
+  const d = (iso) => new Date(iso + "T12:00:00Z").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  // Gráfico de barras: precio medio de cada hora del día.
+  const W = 640, H = 240, L = 46, B = 26, TOP = 16, max = Math.max(...st.byHour) * 1.1, slot = (W - L - 6) / 24, bw = slot * 0.72;
+  const y = (v) => TOP + (H - TOP - B) * (1 - v / max);
+  let bars = "";
+  for (let k = 0; k <= 3; k++) { const v = (max * k) / 3; bars += `<line x1="${L}" x2="${W - 6}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="${k ? "grid" : "axis"}"/><text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="tick" text-anchor="end">${v.toFixed(2).replace(".", ",")}</text>`; }
+  st.byHour.forEach((p, h) => {
+    const x = L + slot * h + (slot - bw) / 2, top = y(p), r = Math.min(4, (H - B - top) / 2);
+    const cheap = st.cheapest3.includes(h);
+    bars += `<g class="bar"><title>${span(h)}: ${e3(p)} €/kWh de media${cheap ? " (de las 3 más baratas)" : ""}</title><path class="${cheap ? "seg-P3" : "seg-P1"}" d="M${x.toFixed(1)},${H - B} V${(top + r).toFixed(1)} Q${x.toFixed(1)},${top.toFixed(1)} ${(x + r).toFixed(1)},${top.toFixed(1)} H${(x + bw - r).toFixed(1)} Q${(x + bw).toFixed(1)},${top.toFixed(1)} ${(x + bw).toFixed(1)},${(top + r).toFixed(1)} V${H - B} Z"/></g>`;
+    if (h % 3 === 0) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" class="tick" text-anchor="middle">${h}</text>`;
+  });
+  const chart = `<figure class="study-fig"><svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Precio medio del PVPC por hora del día en ${STUDY_YEAR}"><text x="${L - 6}" y="10" class="tick" text-anchor="end">€/kWh</text>${bars}</svg>
+<figcaption><span class="legend"><span><i class="sw sw-P3"></i>Las 3 horas más baratas de media</span><span><i class="sw sw-P1"></i>Resto de horas</span></span> Precio medio de la energía del PVPC por hora del día (sin impuestos), del ${d(st.from)} al ${d(st.to)}. Fuente: Red Eléctrica.</figcaption></figure>`;
+  // Mapa de calor: mes × hora.
+  const hmax = Math.max(...st.months.flatMap((m) => m.hours)), hmin = Math.min(...st.months.flatMap((m) => m.hours));
+  const cell = (v) => RAMP[Math.min(RAMP.length - 1, Math.floor(((v - hmin) / (hmax - hmin || 1)) * (RAMP.length - 1)))];
+  const heat = `<figure class="study-fig"><div class="heat-wrap"><div class="heat heat-months" role="img" aria-label="Precio medio por mes y hora del día"><span></span>${Array.from({ length: 24 }, (_, h) => `<span class="heat-h">${h % 3 === 0 ? h : ""}</span>`).join("")}
+${st.months.map((m) => `<span class="heat-d">${m.name.slice(0, 3)}</span>${m.hours.map((v, h) => `<span class="cell" style="background:${cell(v)}" title="${m.name} ${span(h)}: ${e3(v)} €/kWh"></span>`).join("")}`).join("\n")}</div></div>
+<div class="heat-legend"><span>${e3(hmin)}</span><i style="background:linear-gradient(90deg,${RAMP.join(",")})"></i><span>${e3(hmax)} €/kWh</span></div>
+<figcaption>Precio medio de cada hora del día, mes a mes (más oscuro = más caro).</figcaption></figure>`;
+  const monthRows = st.months.map((m) => `<tr><td>${m.name[0].toUpperCase() + m.name.slice(1)}</td><td class="num">${e3(m.mean)}</td><td>${span(m.cheapest.h)} (${e3(m.cheapest.p)})</td><td>${span(m.dearest.h)} (${e3(m.dearest.p)})</td></tr>`).join("");
+  const hourRows = st.byHour.map((p, h) => `<tr><td>${span(h)}</td><td class="num">${e3(p)}</td><td class="num">${st.counts[h]}</td></tr>`).join("");
+  const saving = st.spread * 365 * (1 + RULES.electricityTax) * (1 + RULES.vat);
+  return `<div class="kpis study-kpis">
+  <div class="kpi"><span class="kpi-label">Hora más barata de media</span><strong class="kpi-value">${span(st.cheapest.h)}</strong><span class="kpi-sub">${e3(st.cheapest.p)} €/kWh</span></div>
+  <div class="kpi"><span class="kpi-label">Hora más cara de media</span><strong class="kpi-value">${span(st.dearest.h)}</strong><span class="kpi-sub">${e3(st.dearest.p)} €/kWh</span></div>
+  <div class="kpi"><span class="kpi-label">Diferencia</span><strong class="kpi-value">${Math.round((st.dearest.p / st.cheapest.p - 1) * 100)} %</strong><span class="kpi-sub">más cara la peor hora que la mejor</span></div>
+  <div class="kpi"><span class="kpi-label">Días analizados</span><strong class="kpi-value">${st.nDays}</strong><span class="kpi-sub">del ${d(st.from)} al ${d(st.to)}</span></div>
+</div>
+<h2>Las conclusiones</h2>
+<ul class="study-findings">
+  <li>De media, las tres horas más baratas de ${STUDY_YEAR} han sido <strong>${st.cheapest3.map(span).join(", ")}</strong>, y las tres más caras, <strong>${st.dearest3.map(span).join(", ")}</strong>.</li>
+  <li>La hora más barata de cada día cayó <strong>de madrugada (00:00–08:00) el ${pct(st.shareNight)} de los días</strong> y <strong>en horas de sol (10:00–18:00) el ${pct(st.shareSolar)}</strong>.</li>
+  <li>El precio medio fue de <strong>${e3(st.weekday)} €/kWh en laborables</strong> y de <strong>${e3(st.weekend)} €/kWh en fines de semana y festivos</strong> (media del año: ${e3(st.mean)} €/kWh, sin impuestos).</li>
+  <li>El día más barato fue el <strong>${d(st.cheapestDay.date)}</strong> (${e3(st.cheapestDay.mean)} €/kWh de media) y el más caro, el <strong>${d(st.dearestDay.date)}</strong> (${e3(st.dearestDay.mean)} €/kWh).</li>
+  <li>Mover <strong>1 kWh al día</strong> de la hora más cara a la más barata (de media) supone unos <strong>${saving.toFixed(0)} € al año</strong> con impuestos, en la tarifa regulada.</li>
+</ul>
+<h2>Precio medio por hora del día</h2>
+${chart}
+<details class="data-table"><summary>Ver la tabla: precio medio por hora y cuántos días fue la más barata</summary><div class="table-wrap"><table><thead><tr><th>Hora</th><th>€/kWh medio</th><th>Días que fue la más barata</th></tr></thead><tbody>${hourRows}</tbody></table></div></details>
+<h2>Mes a mes</h2>
+${heat}
+<div class="table-wrap"><table><thead><tr><th>Mes</th><th>€/kWh medio</th><th>Hora más barata (media)</th><th>Hora más cara (media)</th></tr></thead><tbody>${monthRows}</tbody></table></div>
+<p><a class="btn" href="{{root}}data/pvpc-${STUDY_YEAR}.csv" download>Descargar los datos (CSV, ${st.nDays * 24} filas)</a></p>`;
+}
+
 // Texto del crédito «Hecho con …» de los vídeos. Con dominio propio se añade (se lee bien en un vídeo);
 // una dirección larga de github.io, no.
 function creditText(lang) {
@@ -154,9 +220,10 @@ function toolHtml(tool, lang, page) {
   const t = TOOLS[tool].strings[lang];
   return readFileSync(join(ROOT, "src/partials", TOOLS[tool].partial), "utf8")
     .replace("{{languageOptions}}", () => languageOptions(lang, t.autoDetect))
-    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot())
+    .replace("{{pvpcSnapshot}}", () => pvpcSnapshot(page.mode))
     .replace(/\{\{credit\}\}/g, () => esc(creditText(lang)))
     .replace(/\{\{mode\}\}/g, esc(page.mode || ""))
+    .replace(/\{\{c\.(\w+)\}\}/g, (_, k) => esc(page.coste?.[k] ?? ""))
     .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
     .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
@@ -193,6 +260,80 @@ function appSchema(page, url) {
     inLanguage: page.lang,
     offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
   };
+}
+
+// Secciones del sitio: cada página de guía se agrupa con su herramienta para las migas de pan y el enlazado interno.
+const SECTIONS = {
+  es: { luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
+  en: { captions: { href: "en/animated-captions/", label: "Captions" }, transcribe: { href: "en/audio-to-text/", label: "Audio to text" } },
+};
+function sectionOf(page) {
+  if (page.section !== undefined) return page.section;
+  const dir = page.slug.includes("/") ? page.slug.replace(/^en\//, "").split("/")[0] : "";
+  if (dir === "luz") return "luz";
+  if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";
+  if (dir === "pasar-audio-a-texto" || dir === "audio-to-text") return "transcribe";
+  if (toolOf(page) === "transcribe") return "transcribe";
+  return null;
+}
+const stripTags = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+// Nombre corto de una página para enlaces: "nav" en la cabecera JSON o, si no, su <h1>.
+const navLabel = (p) => p.nav || stripTags(p.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] || p.title.split(" | ")[0]);
+const isIndexable = (p) => !p.noindex && !p.bare && !(p.proPage && !proOn);
+
+// Fecha real de la última modificación (último commit que tocó el archivo). Sin git, la de site.config.json.
+function gitDate(file) {
+  try { return execFileSync("git", ["log", "-1", "--format=%cs", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null; } catch { return null; }
+}
+const PVPC_FILE = join(ROOT, "data", "pvpc.json");
+const pvpcUpdated = () => { try { return JSON.parse(readFileSync(PVPC_FILE, "utf8")).updated?.slice(0, 10) || null; } catch { return null; } };
+function lastmod(page) {
+  const dates = [gitDate(join("src/pages", page.lang, page.file)) || site.lastUpdated];
+  // Las páginas que muestran precios del día cambian cada día aunque no se toque su archivo.
+  if (page.daily && pvpcUpdated()) dates.push(pvpcUpdated());
+  return dates.sort().at(-1);
+}
+
+// Imagen para redes sociales: assets/img/og/<slug>.jpg si existe (scripts/og-images.mjs), si no la general.
+const ogName = (slug) => slug.replace(/\.html$/, "").replace(/(^|\/)index$/, "$1").replace(/\/$/, "").replace(/\//g, "--") || "index";
+function ogImage(page) {
+  const name = ogName(page.slug);
+  return existsSync(join(ROOT, "assets/img/og", name + ".jpg")) ? `assets/img/og/${name}.jpg` : "assets/img/og.jpg";
+}
+
+// Estadística GoatCounter (sin cookies). Desactivada mientras site.config.json → goatcounter esté vacío.
+function analyticsTag() {
+  const code = String(process.env.GOATCOUNTER ?? site.goatcounter ?? "").trim();
+  if (!/^[a-z0-9-]+$/i.test(code)) return "";
+  return `<script data-goatcounter="https://${code}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`;
+}
+
+// Datos del PVPC como conjunto de datos (Google Dataset Search). Solo se declara si data/pvpc.json existe.
+function datasetSchema(page, url) {
+  let pv = null;
+  try { pv = JSON.parse(readFileSync(PVPC_FILE, "utf8")); } catch {}
+  return {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "Precio horario de la luz PVPC 2.0TD (península)",
+    description: "Precio de la energía de la tarifa regulada PVPC 2.0TD en España peninsular, hora a hora, en €/kWh sin impuestos. Se actualiza cada día con los datos publicados por Red Eléctrica (REE).",
+    url,
+    inLanguage: "es",
+    isAccessibleForFree: true,
+    keywords: ["precio de la luz", "PVPC", "tarifa regulada", "precio por horas", "España"],
+    creator: { "@type": "Organization", name: site.siteName, url: `${siteUrl}/` },
+    isBasedOn: "https://www.ree.es/es/datos/mercados",
+    spatialCoverage: { "@type": "Place", name: "España peninsular" },
+    ...(pv?.from && pv?.to ? { temporalCoverage: `${pv.from}/${pv.to}`, dateModified: pv.updated } : {}),
+    distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${siteUrl}/data/pvpc.json` }],
+  };
+}
+
+// Hueco de anuncio. Si AdSense está activado y el hueco tiene ID, se reserva su alto desde el HTML (clase ad-on):
+// así no hay salto de contenido (CLS) cuando llega el anuncio. Sin anuncios, el hueco no ocupa nada.
+function adSlot(slot) {
+  const on = adsCfg.adsEnabled === true && /^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) && !!(adsCfg.slots || {})[slot];
+  return `<div class="ad-slot${on ? " ad-on" : ""}" data-slot="${slot}"></div>`;
 }
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -239,6 +380,24 @@ function layout(page, pagesBySlug) {
   if (page.slug.endsWith("index.html") || page.slug === "index.html") {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
+  if (page.slug === "index.html" || page.slug === "en/index.html") {
+    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-180.png`, ...(site.telegram ? { sameAs: [site.telegram] } : {}) });
+  }
+  if (page.dataset) schemas.push(datasetSchema(page, url));
+
+  // Migas de pan (visibles y en datos estructurados) para las páginas que cuelgan de una herramienta.
+  const section = sectionOf(page);
+  const secInfo = section && SECTIONS[lang]?.[section];
+  const crumbs = [];
+  if (secInfo && page.slug !== secInfo.href + "index.html" && !page.absolute) {
+    crumbs.push([ui.home, href(L.home), `${siteUrl}/`], [secInfo.label, href(secInfo.href), `${siteUrl}/${secInfo.href}`], [navLabel(page), null, url]);
+    schemas.push({
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: crumbs.map(([name, , item], i) => ({ "@type": "ListItem", position: i + 1, name, item })),
+    });
+  }
+  // Enlazado interno: el resto de guías de la misma sección.
+  const guides = section ? [...pagesBySlug.values()].filter((p) => p !== page && p.lang === lang && isIndexable(p) && sectionOf(p) === section) : [];
 
   const here = page.slug.replace(/index\.html$/, "");
   const nav = (key, label, section = false) => {
@@ -251,10 +410,12 @@ function layout(page, pagesBySlug) {
 
   let body = page.body
     .replace("{{tool}}", () => (tool ? toolHtml(tool, lang, page) : ""))
-    .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => `<div class="ad-slot" data-slot="${s}"></div>`)
+    .replace(/\{\{ad:(\w+)\}\}/g, (_, s) => adSlot(s))
+    .replace(/<div class="ad-slot" data-slot="(\w+)"><\/div>/g, (_, s) => adSlot(s))
     .replace(/\{\{cfg\.(\w+)\}\}/g, (_, k) => esc(site[k] ?? ""))
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
+    .replace("{{study}}", () => studyHtml())
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{siteUrl\}\}/g, siteUrl)
@@ -284,7 +445,10 @@ ${hreflang}
 <meta property="og:title" content="${esc(page.title)}">
 <meta property="og:description" content="${esc(page.description)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${siteUrl}/assets/img/og.jpg">
+<meta property="og:image" content="${siteUrl}/${ogImage(page)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(navLabel(page))}">
 <meta property="og:locale" content="${lang === "es" ? "es_ES" : "en_US"}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
@@ -303,12 +467,15 @@ ${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</s
     ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>
 </header>
-<div class="wrap"><div class="ad-slot" data-slot="top"></div></div>
+<div class="wrap">${adSlot("top")}</div>
 <main id="main" class="wrap">
+${crumbs.length ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
 ${body.trim()}
+${section === "luz" && site.telegram ? `<aside class="tg-cta" aria-label="Canal de Telegram"><p><strong>Recibe cada tarde el precio de mañana.</strong> Las horas más baratas y más caras del día siguiente, en un mensaje a las 20:40. Gratis y sin registrarte en ninguna web.</p><a class="btn btn-primary" href="${esc(site.telegram)}" rel="noopener">Unirme al canal de Telegram</a></aside>` : ""}
+${guides.length ? `<nav class="guides" aria-labelledby="guides-title"><h2 id="guides-title">${lang === "es" ? "Guías relacionadas" : "Related guides"}</h2><ul>${guides.map((p) => `<li><a href="${href(p.slug.replace(/index\.html$/, ""))}">${esc(navLabel(p))}</a></li>`).join("")}</ul></nav>` : ""}
 ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title"><h2 id="related-title">${ui.related}</h2><div class="tool-cards">${cards(tool)}</div></aside>` : ""}
 </main>
-<div class="wrap"><div class="ad-slot" data-slot="bottom"></div></div>
+<div class="wrap">${adSlot("bottom")}</div>
 <footer class="site-footer">
   <div class="wrap">
     <nav aria-label="${lang === "es" ? "Legal" : "Legal"}">
@@ -321,6 +488,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
     <p class="muted small">© ${new Date().getFullYear()} ${esc(site.siteName)} · ${ui.footerNote}</p>
   </div>
 </footer>
+${analyticsTag()}
 <script src="${root}assets/js/config.js"></script>
 <script src="${root}assets/js/ads.js" defer></script>
 ${tool ? `<script type="module" src="${root}${TOOLS[tool].script}"></script>` : ""}
@@ -345,6 +513,8 @@ function build() {
     writeFileSync(join(OUT, "data", "pvpc-hoy.json"), JSON.stringify({ updated: pv.updated, source: pv.source, days }));
   }
 
+  // Datos del estudio en CSV (para periodistas y quien quiera comprobar los cálculos).
+  { const pv = readPvpc(); if (pv) writeFileSync(join(OUT, "data", `pvpc-${STUDY_YEAR}.csv`), studyCSV(pv, STUDY_YEAR, madridDate(0))); }
   const pages = readPages();
   const bySlug = new Map(pages.map((p) => [p.slug, p]));
   for (const p of pages) {
@@ -353,7 +523,7 @@ function build() {
     writeFileSync(dest, layout(p, bySlug));
   }
 
-  const indexable = pages.filter((p) => !p.noindex && !p.bare && !(p.proPage && !proOn));
+  const indexable = pages.filter(isIndexable);
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${indexable.map((p) => {
@@ -362,7 +532,7 @@ ${indexable.map((p) => {
     const links = alt
       ? `\n    <xhtml:link rel="alternate" hreflang="${p.lang}" href="${loc}"/>\n    <xhtml:link rel="alternate" hreflang="${alt.lang}" href="${siteUrl}/${alt.slug.replace(/index\.html$/, "")}"/>`
       : "";
-    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${site.lastUpdated}</lastmod>${links}\n  </url>`;
+    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod(p)}</lastmod>${links}\n  </url>`;
   }).join("\n")}
 </urlset>
 `;
@@ -370,9 +540,12 @@ ${indexable.map((p) => {
   writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`);
 
   const client = (adsCfg.adsenseClient || "").trim();
-  if (/^ca-pub-\d+$/.test(client)) {
-    writeFileSync(join(OUT, "ads.txt"), `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
-  }
+  // IndexNow (Bing, Yandex, Seznam…): archivo con la clave en la raíz. El aviso lo envía scripts/indexnow.mjs.
+  if (/^[a-f0-9]{32}$/.test(site.indexNowKey || "")) writeFileSync(join(OUT, `${site.indexNowKey}.txt`), site.indexNowKey);
+  // ads.txt siempre en la raíz. Sin ID de AdSense solo lleva un comentario (archivo válido, sin vendedores autorizados).
+  writeFileSync(join(OUT, "ads.txt"), /^ca-pub-\d+$/.test(client)
+    ? `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`
+    : `# ${site.siteName}: añade tu ID de AdSense en assets/js/config.js y se generará la línea de Google.\n`);
   console.log(`Generadas ${pages.length} páginas en _site/ (URL base: ${siteUrl})${existsSync(join(OUT, "ads.txt")) ? " + ads.txt" : ""}`);
 }
 

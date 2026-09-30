@@ -75,35 +75,21 @@ node tests/e2e-a11y.cjs            # accesibilidad (axe-core) de todas las pági
 
 - Rellena `site.config.json`: `ownerName`, `ownerId`, `ownerAddress` y `contactEmail` aparecen en el aviso legal,
   la privacidad y el contacto. **AdSense rechaza webs con datos de contacto de relleno.**
-- **URL pública y ruta base** (`site.config.json`):
-  ```json
-  "siteOrigin": "https://xabiouteda-ui.github.io",
-  "basePath": "/Gamee/"
-  ```
-  Juntos forman la URL pública (`https://xabiouteda-ui.github.io/Gamee/`), que se usa **solo** para las URLs
-  absolutas: canonical, hreflang, sitemap, Open Graph y la página 404. Todo lo demás (enlaces entre páginas, CSS,
-  JS, el worker, imágenes) usa rutas relativas, así que la web funciona igual en una subcarpeta o en la raíz. Las
-  pruebas fallan si alguna página, CSS o JS usa una ruta que empiece por `/`.
-- **Importante:** `basePath` debe coincidir exactamente con el nombre del repositorio (mayúsculas incluidas). Si
-  renombras el repositorio, cambia también `basePath`. Si no coinciden, el workflow muestra un aviso (la web
-  funciona, pero canonical y sitemap apuntarían a otra URL y Google no la indexaría bien).
-- También puedes cambiarlos sin tocar código con las variables `SITE_ORIGIN` y `BASE_PATH` en **Settings → Secrets
-  and variables → Actions → Variables**.
+- **URL pública:** la web está en **https://herramientaslibres.es** (`site.config.json` → `"siteOrigin":
+  "https://herramientaslibres.es"`, `"basePath": "/"`; en Actions también lo fijan las variables `SITE_ORIGIN` y
+  `BASE_PATH`). Se usa **solo** para las URLs absolutas: canonical, hreflang, sitemap, Open Graph, 404, widget,
+  crédito de los vídeos y Telegram. Todo lo demás usa rutas relativas, así que la web también funcionaría en una
+  subcarpeta (las pruebas fallan si algo usa una ruta que empiece por `/`).
+- Si la URL configurada no coincide con la que GitHub Pages asigna al repositorio, el workflow muestra un aviso.
+  Si solo cambia `http`/`https`, muestra una nota para activar **Settings → Pages → Enforce HTTPS**.
 
-### Dominio propio (recomendado para AdSense)
+### Dominio propio
 
-AdSense no acepta subdominios de `github.io` como sitio propio (y `ads.txt` debe estar en la raíz del dominio),
-así que para monetizar necesitas un dominio (unos 10 €/año, es el único coste):
-
-1. En **Settings → Pages → Custom domain** escribe tu dominio y guarda.
-2. En tu proveedor de dominio crea los registros DNS que indica GitHub (CNAME a `TU_USUARIO.github.io`
-   para `www`, o registros A para el dominio raíz) y activa **Enforce HTTPS**.
-3. En `site.config.json` pon `"siteOrigin": "https://www.tudominio.com"` y `"basePath": "/"` (o las variables
-   `SITE_ORIGIN` y `BASE_PATH`) y vuelve a publicar.
-4. Da de alta el dominio en Google Search Console y envía `https://tudominio.com/sitemap.xml`.
-
-Mientras la web esté en una subcarpeta de `github.io`, `robots.txt` y `ads.txt` no están en la raíz del dominio y
-los buscadores los ignoran: envía el sitemap a mano en Search Console (`https://xabiouteda-ui.github.io/Gamee/sitemap.xml`).
+1. **Settings → Pages → Custom domain**: `herramientaslibres.es` (hecho). Activa **Enforce HTTPS** cuando GitHub lo
+   permita.
+2. `robots.txt` y `ads.txt` se generan en la raíz del dominio en cada publicación.
+3. Da de alta el dominio en Google Search Console (propiedad de dominio) y en Bing Webmaster Tools, y envía
+   `https://herramientaslibres.es/sitemap.xml`.
 
 ## Activar los anuncios (Google AdSense)
 
@@ -134,6 +120,30 @@ los buscadores los ignoran: envía el sitemap a mano en Search Console (`https:/
 
 Consejos para la aprobación: rellena los datos del titular, publica en un dominio propio, espera a tener algo de
 tráfico orgánico e indexación en Search Console, y no pulses tus propios anuncios.
+
+Los huecos tienen **alto fijo** (100/90 px arriba y abajo, 250 px en mitad del texto y bajo la herramienta) y se
+reservan desde el HTML en cuanto tienen ID: el anuncio no desplaza la página (CLS 0). Crea en AdSense bloques
+**adaptables** normales; el alto lo pone la web.
+
+## Estadísticas de visitas (GoatCounter, sin cookies)
+
+1. Crea una cuenta en https://www.goatcounter.com/ y elige un código, p. ej. `herramientaslibres`. El plan alojado
+   es gratis para webs **no comerciales**; cuando la web gane dinero con anuncios, sus condiciones piden un plan
+   de pago (unos pocos dólares al mes según fuentes consultadas el 29/09/2026: compruébalo en su web).
+2. Ponlo en `site.config.json` → `"goatcounter": "herramientaslibres"` y publica. Vacío = desactivado.
+3. Tus estadísticas quedan en `https://herramientaslibres.goatcounter.com`. No usa cookies, así que no necesita
+   aviso de consentimiento; la política de privacidad ya lo menciona.
+
+## Canal de Telegram e IndexNow
+
+- El enlace al canal (`site.config.json` → `telegram`) sale en todas las páginas de luz.
+- `indexNowKey` (en `site.config.json`) es una clave pública: el build publica `/<clave>.txt` y el workflow avisa a
+  Bing y otros buscadores tras cada publicación (`scripts/indexnow.mjs`). No hace falta cuenta.
+
+## Imágenes para redes sociales
+
+Cada página tiene su imagen en `assets/img/og/`. Si creas o renombras una página, ejecuta
+`node scripts/og-images.mjs` (necesita Playwright) y haz commit de las imágenes; las pruebas avisan si falta una.
 
 ## Cambiar textos, nombre o añadir páginas
 

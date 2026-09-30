@@ -1,10 +1,13 @@
 import { STRINGS } from "./i18n.js";
 import { showAffiliates } from "../afiliados.js";
 import { proStatus } from "../pro.js";
-import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, drawCredit, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText } from "./core.js";
+import { segmentsToWords, groupWords, retimeLine, parseSubtitles, linesToSRT, drawCaptions, PRESETS, FONTS, PLATFORMS, drawCredit, autoKeywords, clearAutoKeywords, autoEmojis, clearAutoEmojis, lineEditText, faceSampleTimes, mainFaceX, smoothFaceTrack, cropAt } from "./core.js";
 
 // Librería de vídeo (MPL-2.0): lee el vídeo, nos deja dibujar sobre cada fotograma y lo vuelve a codificar.
 const MEDIABUNNY_URL = "https://cdn.jsdelivr.net/npm/mediabunny@1.60.0/dist/bundles/mediabunny.min.mjs";
+// Detector de caras de MediaPipe (Apache-2.0) para el reencuadre a 9:16; el modelo BlazeFace se sirve desde esta web.
+const FACE_LIB = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1";
+const FACE_MODEL = new URL("../../models/blaze_face_short_range.tflite", import.meta.url).href;
 const MAX_SIDE = 1920; // los vídeos más grandes se reducen a 1080p para exportar rápido
 const MAX_SIDE_PRO = 3840; // Pro: resolución original hasta 4K
 
@@ -23,14 +26,14 @@ const els = {
   exportText: $("export-text"), exportBar: $("export-bar"),
   font: $("st-font"), color: $("st-color"), highlight: $("st-highlight"), size: $("st-size"), pos: $("st-pos"),
   words: $("st-words"), wordsVal: $("st-words-val"), upper: $("st-upper"),
-  keyColor: $("st-key"), keys: $("st-keys"), emojis: $("st-emojis"), crop: $("st-crop"), cropRow: $("crop-row"),
+  keyColor: $("st-key"), keys: $("st-keys"), emojis: $("st-emojis"), crop: $("st-crop"), cropRow: $("crop-row"), follow: $("st-follow"), followRow: $("follow-row"), followStatus: $("follow-status"),
   credit: $("st-credit"), safe: $("st-safe"), safeRow: $("safe-row"), exportCancel: $("export-cancel"), encoderWarn: $("encoder-warn"),
 };
 
 const state = {
   file: null, running: false, phase: null, worker: null, segments: [], lines: [],
   style: { ...PRESETS.karaoke }, preset: "karaoke", exporting: null, wordsExact: true,
-  platform: "", crop: false, safe: true, autoKeys: true, autoEmojis: false, credit: true,
+  platform: "", crop: false, follow: false, faceTrack: null, faceJob: 0, safe: true, autoKeys: true, autoEmojis: false, credit: true,
   pro: false, max4k: false, waiter: null,
 };
 
@@ -94,6 +97,8 @@ function setFile(file) {
   els.exportStatus.hidden = true;
   els.downloadLink.hidden = true;
   $("afiliados").hidden = true;
+  state.faceTrack = null;
+  state.faceJob++;
   if (els.video.src) URL.revokeObjectURL(els.video.src);
   els.video.src = URL.createObjectURL(file);
   els.video.onloadedmetadata = () => {
@@ -314,13 +319,86 @@ function renderLines() {
   els.lines.replaceChildren(frag);
 }
 
-// Encuadre de salida en píxeles del vídeo original: completo o recortado a 9:16 centrado.
-function frame(vw, vh) {
+// Encuadre de salida en píxeles del vídeo original: completo o recortado a 9:16 (centrado o siguiendo la cara en t).
+function frame(vw, vh, t = 0) {
   if (state.crop && vw > vh) {
     const cw = Math.round((vh * 9) / 16);
-    return { W: cw, H: vh, sx: Math.round((vw - cw) / 2), sw: cw };
+    const p = state.follow && state.faceTrack ? cropAt(state.faceTrack, t) : 0.5;
+    return { W: cw, H: vh, sx: Math.round((vw - cw) * p), sw: cw, p };
   }
   return { W: vw, H: vh, sx: 0, sw: vw };
+}
+
+// MediaPipe envía cada minuto estadísticas de uso a Google (odml.pa.googleapis.com). Las bloqueamos: si esa
+// petición falla, la librería deja de intentarlo. El vídeo nunca se envía, pero así no sale nada más de la página.
+function blockFaceTelemetry() {
+  if (window.__noOdml) return;
+  window.__noOdml = true;
+  const f = window.fetch.bind(window);
+  window.fetch = (input, init) => (String(input?.url ?? input).startsWith("https://odml.pa.googleapis.com/") ? Promise.reject(new TypeError("bloqueado")) : f(input, init));
+}
+
+// Caras pequeñas (plano general): el detector trabaja a baja resolución, así que si no ve ninguna en el fotograma
+// entero se busca en tres cuadrados (izquierda, centro, derecha) y se pasa la posición a píxeles del vídeo.
+function detectFace(detector, video, square) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  let x = mainFaceX(detector.detect(video).detections);
+  if (x != null || vw <= vh) return x;
+  const n = square.width, ctx = square.getContext("2d");
+  let best = null;
+  for (const ox of [0, (vw - vh) / 2, vw - vh]) {
+    ctx.drawImage(video, ox, 0, vh, vh, 0, 0, n, n);
+    for (const d of detector.detect(square).detections) {
+      const b = d.boundingBox;
+      if (b && (!best || b.width > best.w)) best = { w: b.width, x: ox + ((b.originX + b.width / 2) * vh) / n };
+    }
+  }
+  return best ? best.x : null;
+}
+
+// Busca la cara en el vídeo (unas 2 veces por segundo) para mover el recorte 9:16 con ella. Todo en el navegador:
+// el vídeo no sale del dispositivo; solo se descarga el detector (jsDelivr) y el modelo (esta web).
+async function trackFaces() {
+  const job = ++state.faceJob;
+  const alive = () => job === state.faceJob && state.follow;
+  const say = (text) => { if (job === state.faceJob) els.followStatus.textContent = text; };
+  say(T.faceLoading);
+  const probe = document.createElement("video");
+  try {
+    blockFaceTelemetry();
+    const { FilesetResolver, FaceDetector } = await import(`${FACE_LIB}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${FACE_LIB}/wasm`);
+    const detector = await FaceDetector.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: FACE_MODEL, delegate: "CPU" }, runningMode: "IMAGE", minDetectionConfidence: 0.5,
+    });
+    probe.muted = true;
+    probe.playsInline = true;
+    probe.preload = "auto";
+    probe.src = els.video.src;
+    await new Promise((ok, ko) => { probe.onloadeddata = ok; probe.onerror = () => ko(new Error("vídeo")); });
+    const vw = probe.videoWidth, vh = probe.videoHeight, cw = Math.round((vh * 9) / 16);
+    const times = faceSampleTimes(probe.duration);
+    const square = Object.assign(document.createElement("canvas"), { width: 384, height: 384 });
+    const samples = [];
+    for (let i = 0; i < times.length; i++) {
+      if (!alive()) { detector.close(); return; }
+      await new Promise((ok) => { probe.onseeked = ok; probe.currentTime = times[i]; });
+      samples.push({ t: times[i], x: detectFace(detector, probe, square) });
+      if (i % 10 === 0) say(fmt(T.faceProgress, { p: Math.round((i / times.length) * 100) }));
+    }
+    detector.close();
+    if (!alive()) return;
+    state.faceTrack = smoothFaceTrack(samples, vw, cw);
+    const found = samples.filter((s) => s.x != null).length;
+    say(state.faceTrack ? fmt(T.faceDone, { p: Math.round((found / samples.length) * 100) }) : T.faceNone);
+    draw();
+  } catch (e) {
+    console.warn("caras:", e);
+    say(T.faceError);
+  } finally {
+    probe.removeAttribute("src");
+    probe.load();
+  }
 }
 
 // Estilo efectivo: el del usuario + el ancho máximo de la zona segura de la plataforma elegida.
@@ -336,6 +414,7 @@ function layoutStage() {
   const horizontal = v.videoWidth > v.videoHeight;
   els.cropRow.hidden = !horizontal;
   if (!horizontal) state.crop = false;
+  els.followRow.hidden = !state.crop;
   const f = frame(v.videoWidth, v.videoHeight);
   els.safeRow.hidden = !(PLATFORMS[state.platform] && f.W < f.H);
   els.stage.classList.toggle("crop", f.W !== v.videoWidth);
@@ -375,7 +454,8 @@ function draw() {
   if (!w || !h) return;
   if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
   const ctx = c.getContext("2d");
-  const { W, H } = frame(v.videoWidth, v.videoHeight);
+  const { W, H, p } = frame(v.videoWidth, v.videoHeight, v.currentTime);
+  v.style.objectPosition = p == null ? "" : `${(p * 100).toFixed(2)}% 50%`;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, w, h);
   ctx.setTransform(w / W, 0, 0, h / H, 0, 0);
@@ -404,6 +484,7 @@ function syncControls() {
   els.keys.checked = state.autoKeys;
   els.emojis.checked = state.autoEmojis;
   els.crop.checked = state.crop;
+  els.follow.checked = state.follow;
   els.credit.checked = state.credit;
   els.safe.checked = state.safe;
   for (const b of document.querySelectorAll(".chip[data-platform]")) b.setAttribute("aria-pressed", String(b.dataset.platform === state.platform));
@@ -474,7 +555,8 @@ async function exportVideo() {
         ...(frameRate ? { frameRate } : {}),
         process: (sample) => {
           ctx.clearRect(0, 0, W, H);
-          sample.draw(ctx, f.sx, 0, f.sw, f.H, 0, 0, W, H);
+          const sx = state.follow && state.faceTrack ? frame(track.displayWidth, track.displayHeight, sample.timestamp).sx : f.sx;
+          sample.draw(ctx, sx, 0, f.sw, f.H, 0, 0, W, H);
           drawCaptions(ctx, W, H, sample.timestamp + (sample.duration || 0) / 2, lines, style);
           if (credit) drawCredit(ctx, W, H, ...credit);
           return canvas;
@@ -547,6 +629,7 @@ function init() {
   state.autoKeys = store.get("autoKeys") !== "0";
   state.autoEmojis = store.get("autoEmojis") === "1";
   state.credit = store.get("credit") !== "0";
+  state.follow = store.get("follow") === "1";
   initPro();
   const p = store.get("preset");
   // Cada página puede preseleccionar plataforma, estilo o traducción (p. ej. «subtítulos para TikTok»).
@@ -632,7 +715,8 @@ function init() {
     syncControls();
     layoutStage();
   }));
-  els.crop.addEventListener("change", () => { state.crop = els.crop.checked; layoutStage(); });
+  els.crop.addEventListener("change", () => { state.crop = els.crop.checked; layoutStage(); if (state.crop && state.follow && !state.faceTrack) trackFaces(); });
+  els.follow.addEventListener("change", () => { state.follow = els.follow.checked; store.set("follow", state.follow ? "1" : "0"); if (state.follow && !state.faceTrack) trackFaces(); else { els.followStatus.textContent = ""; draw(); } });
   els.safe.addEventListener("change", () => { state.safe = els.safe.checked; draw(); });
   els.credit.addEventListener("change", () => { state.credit = els.credit.checked; store.set("credit", state.credit ? "1" : "0"); draw(); });
   els.keys.addEventListener("change", () => { state.autoKeys = els.keys.checked; store.set("autoKeys", state.autoKeys ? "1" : "0"); decorate(); renderLines(); draw(); });
