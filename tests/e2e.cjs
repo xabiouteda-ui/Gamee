@@ -109,6 +109,8 @@ function check(cond, msg) {
       if (pro && url.endsWith("/data/pro.json")) return route.fulfill({ contentType: "application/json", body: pro });
       if (affiliates && url.endsWith("/data/afiliados.json")) return route.fulfill({ contentType: "application/json", body: affiliates });
       if (url.startsWith(origin)) return route.continue();
+      // El beacon de Cloudflare Web Analytics (sin cookies) se sustituye por un script vacío: no es un tercero de la herramienta.
+      if (url.startsWith("https://static.cloudflareinsights.com/")) return route.fulfill({ contentType: "text/javascript", body: "" });
       // URLs absolutas a la web pública (canonical, 404…) se sirven desde el servidor local.
       if (url.startsWith(PUBLIC_URL)) {
         return fetch(base + "/" + url.slice(PUBLIC_URL.length))

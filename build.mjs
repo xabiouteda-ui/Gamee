@@ -303,9 +303,13 @@ function ogImage(page) {
 
 // Estadística GoatCounter (sin cookies). Desactivada mientras site.config.json → goatcounter esté vacío.
 function analyticsTag() {
+  const tags = [];
   const code = String(process.env.GOATCOUNTER ?? site.goatcounter ?? "").trim();
-  if (!/^[a-z0-9-]+$/i.test(code)) return "";
-  return `<script data-goatcounter="https://${code}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`;
+  if (/^[a-z0-9-]+$/i.test(code)) tags.push(`<script data-goatcounter="https://${code}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`);
+  // Cloudflare Web Analytics (sin cookies). Solo con un token válido: 32 caracteres hexadecimales.
+  const cf = String(process.env.CLOUDFLARE_ANALYTICS ?? site.cloudflareAnalytics ?? "").trim();
+  if (/^[0-9a-f]{32}$/i.test(cf)) tags.push(`<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${cf}"}'></script>`);
+  return tags.join("\n");
 }
 
 // Datos del PVPC como conjunto de datos (Google Dataset Search). Solo se declara si data/pvpc.json existe.
@@ -354,6 +358,7 @@ ${page.style ? `<link rel="stylesheet" href="${root}${page.style}">` : ""}
 </head>
 <body>
 ${body.trim()}
+${analyticsTag()}
 ${page.script ? `<script type="module" src="${root}${page.script}"></script>` : ""}
 </body>
 </html>

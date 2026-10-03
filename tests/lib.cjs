@@ -49,6 +49,8 @@ async function newContext(browser, srv, opts = {}, libs = {}) {
     const url = route.request().url();
     if (libs[url] != null) return route.fulfill({ contentType: "text/javascript", body: libs[url], headers: { "Access-Control-Allow-Origin": "*" } });
     if (url.startsWith(srv.origin)) return route.continue();
+    // El beacon de Cloudflare Web Analytics (sin cookies) se sustituye por un script vacío.
+    if (url.startsWith("https://static.cloudflareinsights.com/")) return route.fulfill({ contentType: "text/javascript", body: "" });
     if (url.startsWith(PUBLIC_URL)) {
       const r = await fetch(srv.base + "/" + url.slice(PUBLIC_URL.length));
       return route.fulfill({ status: r.status, contentType: r.headers.get("content-type") || undefined, body: Buffer.from(await r.arrayBuffer()) });

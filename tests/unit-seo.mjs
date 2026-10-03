@@ -1,7 +1,7 @@
 // Pruebas del SEO técnico: sitemap con lastmod real, datos estructurados, migas de pan, enlazado interno e IndexNow.
 // Necesita la web generada (`node build.mjs`).   node tests/unit-seo.mjs
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
 import { join } from "node:path";
@@ -111,15 +111,25 @@ await test("AdSense y GoatCounter: apagados por defecto; al activarlos, hueco re
   const dir = mkdtempSync(join(tmpdir(), "hl-"));
   writeFileSync(join(dir, "config.js"), `window.SITE_CONFIG = { adsEnabled: true, adsenseClient: "ca-pub-1234567890123456", slots: { top: "1", result: "", content: "3", bottom: "" } };`);
   await new Promise((resolve, reject) => execFile(process.execPath, ["build.mjs"], {
-    cwd: ROOT, env: { ...process.env, SITE_OUT: join(dir, "site"), ADS_CONFIG: join(dir, "config.js"), GOATCOUNTER: "micodigo" },
+    cwd: ROOT, env: { ...process.env, SITE_OUT: join(dir, "site"), ADS_CONFIG: join(dir, "config.js"), GOATCOUNTER: "micodigo", CLOUDFLARE_ANALYTICS: "no-es-un-token" },
   }, (err) => (err ? reject(err) : resolve())));
   const html = readFileSync(join(dir, "site", "luz/precio-luz-hoy.html"), "utf8");
   assert.match(html, /<div class="ad-slot ad-on" data-slot="top">/);
   assert.match(html, /<div class="ad-slot ad-on" data-slot="content">/);
   assert.match(html, /<div class="ad-slot" data-slot="bottom">/, "hueco sin ID: no se reserva");
   assert.match(html, /<script data-goatcounter="https:\/\/micodigo\.goatcounter\.com\/count" async src="https:\/\/gc\.zgo\.at\/count\.js"><\/script>/);
+  assert.ok(!html.includes("cloudflareinsights"), "token de Cloudflare no válido: sin beacon");
   assert.match(readFileSync(join(dir, "site", "ads.txt"), "utf8"), /^google\.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0$/m);
   rmSync(dir, { recursive: true, force: true });
+});
+
+await test("Cloudflare Web Analytics: beacon en todas las páginas con el token de site.config.json", () => {
+  const token = site.cloudflareAnalytics;
+  assert.match(token, /^[0-9a-f]{32}$/, "token de 32 caracteres hexadecimales");
+  const tag = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${token}"}'></script>`;
+  const pages = readdirSync(SITE, { recursive: true }).filter((f) => f.endsWith(".html")).map((f) => join(SITE, f));
+  assert.ok(pages.length > 10, "hay páginas generadas");
+  for (const f of pages) assert.equal(readFileSync(f, "utf8").split(tag).length - 1, 1, `${f} lleva el beacon una vez`);
 });
 
 console.log(`${n} pruebas de SEO correctas.`);
