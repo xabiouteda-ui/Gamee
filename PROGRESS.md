@@ -2,6 +2,42 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
+## Sesión 6 (04/10/2026) – más páginas que atraen visitas (terminada: PR #5 lista para fusionar)
+
+El backlog de la sesión 5 estaba terminado, así que lo he ampliado con lo que más visitas puede traer en otoño.
+
+| Bloque | Estado |
+|---|---|
+| 1. Horario de la luz: punta, llano y valle | ✅ |
+| 2. Coste de calefacción, secadora, lavavajillas y termo | ✅ |
+| 3. Más búsquedas de transcripción (+2 en inglés) | ✅ |
+
+**1. Horario de la luz ✅** Nueva página `/luz/horarios-luz-punta-llano-valle.html`: dice en qué tramo estamos
+ahora, hasta cuándo dura, las franjas de hoy y mañana y el precio medio real del PVPC en cada tramo. Tabla de
+horarios, Ceuta y Melilla, festivos que cuentan y potencia. Fuente: Circular 3/2020 de la CNMC.
+
+**2. Coste de aparatos ✅** 4 páginas nuevas con la calculadora de coste por hora y el PVPC real:
+**calefacción eléctrica** (radiador, calefactor, emisor), **secadora**, **lavavajillas** y **termo eléctrico**
+(con cuánto cuesta una ducha, calculado con física, no con cifras de terceros).
+
+**3. Transcripción ✅** 3 páginas nuevas: **transcribir un podcast** (notas, capítulos, blog, SRT), **transcribir
+un vídeo a texto** (MP4, MOV, WebM…) y **traducir un audio al inglés** (texto y SRT). Las dos primeras, también
+en inglés (enlazadas con su versión en español). 63 páginas en total.
+
+**Calidad:** `bash tests/run-all.sh` pasa entero (63 páginas, accesibilidad claro/oscuro). Pruebas nuevas para los
+horarios (tramo de ahora, festivos, cambio de día en hora de Madrid) y su página en el móvil.
+
+**Siguiente en el backlog (no empezado):** página de subtítulos desde el móvil (antes hay que probar la exportación
+en un iPhone real), y en la semana 8 del plan, mejorar las páginas que Search Console muestre entre el puesto 8 y
+el 30 (necesito que me pases esos datos).
+
+**Sigue pendiente de ti** (igual que en la sesión 5): *Enforce HTTPS* en GitHub Pages, Search Console y Bing,
+mensaje de consentimiento y `ca-pub` de AdSense, código de GoatCounter si lo quieres y el bot de Telegram.
+Ojo: en `site.config.json` → `ownerAddress` solo hay un código postal (36205); el aviso legal (LSSI) pide una
+dirección completa.
+
+---
+
 ## Sesión 5 (29/09/2026) – dominio, SEO y marketing (terminada: PR #4 lista para fusionar)
 
 | Bloque | Estado |

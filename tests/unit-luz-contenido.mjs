@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { windowCost, costByStart, summary, madridHour, withTaxes } from "../assets/js/luz/coste.js";
 import { computeStudy, studyCSV, studyDays } from "../assets/js/luz/estudio.js";
 import { RULES } from "../assets/js/luz/core.js";
+import { madridNow, nextChange, dayPeriods, allValle } from "../assets/js/luz/periodos.js";
 
 let n = 0;
 const test = (name, fn) => { fn(); n++; console.log("✓ " + name); };
@@ -76,6 +77,22 @@ test("Estudio: hasta una fecha, sin datos suficientes y CSV", () => {
   assert.equal(csv[0], "fecha;hora;pvpc_eur_kwh_sin_impuestos");
   assert.equal(csv.length, 1 + 48);
   assert.equal(csv[1], "2026-01-01;00:00;0.05000");
+});
+
+test("Horarios: tramo de ahora y cuándo cambia (laborable, viernes noche, festivo)", () => {
+  // Lunes 5/10/2026
+  assert.deepEqual(dayPeriods("2026-10-05").join(""), "P3".repeat(8) + "P2P2" + "P1".repeat(4) + "P2".repeat(4) + "P1".repeat(4) + "P2P2");
+  assert.deepEqual(nextChange("2026-10-05", 9), { period: "P2", next: "P1", until: { date: "2026-10-05", hour: 10 } });
+  assert.deepEqual(nextChange("2026-10-05", 23), { period: "P2", next: "P3", until: { date: "2026-10-06", hour: 0 } });
+  // Sábado 10/10 de madrugada: valle hasta el martes a las 08:00, porque el lunes 12/10 es festivo nacional.
+  assert.deepEqual(nextChange("2026-10-10", 3), { period: "P3", next: "P2", until: { date: "2026-10-13", hour: 8 } });
+  assert.ok(allValle("2026-10-12") && allValle("2026-10-10") && !allValle("2026-10-13"));
+});
+
+test("Horarios: fecha y hora de Madrid en verano, en invierno y al cruzar la medianoche UTC", () => {
+  assert.deepEqual(madridNow(new Date("2026-07-01T22:30:00Z")), { date: "2026-07-02", hour: 0 });
+  assert.deepEqual(madridNow(new Date("2026-12-31T23:10:00Z")), { date: "2027-01-01", hour: 0 });
+  assert.deepEqual(madridNow(new Date("2026-12-31T10:59:00Z")), { date: "2026-12-31", hour: 11 });
 });
 
 console.log(`${n} pruebas de contenido de luz correctas.`);

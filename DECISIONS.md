@@ -361,3 +361,28 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     cifras de coste y rendimiento que no he podido contrastar hoy.
 100. **Paro al terminar el bloque 5** en vez de ampliar el backlog: la sesión ha sido larga (el contexto se ha
      compactado una vez) y prefiero no pasarme del tope de 35 $. La PR queda lista para fusionar.
+
+## Sesión 6 (04/10/2026)
+
+101. **Backlog ampliado** porque el de la sesión 5 estaba terminado. Orden por impacto: (1) horarios punta/llano/valle,
+     búsqueda de mucho volumen y que no depende del día; (2) coste por hora de los aparatos que más se buscan en
+     otoño e invierno (calefacción eléctrica, secadora, lavavajillas, termo), reutilizando la calculadora de coste;
+     (3) búsquedas de transcripción y subtítulos aún sin página. Mismo tope de 35 $.
+102. **Página de horarios con herramienta propia** (`periodos`): usa la misma función `periodOf` que el comparador,
+     así que no puede contradecirlo. Solo calcula la península (hora peninsular); Canarias y Baleares tienen los
+     mismos tramos en hora local y Ceuta y Melilla su horario propio, explicado en el texto. Con `data/pvpc.json`
+     muestra la media real del PVPC por tramo (`avg365`, ya calculada al descargar los precios) y en qué tramo cae
+     la hora más barata de hoy. Fuente de los horarios: Circular 3/2020 de la CNMC.
+103. **Páginas de coste de otoño sin cifras dudosas.** Los valores por defecto coinciden con los de la calculadora de
+     electrodomésticos (radiador y termo 1,5 kW, secadora 2,5 kWh, lavavajillas 0,9 kWh) y se presentan como punto
+     de partida, pidiendo el dato de la etiqueta. Donde se dan números, salen de la física (1,16 Wh por litro y
+     grado) y no de estudios de terceros. No se dan porcentajes de ahorro de la bomba de calor: se remite al SCOP
+     de su etiqueta.
+104. **Transcripción: podcast, vídeo a texto y traducir al inglés**, las tres búsquedas sin página que la herramienta
+     ya resuelve tal cual. La de vídeo deja claro que no descarga vídeos de otras webs (solo archivos propios) y la
+     de traducir, que solo traduce hacia el inglés. No digo en ninguna que la web «se mantiene con publicidad»
+     porque los anuncios aún están apagados: se enlaza «Cómo ganamos dinero».
+105. **Paro tras 4 bloques** y dejo la PR lista: lo siguiente con más impacto (mejorar las páginas que ya posicionan)
+     necesita datos de Search Console que solo tiene Gurú, y una página de subtítulos «desde el móvil» exige probar
+     antes la exportación en un iPhone real.
+

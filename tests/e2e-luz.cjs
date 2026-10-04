@@ -248,6 +248,24 @@ const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill(
     await c2.close();
   }
 
+  // 8b2. Horarios de la luz: tramo de ahora, franjas de hoy y mañana y medias del PVPC por tramo
+  {
+    const { ctx } = await newContext(browser, srv, { viewport: { width: 390, height: 860 } }, withPvpc);
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    await page.goto(srv.base + "/luz/horarios-luz-punta-llano-valle.html");
+    await page.waitForSelector("#periodos .pvpc-tramos");
+    check((await page.locator("#periodos .strip").count()) === 2 && (await page.locator("#periodos .strip").first().locator("li").count()) === 24, "Horarios: franjas de 24 h de hoy y mañana");
+    check((await page.locator("#periodos .strip li.now").count()) === 1, "Horarios: marca la hora actual");
+    check(/^(Punta|Llano|Valle)$/.test((await page.textContent("#periodos .kpi .kpi-value")).trim()), "Horarios: dice el tramo de ahora");
+    check((await page.locator("#periodos .pvpc-tramos .kpi").count()) === 3 && /Hoy la hora más barata del PVPC/.test(await page.textContent("#periodos")), "Horarios: medias del PVPC por tramo y hora más barata de hoy");
+    check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "Horarios: sin scroll horizontal en móvil");
+    check(errs.length === 0, "Sin errores en la página de horarios");
+    await page.screenshot({ path: path.join(OUT, "luz-horarios.png"), fullPage: false });
+    await ctx.close();
+  }
+
   // 8c. Calculadora de electrodomésticos
   {
     const { ctx } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, withPvpc);
