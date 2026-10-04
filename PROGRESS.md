@@ -21,7 +21,8 @@ horarios, Ceuta y Melilla, festivos que cuentan y potencia. Fuente: Circular 3/2
 (con cuánto cuesta una ducha, calculado con física, no con cifras de terceros).
 
 **3. Transcripción ✅** 3 páginas nuevas: **transcribir un podcast** (notas, capítulos, blog, SRT), **transcribir
-un vídeo a texto** (MP4, MOV, WebM…) y **traducir un audio al inglés** (texto y SRT). 61 páginas en total.
+un vídeo a texto** (MP4, MOV, WebM…) y **traducir un audio al inglés** (texto y SRT). Las dos primeras, también
+en inglés (enlazadas con su versión en español). 63 páginas en total.
 
 **Sigue pendiente de ti** (igual que en la sesión 5): *Enforce HTTPS* en GitHub Pages, Search Console y Bing,
 mensaje de consentimiento y `ca-pub` de AdSense, código de GoatCounter si lo quieres y el bot de Telegram.
