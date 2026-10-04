@@ -378,4 +378,8 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
      de partida, pidiendo el dato de la etiqueta. Donde se dan números, salen de la física (1,16 Wh por litro y
      grado) y no de estudios de terceros. No se dan porcentajes de ahorro de la bomba de calor: se remite al SCOP
      de su etiqueta.
+104. **Transcripción: podcast, vídeo a texto y traducir al inglés**, las tres búsquedas sin página que la herramienta
+     ya resuelve tal cual. La de vídeo deja claro que no descarga vídeos de otras webs (solo archivos propios) y la
+     de traducir, que solo traduce hacia el inglés. No digo en ninguna que la web «se mantiene con publicidad»
+     porque los anuncios aún están apagados: se enlaza «Cómo ganamos dinero».
 
