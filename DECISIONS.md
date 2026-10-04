@@ -382,4 +382,7 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
      ya resuelve tal cual. La de vídeo deja claro que no descarga vídeos de otras webs (solo archivos propios) y la
      de traducir, que solo traduce hacia el inglés. No digo en ninguna que la web «se mantiene con publicidad»
      porque los anuncios aún están apagados: se enlaza «Cómo ganamos dinero».
+105. **Paro tras 4 bloques** y dejo la PR lista: lo siguiente con más impacto (mejorar las páginas que ya posicionan)
+     necesita datos de Search Console que solo tiene Gurú, y una página de subtítulos «desde el móvil» exige probar
+     antes la exportación en un iPhone real.
 
