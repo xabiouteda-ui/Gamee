@@ -361,3 +361,16 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
     cifras de coste y rendimiento que no he podido contrastar hoy.
 100. **Paro al terminar el bloque 5** en vez de ampliar el backlog: la sesión ha sido larga (el contexto se ha
      compactado una vez) y prefiero no pasarme del tope de 35 $. La PR queda lista para fusionar.
+
+## Sesión 6 (04/10/2026)
+
+101. **Backlog ampliado** porque el de la sesión 5 estaba terminado. Orden por impacto: (1) horarios punta/llano/valle,
+     búsqueda de mucho volumen y que no depende del día; (2) coste por hora de los aparatos que más se buscan en
+     otoño e invierno (calefacción eléctrica, secadora, lavavajillas, termo), reutilizando la calculadora de coste;
+     (3) búsquedas de transcripción y subtítulos aún sin página. Mismo tope de 35 $.
+102. **Página de horarios con herramienta propia** (`periodos`): usa la misma función `periodOf` que el comparador,
+     así que no puede contradecirlo. Solo calcula la península (hora peninsular); Canarias y Baleares tienen los
+     mismos tramos en hora local y Ceuta y Melilla su horario propio, explicado en el texto. Con `data/pvpc.json`
+     muestra la media real del PVPC por tramo (`avg365`, ya calculada al descargar los precios) y en qué tramo cae
+     la hora más barata de hoy. Fuente de los horarios: Circular 3/2020 de la CNMC.
+

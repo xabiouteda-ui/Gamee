@@ -111,6 +111,7 @@ const TOOLS = {
   luzhoy: { partial: "luz-hoy.html", strings: LUZ_STRINGS, script: "assets/js/luz/hoy.js", category: "UtilitiesApplication" },
   luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
   coste: { partial: "coste.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
+  periodos: { partial: "periodos.html", strings: LUZ_STRINGS, script: "assets/js/luz/periodos.js", category: "UtilitiesApplication" },
   coche: { partial: "coche.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
