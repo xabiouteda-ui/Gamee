@@ -9,12 +9,16 @@ El backlog de la sesión 5 estaba terminado, así que lo he ampliado con lo que 
 | Bloque | Estado |
 |---|---|
 | 1. Horario de la luz: punta, llano y valle | ✅ |
-| 2. Coste de calefacción, secadora, lavavajillas y termo | ⏳ |
+| 2. Coste de calefacción, secadora, lavavajillas y termo | ✅ |
 | 3. Más búsquedas de transcripción y subtítulos | ⏳ |
 
 **1. Horario de la luz ✅** Nueva página `/luz/horarios-luz-punta-llano-valle.html`: dice en qué tramo estamos
 ahora, hasta cuándo dura, las franjas de hoy y mañana y el precio medio real del PVPC en cada tramo. Tabla de
 horarios, Ceuta y Melilla, festivos que cuentan y potencia. Fuente: Circular 3/2020 de la CNMC.
+
+**2. Coste de aparatos ✅** 4 páginas nuevas con la calculadora de coste por hora y el PVPC real:
+**calefacción eléctrica** (radiador, calefactor, emisor), **secadora**, **lavavajillas** y **termo eléctrico**
+(con cuánto cuesta una ducha, calculado con física, no con cifras de terceros). 58 páginas en total.
 
 **Sigue pendiente de ti** (igual que en la sesión 5): *Enforce HTTPS* en GitHub Pages, Search Console y Bing,
 mensaje de consentimiento y `ca-pub` de AdSense, código de GoatCounter si lo quieres y el bot de Telegram.

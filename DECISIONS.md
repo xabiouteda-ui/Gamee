@@ -373,4 +373,9 @@ Registro de las decisiones tomadas de forma autónoma durante el desarrollo, con
      mismos tramos en hora local y Ceuta y Melilla su horario propio, explicado en el texto. Con `data/pvpc.json`
      muestra la media real del PVPC por tramo (`avg365`, ya calculada al descargar los precios) y en qué tramo cae
      la hora más barata de hoy. Fuente de los horarios: Circular 3/2020 de la CNMC.
+103. **Páginas de coste de otoño sin cifras dudosas.** Los valores por defecto coinciden con los de la calculadora de
+     electrodomésticos (radiador y termo 1,5 kW, secadora 2,5 kWh, lavavajillas 0,9 kWh) y se presentan como punto
+     de partida, pidiendo el dato de la etiqueta. Donde se dan números, salen de la física (1,16 Wh por litro y
+     grado) y no de estudios de terceros. No se dan porcentajes de ahorro de la bomba de calor: se remite al SCOP
+     de su etiqueta.
 
