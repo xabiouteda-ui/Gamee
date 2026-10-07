@@ -634,3 +634,11 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
 @media (prefers-reduced-motion: no-preference) {
   .nv-skel span { animation: nv-pulse 1.2s ease-in-out infinite; }
 }
+
+/* Escenario 3D de la nevera */
+.nv-stage { position: relative; height: clamp(340px, 50vw, 480px); border-radius: 26px; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 100%, var(--nv-basil-soft), transparent 70%), var(--nv-door); border: 1px solid var(--nv-door-edge); }
+.nv-stage canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.nv.has-3d .nv-handle { display: none; }
+.nv.has-3d .nv-door { padding-right: 26px; border-radius: 22px; box-shadow: none; }
+@media (max-width: 560px) { .nv-stage { height: 360px; border-radius: 20px; } .nv.has-3d .nv-door { padding-right: 18px; } }

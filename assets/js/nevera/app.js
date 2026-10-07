@@ -37,6 +37,27 @@ let ingredients = [];
 let lastList = "";
 let busy = false;
 let current = [];
+let fridge = null; // escena 3D (scene.js), si hay WebGL
+
+async function load3D() {
+  const stage = $("nv-stage");
+  const gl = (() => { try { return !!document.createElement("canvas").getContext("webgl2"); } catch { return false; } })();
+  if (!stage || !gl) { stage?.remove(); return; }
+  try {
+    const { createFridge } = await import("./scene.js");
+    fridge = createFridge(stage, { onPlate: (i) => {
+      const art = document.querySelectorAll(".nv-recipe")[i];
+      if (art) { art.querySelector("details").open = true; art.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    } });
+    document.querySelector(".nv").classList.add("has-3d");
+    setTimeout(() => scene("idleOpen"), 600);
+  } catch {
+    stage.remove();
+  }
+}
+// Las animaciones van en cola, en orden, aunque la IA responda antes de que termine la anterior.
+let queue = Promise.resolve();
+const scene = (fn, ...a) => { queue = queue.then(() => fridge?.[fn]?.(...a)).catch(() => { /* la escena es decorativa */ }); return queue; };
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7);
@@ -146,20 +167,22 @@ async function fromPhoto(file) {
   }
   showBoard(dataUrl);
   ingredients = []; renderMagnets(); renderSkeleton();
+  scene("showPhoto", dataUrl); scene("think");
   $("nv-board-title").textContent = "Mirando tu nevera…";
   status("Reconociendo ingredientes y pensando recetas. Tarda unos segundos.");
   try {
     const data = await ask({ imagen: dataUrl, ...prefs() });
     if (data.esComida === false || !data.ingredientes.length) {
-      $("nv-board-title").textContent = "No veo comida en esta foto"; renderRecipes([]);
+      $("nv-board-title").textContent = "No veo comida en esta foto"; renderRecipes([]); scene("reset");
       status("Prueba con la puerta de la nevera abierta y buena luz, o escribe tus ingredientes.", true);
     } else {
       ingredients = data.ingredientes; lastList = ingredients.join("|");
       $("nv-board-title").textContent = "Esto es lo que hay";
       renderMagnets(true); renderRecipes(data.recetas); status("");
+      scene("serve", data.recetas);
     }
   } catch (e) {
-    renderRecipes([]);
+    renderRecipes([]); scene("reset");
     $("nv-board-title").textContent = "Esto es lo que hay";
     status(e.message, true);
   } finally {
@@ -171,15 +194,16 @@ async function fromList(evitar = []) {
   if (busy || !ingredients.length) return;
   const before = current;
   renderSkeleton();
+  scene("hidePlates"); scene("think");
   busy = true;
   document.querySelector(".nv").classList.add("is-busy");
   status("Buscando recetas con tu lista…");
   try {
     const data = await ask({ ingredientes: ingredients, evitar, ...prefs() });
     lastList = ingredients.join("|"); renderMagnets(); renderRecipes(data.recetas); status("");
-    $("nv-recipes-title")?.focus({ preventScroll: false });
+    scene("serve", data.recetas);
   } catch (e) {
-    renderRecipes(before);
+    renderRecipes(before); scene("serve", before);
     status(e.message, true);
   } finally {
     busy = false; document.querySelector(".nv").classList.remove("is-busy");
@@ -198,7 +222,7 @@ if ($("nevera")) {
     showBoard(null);
     ingredients = [...EXAMPLE.ingredientes]; lastList = ingredients.join("|");
     $("nv-board-title").textContent = "Ejemplo: una nevera cualquiera";
-    renderMagnets(true); renderRecipes(EXAMPLE.recetas);
+    renderMagnets(true); renderRecipes(EXAMPLE.recetas); scene("serve", EXAMPLE.recetas);
     status("Esto es un ejemplo. Haz una foto de tu nevera para ver tus recetas.");
   });
   $("nv-type").addEventListener("click", () => {
@@ -208,7 +232,7 @@ if ($("nevera")) {
   });
   $("nv-again").addEventListener("click", () => {
     $("nv-board").hidden = true; $("nv-start").hidden = false;
-    ingredients = []; lastList = ""; renderRecipes([]); status("");
+    ingredients = []; lastList = ""; renderRecipes([]); status(""); scene("reset");
   });
   $("nv-magnets").addEventListener("click", (e) => {
     const name = e.target.closest("[data-remove]")?.dataset.remove;
@@ -226,6 +250,7 @@ if ($("nevera")) {
     if (e.target.closest("#nv-more")) fromList(current.map((r) => r.nombre));
   });
   loadPrefs();
+  load3D();
   $("nv-personas").addEventListener("change", savePrefs);
   $("nv-rapido").addEventListener("change", savePrefs);
 
