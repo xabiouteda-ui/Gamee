@@ -478,7 +478,7 @@ ${hreflang}
 <link rel="stylesheet" href="${root}assets/css/style.css">
 ${page.fonts ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="${esc(page.fonts)}">\n` : ""}${/^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) ? `<meta name="google-adsense-account" content="${esc(adsCfg.adsenseClient.trim())}">\n` : ""}${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
 </head>
-<body>
+<body${page.immersive ? ' class="immersive"' : ""}>
 <a class="skip" href="#main">${ui.skip}</a>
 <header class="site-header">
   <div class="wrap header-inner">
@@ -489,9 +489,9 @@ ${page.fonts ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossori
     ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>
 </header>
-<div class="wrap">${adSlot("top")}</div>
+${page.immersive ? "" : `<div class="wrap">${adSlot("top")}</div>`}
 <main id="main" class="wrap">
-${crumbs.length ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
+${crumbs.length && !page.immersive ? `<nav class="crumbs" aria-label="${lang === "es" ? "Estás en" : "You are here"}"><ol>${crumbs.map(([name, h]) => `<li>${h ? `<a href="${h}">${esc(name)}</a>` : `<span aria-current="page">${esc(name)}</span>`}</li>`).join("")}</ol></nav>` : ""}
 ${body.trim()}
 ${section === "luz" && site.telegram ? `<aside class="tg-cta" aria-label="Canal de Telegram"><p><strong>Recibe cada tarde el precio de mañana.</strong> Las horas más baratas y más caras del día siguiente, en un mensaje a las 20:40. Gratis y sin registrarte en ninguna web.</p><a class="btn btn-primary" href="${esc(site.telegram)}" rel="noopener">Unirme al canal de Telegram</a></aside>` : ""}
 ${guides.length ? `<nav class="guides" aria-labelledby="guides-title"><h2 id="guides-title">${lang === "es" ? "Guías relacionadas" : "Related guides"}</h2><ul>${guides.map((p) => `<li><a href="${href(p.slug.replace(/index\.html$/, ""))}">${esc(navLabel(p))}</a></li>`).join("")}</ul></nav>` : ""}

@@ -1,22 +1,25 @@
-<section class="nv" id="nevera" aria-label="Recetas con lo que tienes en la nevera">
+<section class="nv" id="nevera" data-step="intro" aria-label="Recetas con lo que tienes en la nevera">
   <div class="nv-stage" id="nv-stage" aria-hidden="true"></div>
-  <div class="nv-door">
-    <span class="nv-handle" aria-hidden="true"></span>
+  <div class="nv-scrim" aria-hidden="true"></div>
 
-    <div class="nv-start" id="nv-start">
-      <p class="nv-hint">Haz una foto con la puerta abierta, que se vean bien las baldas. También vale la despensa o lo que tengas en la encimera.</p>
-      <div class="nv-actions">
-        <label class="nv-btn nv-btn-main" for="nv-camera">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l1.5 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.5L9 4Zm3 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"/></svg>
-          Hacer una foto de la nevera
-        </label>
-        <input type="file" id="nv-camera" accept="image/*" capture="environment" class="nv-file">
-        <label class="nv-btn" for="nv-gallery">Elegir una foto</label>
+  <div class="nv-ui">
+    <!-- 1. Inicio -->
+    <div class="nv-intro" id="nv-intro">
+      <h1 class="nv-title">¿Qué cocino con lo que tengo?</h1>
+      <p class="nv-lead">Haz una foto de tu nevera y te propongo <strong>3 recetas</strong> con lo que tienes. Sin ir a la compra.</p>
+      <label class="nv-cta" for="nv-camera">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l1.5 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.5L9 4Zm3 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"/></svg>
+        <span>Abrir la nevera</span>
+      </label>
+      <input type="file" id="nv-camera" accept="image/*" capture="environment" class="nv-file">
+      <div class="nv-row">
+        <label class="nv-pill" for="nv-gallery">Subir foto</label>
         <input type="file" id="nv-gallery" accept="image/jpeg,image/png,image/webp" class="nv-file">
+        <button type="button" class="nv-pill" id="nv-type">Escribir</button>
+        <button type="button" class="nv-pill" id="nv-demo">Ver ejemplo</button>
       </div>
-      <p class="nv-or">¿Prefieres escribir? <button type="button" class="nv-link" id="nv-type">Pon tus ingredientes a mano</button> · <button type="button" class="nv-link" id="nv-demo">Ver un ejemplo</button></p>
       <div class="nv-prefs">
-        <label>Para
+        <label class="nv-select">Para
           <select id="nv-personas">
             <option value="1">1 persona</option>
             <option value="2" selected>2 personas</option>
@@ -25,34 +28,49 @@
             <option value="6">6 personas</option>
           </select>
         </label>
-        <label class="nv-check"><input type="checkbox" id="nv-rapido"> Solo recetas de 20 minutos o menos</label>
+        <label class="nv-toggle"><input type="checkbox" id="nv-rapido"><span>Solo rápidas</span></label>
       </div>
-      <p class="nv-privacy">La foto se envía a la IA de Google para reconocer los ingredientes y no se guarda. <a href="{{root}}privacidad.html">Más detalles</a>.</p>
+      <p class="nv-fine">La foto la analiza la IA de Google y no se guarda. <a href="{{root}}privacidad.html">Privacidad</a></p>
     </div>
 
-    <div class="nv-board" id="nv-board" hidden>
-      <div class="nv-board-head">
-        <img id="nv-photo" alt="Tu foto" hidden>
-        <div>
-          <h2 class="nv-board-title" id="nv-board-title">Esto es lo que hay</h2>
-          <p class="nv-board-sub">Quita lo que no sea y añade lo que falte. Las recetas se basan en esta lista.</p>
-        </div>
-      </div>
-      <ul class="nv-magnets" id="nv-magnets" aria-label="Ingredientes"></ul>
-      <form class="nv-add" id="nv-add">
-        <label for="nv-new" class="nv-visually-hidden">Añadir ingrediente</label>
-        <input id="nv-new" type="text" placeholder="Añadir ingrediente: queso, cebolla…" autocomplete="off" maxlength="40">
-        <button type="submit" class="nv-btn">Añadir</button>
-      </form>
-      <div class="nv-board-foot">
-        <button type="button" class="nv-btn nv-btn-main" id="nv-refresh" hidden>Buscar recetas con esta lista</button>
-        <button type="button" class="nv-link" id="nv-again">Empezar con otra foto</button>
-      </div>
+    <!-- 2. Pensando -->
+    <div class="nv-busy" id="nv-busy" role="status" aria-live="polite">
+      <p class="nv-busy-text" id="nv-busy-text">Abriendo tu nevera…</p>
+      <div class="nv-bar" aria-hidden="true"><span></span></div>
     </div>
 
-    <p class="nv-status" id="nv-status" role="status" aria-live="polite"></p>
+    <!-- 3. Recetas -->
+    <div class="nv-top" id="nv-top">
+      <button type="button" class="nv-pill nv-glass" id="nv-ings"><span class="nv-dot" aria-hidden="true"></span><span id="nv-ings-n">0</span> ingredientes · Editar</button>
+      <button type="button" class="nv-pill nv-glass" id="nv-again">Otra foto</button>
+    </div>
+    <div class="nv-card nv-glass" id="nv-card" aria-live="polite">
+      <div class="nv-card-head">
+        <button type="button" class="nv-arrow" id="nv-prev" aria-label="Receta anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <p class="nv-count" id="nv-count">Receta 1 de 3</p>
+        <button type="button" class="nv-arrow" id="nv-next" aria-label="Receta siguiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <h2 class="nv-name" id="nv-name"></h2>
+      <p class="nv-desc" id="nv-desc"></p>
+      <p class="nv-meta" id="nv-meta"></p>
+      <div class="nv-card-actions">
+        <button type="button" class="nv-cta nv-cta-sm" id="nv-open">Ver receta</button>
+        <button type="button" class="nv-pill" id="nv-more">Otras 3 ideas</button>
+      </div>
+      <div class="nv-dots" id="nv-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
   </div>
 
-  <div class="nv-recipes" id="nv-recipes" aria-live="polite"></div>
-  <noscript><p>Esta herramienta necesita JavaScript.</p></noscript>
+  <p class="nv-toast" id="nv-status" role="alert" hidden></p>
+
+  <!-- Hoja inferior: receta o lista de ingredientes -->
+  <div class="nv-sheet" id="nv-sheet" hidden>
+    <div class="nv-sheet-back" data-close></div>
+    <div class="nv-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="nv-sheet-title">
+      <div class="nv-grab" aria-hidden="true"></div>
+      <button type="button" class="nv-close" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="nv-sheet-body" id="nv-sheet-body"></div>
+    </div>
+  </div>
+  <noscript><p class="nv-noscript">Esta herramienta necesita JavaScript.</p></noscript>
 </section>
