@@ -36,6 +36,7 @@ const EXAMPLE = {
 let ingredients = [];
 let lastList = "";
 let busy = false;
+let current = [];
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7);
@@ -66,9 +67,10 @@ function renderMagnets(animate = false) {
 
 function renderRecipes(recetas) {
   const box = $("nv-recipes");
+  current = recetas || [];
   if (!recetas?.length) { box.innerHTML = ""; return; }
   const have = new Set(ingredients);
-  box.innerHTML = `<h2 class="nv-recipes-title">Puedes cocinar</h2>` + recetas.map((r, i) => `
+  box.innerHTML = `<h2 class="nv-recipes-title" id="nv-recipes-title" tabindex="-1">Puedes cocinar</h2>` + recetas.map((r, i) => `
     <article class="nv-recipe">
       <header>
         <h3>${esc(r.nombre)}</h3>
@@ -81,7 +83,23 @@ function renderRecipes(recetas) {
         <summary>Cómo se hace</summary>
         <ol>${r.pasos.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>
       </details>
-    </article>`).join("");
+      <p class="nv-recipe-actions"><button type="button" class="nv-link" data-copy="${i}">Copiar receta</button></p>
+    </article>`).join("") + `<p class="nv-more"><button type="button" class="nv-btn" id="nv-more">Dame otras 3 ideas</button></p>`;
+}
+
+function renderSkeleton() {
+  $("nv-recipes").innerHTML = `<h2 class="nv-recipes-title">Pensando recetas…</h2>` + '<div class="nv-skel" aria-hidden="true"><span></span><span></span><span></span></div>'.repeat(3);
+}
+
+function recipeText(r) {
+  return [r.nombre, `${r.minutos} min · dificultad ${r.dificultad}`, "", "Ingredientes: " + r.usa.concat(r.falta).join(", "), "", ...r.pasos.map((p, i) => `${i + 1}. ${p}`), "", `Receta de ${location.origin}${location.pathname}`].join("\n");
+}
+
+async function copyRecipe(i, btn) {
+  const text = recipeText(current[i]);
+  try { await navigator.clipboard.writeText(text); btn.textContent = "Copiada"; }
+  catch { btn.textContent = "No se ha podido copiar"; }
+  setTimeout(() => { btn.textContent = "Copiar receta"; }, 2000);
 }
 
 async function shrink(file) {
@@ -104,6 +122,15 @@ async function ask(payload) {
 }
 
 const prefs = () => ({ personas: Number($("nv-personas").value), rapido: $("nv-rapido").checked });
+const PREFS_KEY = "nevera-prefs";
+function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+    if (p.personas) $("nv-personas").value = String(p.personas);
+    $("nv-rapido").checked = p.rapido === true;
+  } catch { /* sin almacenamiento */ }
+}
+function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs())); } catch { /* sin almacenamiento */ } }
 
 async function fromPhoto(file) {
   if (!file || busy) return;
@@ -118,13 +145,13 @@ async function fromPhoto(file) {
     status("No se ha podido abrir esa foto. Prueba con otra.", true); return;
   }
   showBoard(dataUrl);
-  ingredients = []; renderMagnets(); renderRecipes([]);
+  ingredients = []; renderMagnets(); renderSkeleton();
   $("nv-board-title").textContent = "Mirando tu nevera…";
   status("Reconociendo ingredientes y pensando recetas. Tarda unos segundos.");
   try {
     const data = await ask({ imagen: dataUrl, ...prefs() });
     if (data.esComida === false || !data.ingredientes.length) {
-      $("nv-board-title").textContent = "No veo comida en esta foto";
+      $("nv-board-title").textContent = "No veo comida en esta foto"; renderRecipes([]);
       status("Prueba con la puerta de la nevera abierta y buena luz, o escribe tus ingredientes.", true);
     } else {
       ingredients = data.ingredientes; lastList = ingredients.join("|");
@@ -132,6 +159,7 @@ async function fromPhoto(file) {
       renderMagnets(true); renderRecipes(data.recetas); status("");
     }
   } catch (e) {
+    renderRecipes([]);
     $("nv-board-title").textContent = "Esto es lo que hay";
     status(e.message, true);
   } finally {
@@ -139,15 +167,19 @@ async function fromPhoto(file) {
   }
 }
 
-async function fromList() {
+async function fromList(evitar = []) {
   if (busy || !ingredients.length) return;
+  const before = current;
+  renderSkeleton();
   busy = true;
   document.querySelector(".nv").classList.add("is-busy");
   status("Buscando recetas con tu lista…");
   try {
-    const data = await ask({ ingredientes: ingredients, ...prefs() });
+    const data = await ask({ ingredientes: ingredients, evitar, ...prefs() });
     lastList = ingredients.join("|"); renderMagnets(); renderRecipes(data.recetas); status("");
+    $("nv-recipes-title")?.focus({ preventScroll: false });
   } catch (e) {
+    renderRecipes(before);
     status(e.message, true);
   } finally {
     busy = false; document.querySelector(".nv").classList.remove("is-busy");
@@ -187,5 +219,30 @@ if ($("nevera")) {
     $("nv-new").value.split(",").forEach(addIngredient);
     $("nv-new").value = "";
   });
-  $("nv-refresh").addEventListener("click", fromList);
+  $("nv-refresh").addEventListener("click", () => fromList());
+  $("nv-recipes").addEventListener("click", (e) => {
+    const copy = e.target.closest("[data-copy]");
+    if (copy) copyRecipe(Number(copy.dataset.copy), copy);
+    if (e.target.closest("#nv-more")) fromList(current.map((r) => r.nombre));
+  });
+  loadPrefs();
+  $("nv-personas").addEventListener("change", savePrefs);
+  $("nv-rapido").addEventListener("change", savePrefs);
+
+  // Arrastrar una foto a la puerta o pegarla (Ctrl+V) mientras se ve la pantalla inicial.
+  const door = document.querySelector(".nv-door");
+  const startVisible = () => !$("nv-start").hidden && !document.querySelector(".nv").classList.contains("is-offline");
+  door.addEventListener("dragover", (e) => { if (startVisible()) { e.preventDefault(); door.classList.add("is-drag"); } });
+  door.addEventListener("dragleave", () => door.classList.remove("is-drag"));
+  door.addEventListener("drop", (e) => {
+    door.classList.remove("is-drag");
+    if (!startVisible()) return;
+    e.preventDefault();
+    fromPhoto(e.dataTransfer.files[0]);
+  });
+  document.addEventListener("paste", (e) => {
+    if (!startVisible()) return;
+    const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
+    if (file) fromPhoto(file);
+  });
 }

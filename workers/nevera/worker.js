@@ -37,7 +37,7 @@ const SCHEMA = {
   required: ["esComida", "ingredientes", "recetas"],
 };
 
-export function buildPrompt({ ingredients, personas = 2, rapido = false }) {
+export function buildPrompt({ ingredients, personas = 2, rapido = false, evitar = [] }) {
   const base = [
     "Eres un cocinero de casa español. Respondes siempre en español de España.",
     ingredients
@@ -49,6 +49,7 @@ export function buildPrompt({ ingredients, personas = 2, rapido = false }) {
     "En «usa» pon los ingredientes de su lista que usa la receta, escritos igual que en la lista.",
     "Entre 4 y 7 pasos por receta, frases cortas con cantidades concretas. «descripcion»: una frase que haga apetecer el plato.",
   ];
+  if (evitar.length) base.push(`Ya le has propuesto estas recetas; propón otras distintas: ${evitar.join("; ")}.`);
   return base.join("\n");
 }
 
@@ -57,10 +58,11 @@ export function parseRequest(body) {
   if (!body || typeof body !== "object") return { ok: false, error: "Petición vacía." };
   const personas = Math.min(8, Math.max(1, Number.parseInt(body.personas, 10) || 2));
   const rapido = body.rapido === true;
+  const evitar = Array.isArray(body.evitar) ? body.evitar.map((s) => String(s).trim().slice(0, 80)).filter(Boolean).slice(0, 9) : [];
   if (Array.isArray(body.ingredientes)) {
     const ingredients = [...new Set(body.ingredientes.map((s) => String(s).trim().toLowerCase().slice(0, 40)).filter(Boolean))].slice(0, MAX_INGREDIENTS);
     if (!ingredients.length) return { ok: false, error: "Añade al menos un ingrediente." };
-    return { ok: true, input: { ingredients, personas, rapido } };
+    return { ok: true, input: { ingredients, personas, rapido, evitar } };
   }
   if (typeof body.imagen === "string") {
     const m = body.imagen.match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
@@ -108,7 +110,7 @@ const json = (data, status, headers) => new Response(JSON.stringify(data), { sta
 
 export async function callGemini(input, env, fetchImpl = fetch) {
   const model = env.GEMINI_MODEL || "gemini-flash-lite-latest";
-  const parts = [{ text: buildPrompt({ ingredients: input.ingredients, personas: input.personas, rapido: input.rapido }) }];
+  const parts = [{ text: buildPrompt({ ingredients: input.ingredients, personas: input.personas, rapido: input.rapido, evitar: input.evitar || [] }) }];
   if (input.image) parts.push({ inlineData: { mimeType: input.image.mime, data: input.image.data } });
   const res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",

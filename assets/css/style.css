@@ -622,3 +622,15 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
   .nv-handle { right: 16px; width: 10px; }
   .nv-board-head img { width: 72px; height: 72px; }
 }
+.nv-door.is-drag { outline: 3px dashed var(--nv-basil); outline-offset: -10px; }
+.nv-recipe-actions { margin: 0; }
+.nv-more { margin: 4px 0 0; }
+.nv-recipes-title:focus { outline: none; }
+.nv-skel { display: grid; gap: 8px; padding: 6px 0 6px 18px; border-left: 4px solid var(--nv-door-edge); }
+.nv-skel span { height: 14px; border-radius: 7px; background: var(--nv-door-edge); }
+.nv-skel span:first-child { width: 55%; height: 20px; }
+.nv-skel span:nth-child(2) { width: 85%; }
+.nv-skel span:last-child { width: 40%; }
+@media (prefers-reduced-motion: no-preference) {
+  .nv-skel span { animation: nv-pulse 1.2s ease-in-out infinite; }
+}

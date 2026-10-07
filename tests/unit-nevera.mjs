@@ -13,6 +13,8 @@ const p = parseRequest({ ingredientes: [" Huevo", "huevo", "", "Patata"] });
 ok(p.ok && p.input.ingredients.join() === "huevo,patata", "normaliza y quita duplicados");
 ok(!parseRequest({ ingredientes: [] }).ok, "rechaza lista vacía");
 ok(buildPrompt({ ingredients: ["huevo"], personas: 1, rapido: true }).includes("1 persona"), "prompt en singular para 1 persona");
+const pe = parseRequest({ ingredientes: ["huevo"], evitar: ["Tortilla", "", "Revuelto"] });
+ok(pe.input.evitar.join() === "Tortilla,Revuelto" && buildPrompt(pe.input).includes("Tortilla; Revuelto"), "pide recetas distintas a las ya propuestas");
 
 // Limpieza de la respuesta
 const c = cleanResult({ esComida: true, ingredientes: ["huevo"], recetas: [{ nombre: "Tortilla", minutos: "999", dificultad: "rara", usa: ["huevo"], pasos: ["Batir"] }, {}, {}, {}] });
