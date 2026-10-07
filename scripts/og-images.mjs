@@ -42,6 +42,13 @@ for (const lang of ["es", "en"]) {
   }
 }
 
+// Páginas generadas (ITP por comunidad).
+const { itpRegionPages } = await import("./itp-pages.mjs");
+for (const g of itpRegionPages(site.ownerName)) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: null });
+// Solo algunas páginas: node scripts/og-images.mjs <texto-del-slug>
+const only = process.argv[2];
+if (only) pages.splice(0, pages.length, ...pages.filter((p) => p.slug.includes(only)));
+
 const font = readFileSync(join(ROOT, "assets/fonts/montserrat-latin-900-normal.woff2")).toString("base64");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const html = (p) => {

@@ -5,7 +5,7 @@ const code = $("widget-code"), tema = $("w-tema"), preview = $("widget-preview")
 export function embedCode(widgetUrl, pageUrl, theme = "") {
   const src = widgetUrl + (theme ? `?tema=${encodeURIComponent(theme)}` : "");
   return `<iframe src="${src}" title="Precio de la luz hoy" width="100%" height="330" style="border:0;max-width:420px" loading="lazy"></iframe>
-<p style="font-size:12px;margin:4px 0 0">Fuente: <a href="${pageUrl}">precio de la luz hoy</a> en Herramientas Libres</p>`;
+<p style="font-size:12px;margin:4px 0 0">Precio de la luz por <a href="${pageUrl}" rel="nofollow">Herramientas Libres</a></p>`;
 }
 
 function update() {

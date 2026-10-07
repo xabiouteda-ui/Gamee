@@ -12,6 +12,7 @@ import { dayStats } from "./assets/js/luz/pvpc.js";
 import { madridDate } from "./assets/js/luz/hoy.js";
 import { RULES } from "./assets/js/luz/core.js";
 import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
+import { itpRegionPages, ITP_SLUGS } from "./scripts/itp-pages.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 // SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
@@ -46,14 +47,14 @@ function proBuy() {
 const UI = {
   es: {
     home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
-    contact: "Contacto", money: "Cómo ganamos dinero", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
+    contact: "Contacto", money: "Cómo ganamos dinero", about: "Quién lo hace", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
   en: {
     home: "Home", transcribe: "Audio to text", captions: "Captions", faq: "FAQ", privacy: "Privacy", legal: "Legal notice",
-    contact: "Contact", money: "How we make money", skip: "Skip to content", tagline: "Free and private audio and video transcription",
+    contact: "Contact", money: "How we make money", about: "About", skip: "Skip to content", tagline: "Free and private audio and video transcription",
     footerNote: "Free tools supported by ads. Your files are processed on your device.",
     related: "More free tools",
     otherLang: "Español", otherLangLabel: "Leer en español",
@@ -61,7 +62,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html", about: "sobre-nosotros.html" },
   en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
@@ -109,6 +110,7 @@ function readPages() {
       pages.push({ lang, file: f, ...meta, body: raw.slice(m[0].length) });
     }
   }
+  pages.push(...itpRegionPages(site.ownerName));
   if (!neveraOn) for (const p of pages) if (p.tool === "nevera") p.noindex = true;
   return pages;
 }
@@ -239,6 +241,10 @@ function toolHtml(tool, lang, page) {
     .replace(/\{\{c\.(\w+)\}\}/g, (_, k) => esc(page.coste?.[k] ?? ""))
     .replace(/\{\{platform\}\}/g, esc(page.platform || ""))
     .replace(/\{\{preset\}\}/g, esc(page.preset || ""))
+    .replace(page.itpCcaa ? '<option value="madrid" selected>' : /$^/, '<option value="madrid">')
+    .replace(page.itpCcaa ? `<option value="${page.itpCcaa}">` : /$^/, `<option value="${page.itpCcaa}" selected>`)
+    .replace(page.itpCcaa ? "comprado en Madrid." : /$^/, () => `comprado en ${page.itpNombre}.`)
+    .replace(page.itpCcaa ? '<span id="itp-slip-ccaa">Comunidad de Madrid</span>' : /$^/, () => `<span id="itp-slip-ccaa">${page.itpNombre}</span>`)
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
       if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
       return esc(t[k]);
@@ -277,13 +283,14 @@ function appSchema(page, url) {
 
 // Secciones del sitio: cada página de guía se agrupa con su herramienta para las migas de pan y el enlazado interno.
 const SECTIONS = {
-  es: { luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
+  es: { itp: { href: "calculadora-itp-coche/", label: "ITP coches" }, luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
   en: { captions: { href: "en/animated-captions/", label: "Captions" }, transcribe: { href: "en/audio-to-text/", label: "Audio to text" } },
 };
 function sectionOf(page) {
   if (page.section !== undefined) return page.section;
   const dir = page.slug.includes("/") ? page.slug.replace(/^en\//, "").split("/")[0] : "";
   if (dir === "luz") return "luz";
+  if (dir === "calculadora-itp-coche") return "itp";
   if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";
   if (dir === "pasar-audio-a-texto" || dir === "audio-to-text") return "transcribe";
   if (toolOf(page) === "transcribe") return "transcribe";
@@ -301,7 +308,7 @@ function gitDate(file) {
 const PVPC_FILE = join(ROOT, "data", "pvpc.json");
 const pvpcUpdated = () => { try { return JSON.parse(readFileSync(PVPC_FILE, "utf8")).updated?.slice(0, 10) || null; } catch { return null; } };
 function lastmod(page) {
-  const dates = [gitDate(join("src/pages", page.lang, page.file)) || site.lastUpdated];
+  const dates = [gitDate(page.generated || join("src/pages", page.lang, page.file)) || site.lastUpdated];
   // Las páginas que muestran precios del día cambian cada día aunque no se toque su archivo.
   if (page.daily && pvpcUpdated()) dates.push(pvpcUpdated());
   return dates.sort().at(-1);
@@ -506,6 +513,7 @@ ${tool && cards(tool) ? `<aside class="related" aria-labelledby="related-title">
       ${nav("legal", ui.legal)}
       ${nav("contact", ui.contact)}
       ${exists("money") ? nav("money", ui.money) : ""}
+      ${exists("about") ? nav("about", ui.about) : ""}
     </nav>
     <p class="muted small">© ${new Date().getFullYear()} ${esc(site.siteName)} · ${ui.footerNote}</p>
   </div>

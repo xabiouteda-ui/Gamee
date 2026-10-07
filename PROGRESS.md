@@ -277,3 +277,9 @@ en `assets/js/config.js`.
   ejecutar el workflow → poner la URL `https://nevera-recetas.<subdominio>.workers.dev` en `neveraApi`.
 - **Privacidad:** apartado 3 bis de la política (la foto sí sale del dispositivo).
 - **Pruebas:** `tests/unit-nevera.mjs`.
+
+## Fase 7 — Posicionamiento (oct 2026)
+- 17 páginas del ITP por comunidad generadas desde `assets/js/itp/core.js` (`scripts/itp-pages.mjs`): ejemplos calculados, excepciones de cada comunidad, comparativa y calculadora con la comunidad ya elegida.
+- Página «Quién lo hace» (`sobre-nosotros.html`) enlazada en el pie, con fuentes y uso de IA.
+- Widget de la luz: crédito con la marca y `rel="nofollow"` (pauta de Google para enlaces en widgets).
+- Título de la página de audios de WhatsApp orientado a «pasar audios de WhatsApp a texto».
