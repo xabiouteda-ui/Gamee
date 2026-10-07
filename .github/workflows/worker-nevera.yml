@@ -33,6 +33,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/nevera
+          wranglerVersion: "4.148.0"
           secrets: |
             GEMINI_API_KEY
         env:
