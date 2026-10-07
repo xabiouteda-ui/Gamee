@@ -1,0 +1,39 @@
+name: Publicar intermediario de la nevera (Cloudflare Worker)
+
+# Se publica al cambiar workers/nevera/ o a mano (Actions → Run workflow).
+# Secretos necesarios en Settings → Secrets and variables → Actions:
+#   CLOUDFLARE_API_TOKEN   token con permiso «Edit Cloudflare Workers»
+#   CLOUDFLARE_ACCOUNT_ID  ID de tu cuenta de Cloudflare
+#   GEMINI_API_KEY         clave de Google AI Studio
+on:
+  push:
+    branches: [main]
+    paths: ["workers/nevera/**", ".github/workflows/worker-nevera.yml"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comprobar secretos
+        env:
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          A: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          G: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$T" ] || [ -z "$A" ] || [ -z "$G" ]; then
+            echo "::warning::Faltan secretos (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID o GEMINI_API_KEY). No se publica el Worker."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+      - name: Publicar Worker
+        if: env.SKIP != '1'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/nevera
+          secrets: |
+            GEMINI_API_KEY
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

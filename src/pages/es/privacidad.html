@@ -9,13 +9,16 @@
 <p class="muted">Última actualización: {{cfg.lastUpdated}}</p>
 
 <h2>1. Resumen</h2>
-<p><strong>Tus archivos de audio y vídeo y tus transcripciones no se envían a ningún servidor.</strong> Se procesan dentro de tu navegador, en tu propio dispositivo. No tenemos cuentas de usuario, formularios ni bases de datos, así que no recogemos datos personales de forma directa. Los únicos datos que pueden tratarse son los técnicos inherentes a visitar cualquier web (como tu dirección IP) por parte de los proveedores que se describen abajo, y las cookies de publicidad si los anuncios están activos.</p>
+<p><strong>Tus archivos de audio y vídeo y tus transcripciones no se envían a ningún servidor</strong> (la única excepción es la foto de la herramienta de recetas, explicada en el apartado 3 bis). Se procesan dentro de tu navegador, en tu propio dispositivo. No tenemos cuentas de usuario, formularios ni bases de datos, así que no recogemos datos personales de forma directa. Los únicos datos que pueden tratarse son los técnicos inherentes a visitar cualquier web (como tu dirección IP) por parte de los proveedores que se describen abajo, y las cookies de publicidad si los anuncios están activos.</p>
 
 <h2>2. Responsable</h2>
 <p>Responsable: {{cfg.ownerName}} · NIF: {{cfg.ownerId}} · Dirección: {{cfg.ownerAddress}} · Contacto: {{cfg.contactEmail}}.</p>
 
 <h2>3. Qué ocurre con tus archivos</h2>
 <p>Cuando eliges un archivo (audio o vídeo) o grabas con el micrófono, el contenido se lee en la memoria de tu navegador y lo procesa un modelo de reconocimiento de voz que se ejecuta en tu dispositivo. Ni el audio ni el texto resultante se transmiten a nosotros ni a terceros. Al cerrar o recargar la página, desaparecen. El permiso de micrófono solo se solicita si pulsas «Grabar con el micrófono».</p>
+
+<h2>3 bis. La foto de «¿Qué cocino con lo que tengo?»</h2>
+<p>Esta herramienta es la única excepción: <strong>la foto que eliges sí sale de tu dispositivo</strong>, porque la analiza una inteligencia artificial. Antes de enviarla, tu navegador la reduce de tamaño y le quita los datos ocultos (como la ubicación). Se envía a un intermediario nuestro en Cloudflare, que no la guarda, y de ahí a Google Gemini, que identifica los ingredientes y propone recetas. Google puede usar el contenido enviado para mejorar sus productos, según sus condiciones de la API de Gemini. No hagas fotos en las que salgan personas, documentos o datos personales. Si editas la lista de ingredientes y vuelves a pedir recetas, solo se envía el texto de esa lista.</p>
 
 <h2>4. Proveedores que intervienen al cargar la página</h2>
 <p>Para mostrar la web y hacer funcionar la herramienta, tu navegador se conecta a estos servicios, que reciben datos técnicos como tu dirección IP y el tipo de navegador (igual que ocurre al visitar cualquier web):</p>

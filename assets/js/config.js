@@ -7,6 +7,8 @@
 //   3. Cambia `adsEnabled` a true, haz commit y push.
 // El build genera automáticamente /ads.txt con tu ID.
 window.SITE_CONFIG = {
+  // Dirección del intermediario de «¿Qué cocino con lo que tengo?» (Cloudflare Worker). Vacía = herramienta oculta.
+  neveraApi: "",
   adsEnabled: true,
   adsenseClient: "ca-pub-5682080498285633", // p. ej. "ca-pub-1234567890123456"
   slots: {

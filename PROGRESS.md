@@ -261,3 +261,19 @@ alcanzaba la sección entera); se corrigió en el siguiente commit y ahora hay u
 - **Pruebas:** `tests/unit-itp.mjs`.
 - **Revisar:** cuota mínima de Cantabria (la calculadora aplica el 6 % y avisa) y cuota fija de Murcia para más de
   2.000 cc (75 €, sin contrastar con la norma). Actualizar cada enero con la nueva Orden de precios medios.
+
+## Fase 6 – ¿Qué cocino con lo que tengo? (en preparación)
+
+**Dónde:** `/que-cocinar-con-lo-que-tengo/`. Oculta (sin tarjeta y con `noindex`) mientras `neveraApi` esté vacío
+en `assets/js/config.js`.
+
+- **Qué hace:** foto de la nevera (cámara o galería) → el navegador la reduce a 1024 px en JPEG sin EXIF →
+  intermediario en Cloudflare (`workers/nevera/worker.js`) → Gemini Flash-Lite con salida JSON → ingredientes
+  como «imanes» editables y 3 recetas. Editar la lista vuelve a pedir recetas enviando solo texto. Hay ejemplo
+  sin foto y modo «a mano».
+- **Intermediario:** solo acepta los orígenes de `ALLOWED_ORIGINS`, 6 consultas/minuto por IP (rate limiting de
+  Workers), clave en el secreto `GEMINI_API_KEY`. Se publica con `.github/workflows/worker-nevera.yml`.
+- **Puesta en marcha:** secretos de GitHub `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GEMINI_API_KEY` →
+  ejecutar el workflow → poner la URL `https://nevera-recetas.<subdominio>.workers.dev` en `neveraApi`.
+- **Privacidad:** apartado 3 bis de la política (la foto sí sale del dispositivo).
+- **Pruebas:** `tests/unit-nevera.mjs`.

@@ -30,6 +30,8 @@ const siteUrl = siteOrigin + basePath.replace(/\/$/, "");
 const sandbox = { window: {} };
 vm.runInNewContext(readFileSync(process.env.ADS_CONFIG || join(ROOT, "assets/js/config.js"), "utf8"), sandbox);
 const adsCfg = sandbox.window.SITE_CONFIG || {};
+// «¿Qué cocino con lo que tengo?» solo se enlaza e indexa cuando su intermediario está configurado.
+const neveraOn = /^https:\/\//.test((adsCfg.neveraApi || "").trim());
 
 // Versión Pro (data/pro.json): desactivada por defecto. Con ella desactivada, /pro.html no se indexa.
 const proCfg = existsSync(join(ROOT, "data/pro.json")) ? JSON.parse(readFileSync(join(ROOT, "data/pro.json"), "utf8")) : {};
@@ -59,7 +61,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html" },
   en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
@@ -84,6 +86,10 @@ const CARDS = [
     es: { title: "Precio de la luz hoy", text: "La hora más barata de hoy y de mañana, con los datos oficiales de cada hora." },
   },
   {
+    tool: "nevera", icon: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 2v5h10V4H7Zm0 7v9h10v-9H7Zm2-5h2v2H9V6Zm0 7h2v4H9v-4Z",
+    es: { title: "¿Qué cocino con lo que tengo?", text: "Haz una foto de tu nevera y te proponemos 3 recetas con lo que hay." },
+  },
+  {
     tool: "itp", icon: "M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H4a1 1 0 0 1-1-1v-4a2 2 0 0 1 2-2Zm2.1 0h9.8l-1.2-3.6a.6.6 0 0 0-.5-.4H8.8a.6.6 0 0 0-.5.4L7.1 11ZM7 15.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
     es: { title: "Calculadora ITP coche", text: "Cuánto pagas de impuesto al comprar un coche o una moto de segunda mano en tu comunidad." },
   },
@@ -103,6 +109,7 @@ function readPages() {
       pages.push({ lang, file: f, ...meta, body: raw.slice(m[0].length) });
     }
   }
+  if (!neveraOn) for (const p of pages) if (p.tool === "nevera") p.noindex = true;
   return pages;
 }
 
@@ -116,6 +123,7 @@ const TOOLS = {
   luz: { partial: "luz.html", strings: LUZ_STRINGS, script: "assets/js/luz/app.js", category: "FinanceApplication" },
   coste: { partial: "coste.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
   coche: { partial: "coche.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
+  nevera: { partial: "nevera.html", strings: { es: {}, en: {} }, script: "assets/js/nevera/app.js", category: "LifestyleApplication" },
   itp: { partial: "itp.html", strings: { es: {}, en: {} }, script: "assets/js/itp/app.js", category: "FinanceApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
@@ -415,7 +423,7 @@ function layout(page, pagesBySlug) {
     return `<a href="${href(L[key])}"${current ? ' aria-current="page"' : section ? ' aria-current="true"' : ""}>${label}</a>`;
   };
   const exists = (k) => L[k] && (pagesBySlug.has(L[k]) || pagesBySlug.has(L[k] + "index.html"));
-  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && exists(c.tool))
+  const cards = (except) => CARDS.filter((c) => c[lang] && c.tool !== except && exists(c.tool) && (c.tool !== "nevera" || neveraOn))
     .map((c) => `<a class="tool-card" href="${href(L[c.tool])}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${c.icon}"/></svg><strong>${esc(c[lang].title)}</strong><span>${esc(c[lang].text)}</span></a>`).join("\n");
 
   let body = page.body
@@ -468,7 +476,7 @@ ${hreflang}
 <link rel="manifest" href="${root}site.webmanifest">
 <link rel="apple-touch-icon" href="${root}assets/img/icon-180.png">
 <link rel="stylesheet" href="${root}assets/css/style.css">
-${/^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) ? `<meta name="google-adsense-account" content="${esc(adsCfg.adsenseClient.trim())}">\n` : ""}${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
+${page.fonts ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="${esc(page.fonts)}">\n` : ""}${/^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) ? `<meta name="google-adsense-account" content="${esc(adsCfg.adsenseClient.trim())}">\n` : ""}${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
 </head>
 <body>
 <a class="skip" href="#main">${ui.skip}</a>

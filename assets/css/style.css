@@ -506,3 +506,119 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
 .itp-coef span { font-size: .78rem; color: var(--muted); }
 .itp-coef strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 .itp-coef.on { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ¿Qué cocino con lo que tengo? (/que-cocinar-con-lo-que-tengo/)
+   Concepto: la herramienta es la puerta de una nevera esmaltada (asa a la derecha) y los ingredientes son
+   imanes que se pueden quitar. Bricolage Grotesque solo en títulos e imanes; el resto, la tipografía del sitio. */
+.nv {
+  --nv-door: #edf4f1;
+  --nv-door-edge: #cfdfd8;
+  --nv-handle: #b7c9c1;
+  --nv-basil: #2c6a43;
+  --nv-basil-soft: #dcebe1;
+  --nv-tomato: #c8432c;
+  --nv-m0: #ffd76a; --nv-m1: #ffb3a1; --nv-m2: #b9e3c6; --nv-m3: #bcd4ff; --nv-m4: #f3c6ef;
+  --nv-mag-ink: #1f2420;
+  --nv-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  display: grid; gap: 22px; margin-block: 8px 28px;
+}
+@media (prefers-color-scheme: dark) {
+  .nv {
+    --nv-door: #18211e; --nv-door-edge: #2b3a34; --nv-handle: #3d5048;
+    --nv-basil: #8ed3a6; --nv-basil-soft: #1f3328; --nv-tomato: #ff8a73;
+    --nv-m0: #e9c55c; --nv-m1: #eaa595; --nv-m2: #a7d4b5; --nv-m3: #aac4ee; --nv-m4: #dcb2d8;
+  }
+}
+.nv-door {
+  position: relative; background: var(--nv-door); border: 1px solid var(--nv-door-edge);
+  border-radius: 26px 26px 18px 18px; padding: 26px 64px 24px 26px; display: grid; gap: 14px;
+  box-shadow: inset 0 -6px 0 var(--nv-door-edge);
+}
+.nv-handle {
+  position: absolute; right: 22px; top: 28px; width: 12px; height: min(220px, 60%);
+  border-radius: 8px; background: var(--nv-handle);
+  box-shadow: inset -3px 0 0 rgb(0 0 0 / .08);
+}
+.nv-start { display: grid; gap: 16px; }
+.nv-hint { margin: 0; font-size: 1.05rem; max-width: 54ch; }
+.nv-hero h1 { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-weight: 700; letter-spacing: -.02em; }
+.nv-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.nv-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.nv-btn {
+  display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--nv-basil); color: var(--nv-basil); background: transparent;
+  border-radius: 999px; padding: 11px 18px; min-height: 46px; text-decoration: none;
+}
+.nv-btn:hover { background: var(--nv-basil-soft); }
+.nv-btn-main { background: var(--nv-basil); color: var(--nv-door); font-size: 1.05rem; }
+.nv-btn-main:hover { background: var(--nv-basil); filter: brightness(1.08); }
+.nv-btn svg { width: 22px; height: 22px; fill: currentColor; }
+.nv-file:focus-visible + .nv-btn, .nv-btn:focus-visible, .nv-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.nv-actions label:has(+ .nv-file:focus-visible) { outline: 3px solid var(--accent); outline-offset: 3px; }
+.nv-link { font: inherit; background: none; border: 0; padding: 0; color: var(--nv-basil); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.nv-or { margin: 0; color: var(--muted); }
+.nv-prefs { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: .95rem; }
+.nv-prefs label { display: inline-flex; gap: 8px; align-items: center; }
+.nv-prefs select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--nv-door-edge); border-radius: 10px; padding: 6px 10px; }
+.nv-check input { width: 18px; height: 18px; accent-color: var(--nv-basil); }
+.nv-privacy { margin: 0; font-size: .85rem; color: var(--muted); }
+.nv-privacy a { color: inherit; }
+.nv.is-offline .nv-actions { opacity: .45; pointer-events: none; }
+
+.nv-board { display: grid; gap: 16px; }
+.nv-board-head { display: flex; gap: 16px; align-items: center; }
+.nv-board-head > div { min-width: 0; }
+.nv-board-head img { width: 96px; height: 96px; object-fit: cover; border-radius: 14px; border: 3px solid var(--surface); box-shadow: 0 2px 8px rgb(0 0 0 / .12); transform: rotate(-2deg); flex: none; }
+.nv-board-title { font-family: var(--nv-display); font-weight: 700; font-size: clamp(1.4rem, 3.4vw, 1.8rem); margin: 0; letter-spacing: -.015em; }
+.nv-board-sub { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+.nv-magnets { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 8px; }
+.nv-magnet {
+  display: inline-flex; align-items: center; gap: 2px; padding: 6px 6px 6px 14px; border-radius: 12px;
+  font-family: var(--nv-display); font-weight: 600; font-size: 1.02rem; color: var(--nv-mag-ink);
+  background: var(--nv-m0); transform: rotate(var(--r, 0deg));
+  box-shadow: 0 2px 0 rgb(0 0 0 / .18), 0 6px 12px -6px rgb(0 0 0 / .25); max-width: 100%;
+}
+.nv-magnet[data-tone="1"] { background: var(--nv-m1); }
+.nv-magnet[data-tone="2"] { background: var(--nv-m2); }
+.nv-magnet[data-tone="3"] { background: var(--nv-m3); }
+.nv-magnet[data-tone="4"] { background: var(--nv-m4); }
+.nv-magnet span { overflow-wrap: anywhere; }
+.nv-magnet button { font: inherit; font-size: 1.15rem; line-height: 1; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; opacity: .55; }
+.nv-magnet button:hover, .nv-magnet button:focus-visible { opacity: 1; background: rgb(0 0 0 / .08); }
+.nv-empty { color: var(--muted); font-size: .95rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .nv-drop .nv-magnet { animation: nv-stick .42s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: calc(var(--i) * 45ms); }
+  @keyframes nv-stick { from { opacity: 0; transform: translateY(-14px) rotate(calc(var(--r, 0deg) * -3)) scale(.9); } }
+  .nv.is-busy .nv-board-title::after { content: ""; display: inline-block; width: .5em; height: .5em; margin-left: .4em; border-radius: 50%; background: var(--nv-basil); animation: nv-pulse 1s ease-in-out infinite; }
+  @keyframes nv-pulse { 50% { opacity: .2; } }
+}
+.nv-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.nv-add input { flex: 1 1 220px; min-width: 0; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--nv-door-edge); border-radius: 999px; padding: 10px 16px; min-height: 46px; }
+.nv-board-foot { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; }
+.nv-status { margin: 0; font-size: .95rem; color: var(--muted); }
+.nv-status:empty { display: none; }
+.nv-status.is-error { color: var(--nv-tomato); font-weight: 600; }
+.nv-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.nv-recipes { display: grid; gap: 18px; }
+.nv-recipes:empty { display: none; }
+.nv-recipes-title { font-family: var(--nv-display); font-weight: 700; margin: 6px 0 0; letter-spacing: -.015em; }
+.nv-recipe { border-left: 4px solid var(--nv-basil); padding: 4px 0 4px 18px; display: grid; gap: 8px; }
+.nv-recipe header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.nv-recipe h3 { font-family: var(--nv-display); font-weight: 700; font-size: 1.35rem; margin: 0; letter-spacing: -.01em; }
+.nv-meta { margin: 0; display: flex; gap: 12px; color: var(--muted); font-size: .92rem; font-variant-numeric: tabular-nums; }
+.nv-desc { margin: 0; }
+.nv-uses { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .92rem; }
+.nv-uses strong { margin-right: 4px; }
+.nv-tag { padding: 2px 10px; border-radius: 999px; background: var(--nv-basil-soft); color: var(--nv-basil); font-weight: 600; }
+.nv-tag.off { background: var(--surface-2); color: var(--muted); }
+.nv-tag.miss { background: color-mix(in srgb, var(--nv-tomato) 14%, transparent); color: var(--nv-tomato); }
+.nv-ok { color: var(--nv-basil); font-weight: 600; }
+.nv-recipe details { border: 0; padding: 0; margin: 0; background: none; }
+.nv-recipe summary { cursor: pointer; font-weight: 600; color: var(--nv-basil); }
+.nv-recipe ol { margin: 8px 0 0; padding-left: 1.3em; display: grid; gap: 6px; }
+@media (max-width: 560px) {
+  .nv-door { padding: 20px 46px 20px 18px; border-radius: 22px 22px 14px 14px; }
+  .nv-handle { right: 16px; width: 10px; }
+  .nv-board-head img { width: 72px; height: 72px; }
+}

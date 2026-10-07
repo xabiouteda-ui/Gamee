@@ -1,0 +1,14 @@
+name = "nevera-recetas"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+GEMINI_MODEL = "gemini-flash-lite-latest"
+ALLOWED_ORIGINS = "https://herramientaslibres.es,https://www.herramientaslibres.es,https://xabiouteda-ui.github.io"
+
+# Límite por IP: 6 consultas por minuto. Gratis en Workers.
+[[ratelimits]]
+name = "PER_IP"
+namespace_id = "1001"
+simple = { limit = 6, period = 60 }
