@@ -391,7 +391,7 @@ function layout(page, pagesBySlug) {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
   if (page.slug === "index.html" || page.slug === "en/index.html") {
-    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-180.png`, ...(site.telegram ? { sameAs: [site.telegram] } : {}) });
+    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-512.png`, ...(site.telegram ? { sameAs: [site.telegram] } : {}) });
   }
   if (page.dataset) schemas.push(datasetSchema(page, url));
 
@@ -461,7 +461,11 @@ ${hreflang}
 <meta property="og:image:alt" content="${esc(navLabel(page))}">
 <meta property="og:locale" content="${lang === "es" ? "es_ES" : "en_US"}">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="${root}favicon.ico" sizes="48x48">
+<link rel="icon" href="${root}assets/img/icon-96.png" sizes="96x96" type="image/png">
+<link rel="icon" href="${root}assets/img/icon-192.png" sizes="192x192" type="image/png">
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="${root}site.webmanifest">
 <link rel="apple-touch-icon" href="${root}assets/img/icon-180.png">
 <link rel="stylesheet" href="${root}assets/css/style.css">
 ${/^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) ? `<meta name="google-adsense-account" content="${esc(adsCfg.adsenseClient.trim())}">\n` : ""}${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
@@ -512,6 +516,9 @@ function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   cpSync(join(ROOT, "assets"), join(OUT, "assets"), { recursive: true });
+  // Favicon en la raíz (Google y los navegadores lo buscan ahí) y manifiesto con los iconos.
+  cpSync(join(ROOT, "assets/img/favicon.ico"), join(OUT, "favicon.ico"));
+  writeFileSync(join(OUT, "site.webmanifest"), JSON.stringify({ name: site.siteName, short_name: site.siteName, start_url: basePath, display: "browser", theme_color: "#4f46e5", background_color: "#ffffff", icons: [48, 96, 192, 512].map((s) => ({ src: `${basePath}assets/img/icon-${s}.png`, sizes: `${s}x${s}`, type: "image/png" })) }, null, 2));
   // Datos de las herramientas (tarifas de luz a mano; data/pvpc.json lo genera scripts/fetch-pvpc.mjs en Actions).
   if (existsSync(join(ROOT, "data"))) cpSync(join(ROOT, "data"), join(OUT, "data"), { recursive: true, filter: (src) => !/\/\./.test(src.slice(ROOT.length)) });
   writeFileSync(join(OUT, ".nojekyll"), "");
