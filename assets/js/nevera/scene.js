@@ -14,6 +14,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { buildDish } from "./food.js";
 
 const W = 1.25, H = 2.05, D = 0.85, T = 0.05; // nevera (m)
 const OPEN = -2.25; // puerta abierta (rad)
@@ -67,36 +68,6 @@ const checkerFloor = () => {
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(9, 9); t.anisotropy = 8; return t;
 };
-
-// ---------- Comida según la receta ----------
-const KINDS = [
-  ["soup", /sopa|crema de|caldo|potaje|guiso|lenteja|garbanzo|cocido|gazpacho|salmorejo|pur[eé]|estofado|curry|ramen/],
-  ["pasta", /pasta|espagueti|macarr|tallarin|fideo|lasa[ñn]a|[ñn]oqui|penne|carbonara|bolo[ñn]esa/],
-  ["rice", /arroz|paella|risotto|cusc[uú]s|quinoa/],
-  ["salad", /ensalada|poke|tabul[eé]/],
-  ["flat", /tortilla|pizza|quiche|tarta|crep|frittata|tosta|tostada|bocadillo|s[aá]ndwich|hamburguesa|empanad|torrija|bizcocho|tortita|pancake|coca /],
-];
-const COLORS = [
-  [/huevo|tortilla|revuelto|frittata/, 0xf2c14e], [/tomate|pizza|gazpacho|salmorejo|bolo[ñn]esa|fresa/, 0xd8432a],
-  [/patata|pur[eé]/, 0xe9b65c], [/pimiento rojo|piment[oó]n|chorizo/, 0xc63b25], [/zanahoria|calabaza|naranja|curry/, 0xef8a2c],
-  [/calabac|espinaca|br[oó]coli|guisante|jud[ií]a|acelga|pesto|lechuga|ensalada|pepino|aguacate|pimiento verde|puerro/, 0x67a64a],
-  [/queso|bechamel|nata|carbonara/, 0xf5dc8c], [/arroz|pasta|macarr|espagueti|fideo|pan |cusc/, 0xf1e1b4],
-  [/pollo|pavo/, 0xd39a5b], [/carne|ternera|cerdo|lomo|hamburguesa|alb[oó]ndiga|estofado/, 0x7f4a2c], [/jam[oó]n|bacon|beicon/, 0xc0545a],
-  [/salm[oó]n|at[uú]n|pescado|merluza|gamba|langostino/, 0xf29a78], [/lenteja|garbanzo|alubia|champi|seta/, 0x8b5b3a],
-  [/chocolate|cacao/, 0x5a3420], [/pl[aá]tano|manzana|fruta|lim[oó]n|yogur/, 0xf3d763], [/cebolla|ajo/, 0xf1e6c8],
-];
-const COLD = /ensalada|gazpacho|salmorejo|batido|yogur|helado|tartar|carpaccio|fr[ií][oa]|poke|tabul/;
-
-function recipeLook(r) {
-  const name = (r?.nombre || "").toLowerCase();
-  const all = name + " " + (r?.usa || []).join(" ").toLowerCase();
-  const kind = (KINDS.find(([, re]) => re.test(name)) || ["mound"])[0];
-  const fromName = COLORS.filter(([re]) => re.test(name)).map(([, c]) => c);
-  const fromAll = COLORS.filter(([re]) => re.test(all)).map(([, c]) => c);
-  const colors = [...new Set([...fromName, ...fromAll])];
-  if (!colors.length) colors.push(0xd9a55b, 0x67a64a);
-  return { kind, colors, hot: !COLD.test(name) };
-}
 
 export function createFridge(container, { adaptive = true } = {}) {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -270,107 +241,77 @@ export function createFridge(container, { adaptive = true } = {}) {
   let plates = [];
   const SPACING = 1.25;
   const plateSpot = (i) => new THREE.Vector3(i * SPACING, -0.3, 1.95);
-  const lathe = (pts, seg = 64) => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
-  const PLATE = lathe([[0, 0.012], [0.22, 0.012], [0.26, 0.02], [0.33, 0.047], [0.365, 0.052], [0.37, 0.046], [0.33, 0.034], [0.25, 0.004], [0.2, 0], [0, 0]]);
-  const BOWL = lathe([[0, 0], [0.15, 0], [0.17, 0.01], [0.25, 0.1], [0.28, 0.165], [0.272, 0.168], [0.245, 0.11], [0.17, 0.035], [0, 0.035]]);
-  const PLATE_STYLES = [[0xe9e2d3, 0x2f7a52], [0xd16a3c, 0xf5e2c8], [0x23476e, 0xe9c46a]];
-  const mat = (c, r = 0.55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
-  const lumpy = (geo, amt, seed) => {
-    const p = geo.attributes.position, v = new THREE.Vector3();
-    for (let k = 0; k < p.count; k++) {
-      v.fromBufferAttribute(p, k);
-      const n = 1 + amt * (Math.sin(v.x * 21 + seed) * Math.sin(v.z * 17 + seed * 2) + 0.5 * Math.sin(v.y * 31 + seed));
-      p.setXYZ(k, v.x * n, v.y * n, v.z * n);
-    }
-    geo.computeVertexNormals(); return geo;
-  };
-  function scatter(group, geo, count, colors, place) {
-    const m = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: 0.5 }), count);
-    const o = new THREE.Object3D(), c = new THREE.Color();
-    for (let k = 0; k < count; k++) {
-      place(o, k); o.updateMatrix(); m.setMatrixAt(k, o.matrix);
-      c.setHex(colors[k % colors.length]).offsetHSL(0, 0, rnd(-0.06, 0.06)); m.setColorAt(k, c);
-    }
-    m.castShadow = true; group.add(m); return m;
+  // Mesa de madera donde se sirven los platos (sube cuando llegan las recetas)
+  const woodTex = canvasTex(1024, 256, (g, w, h) => {
+    g.fillStyle = "#6b4126"; g.fillRect(0, 0, w, h);
+    for (let k = 0; k < 6; k++) { g.fillStyle = `hsl(${22 + rnd(-3, 3)} ${42 + rnd(-6, 6)}% ${26 + rnd(-4, 5)}%)`; g.fillRect(0, (k * h) / 6, w, h / 6 - 3); }
+    for (let k = 0; k < 420; k++) { g.strokeStyle = `rgba(${rnd(0, 1) > 0.5 ? "40,20,8" : "160,110,70"},${rnd(0.05, 0.22)})`; g.lineWidth = rnd(0.5, 2); const y = rnd(0, h); g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= w; x += 64) g.lineTo(x, y + Math.sin(x * 0.01 + y) * rnd(1, 5)); g.stroke(); }
+    g.fillStyle = "rgba(20,10,4,.6)"; for (let k = 1; k < 6; k++) g.fillRect(0, (k * h) / 6 - 3, w, 3);
+  });
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping; woodTex.repeat.set(2, 1); woodTex.anisotropy = 8;
+  const TABLE_TOP = -0.3;
+  const table = new THREE.Group(); table.visible = false; scene.add(table);
+  { const top = new THREE.Mesh(new RoundedBoxGeometry(SPACING * 2 + 1.8, 0.06, 2.4, 3, 0.02), new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.42, metalness: 0 }));
+    top.position.set(SPACING, TABLE_TOP - 0.03, 2.25); top.receiveShadow = true; top.castShadow = true; table.add(top);
+    for (const x of [-0.75, SPACING * 2 + 0.75]) for (const z of [1.2, 3.3]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 2, 0.07), new THREE.MeshStandardMaterial({ color: 0x4a2c18, roughness: 0.5 })); leg.position.set(x, TABLE_TOP - 1.06, z); table.add(leg); } }
+  const TABLE_HIDE = -2.6;
+  // Servilleta de cuadros y tenedor
+  const gingham = canvasTex(256, 256, (g) => {
+    g.fillStyle = "#f7f1e6"; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = "rgba(196,48,40,.55)"; for (let k = 0; k < 8; k++) { g.fillRect(k * 32, 0, 16, 256); g.fillRect(0, k * 32, 256, 16); }
+  });
+  const napkinMat = new THREE.MeshStandardMaterial({ map: gingham, roughness: 0.9 });
+  const forkMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 1, roughness: 0.38 });
+  function setting(g, i) {
+    const nap = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42, 8, 8), napkinMat);
+    const np = nap.geometry.attributes.position; for (let k = 0; k < np.count; k++) np.setZ(k, Math.sin(np.getX(k) * 18 + np.getY(k) * 7) * 0.003);
+    nap.geometry.computeVertexNormals();
+    nap.rotation.set(-Math.PI / 2, 0, 0.25 + i * 0.4); nap.position.set(0.36, 0.002, -0.05); nap.receiveShadow = true; g.add(nap);
+    const fork = new THREE.Group();
+    const handle = new THREE.Mesh(new RoundedBoxGeometry(0.026, 0.008, 0.16, 2, 0.003), forkMat); handle.position.z = 0.09; fork.add(handle);
+    const neck = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.04), forkMat); neck.position.z = -0.005; fork.add(neck);
+    for (let k = 0; k < 4; k++) { const tine = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.004, 0.055), forkMat); tine.position.set(-0.0105 + k * 0.007, 0, -0.05); fork.add(tine); }
+    fork.traverse((o) => { o.castShadow = true; });
+    fork.position.set(0.4, 0.008, 0.02); fork.rotation.y = 0.18; g.add(fork);
   }
-  function makeFood(look, seed) {
-    const g = new THREE.Group();
-    const [base, ...acc] = look.colors;
-    const accents = acc.length ? acc : [0x67a64a];
-    const herb = () => scatter(g, new THREE.SphereGeometry(0.014, 6, 4), 14, [0x3f8f3a, 0x5fb04a], (o) => {
-      const a = rnd(0, 6.3), r = rnd(0, 0.15); o.position.set(Math.cos(a) * r, 0.11 + rnd(0, 0.02), Math.sin(a) * r); o.scale.set(1.4, 0.4, 1); o.rotation.set(rnd(0, 3), rnd(0, 3), 0);
-    });
-    if (look.kind === "soup") {
-      const bowl = new THREE.Mesh(BOWL, new THREE.MeshPhysicalMaterial({ color: 0xf7f3ea, roughness: 0.2, clearcoat: 0.8, side: THREE.DoubleSide }));
-      bowl.castShadow = true; bowl.position.y = 0.04; g.add(bowl);
-      const soup = new THREE.Mesh(new THREE.CircleGeometry(0.245, 48), new THREE.MeshPhysicalMaterial({ color: base, roughness: 0.18, clearcoat: 0.6 }));
-      soup.rotation.x = -Math.PI / 2; soup.position.y = 0.175; g.add(soup);
-      scatter(g, new THREE.SphereGeometry(0.022, 8, 6), 10, accents, (o) => { const a = rnd(0, 6.3), r = rnd(0, 0.17); o.position.set(Math.cos(a) * r, 0.178, Math.sin(a) * r); o.scale.set(1, 0.5, 1); });
-      scatter(g, new THREE.SphereGeometry(0.011, 6, 4), 12, [0x3f8f3a], (o) => { const a = rnd(0, 6.3), r = rnd(0, 0.2); o.position.set(Math.cos(a) * r, 0.18, Math.sin(a) * r); o.scale.set(1.5, 0.3, 1); });
-      g.userData.top = 0.2;
-    } else if (look.kind === "pasta") {
-      const sauce = new THREE.Mesh(lumpy(new THREE.SphereGeometry(0.2, 32, 16), 0.06, seed), mat(accents[0] === base ? 0xd8432a : accents[0], 0.35));
-      sauce.scale.set(1, 0.22, 1); sauce.position.y = 0.04; g.add(sauce);
-      scatter(g, new THREE.CylinderGeometry(0.016, 0.016, 0.075, 10, 1, true), 90, [base === 0xd8432a ? 0xf1e1b4 : base, 0xf1e1b4], (o) => {
-        const a = rnd(0, 6.3), r = Math.sqrt(Math.random()) * 0.16; o.position.set(Math.cos(a) * r, 0.06 + (0.16 - r) * 0.55 + rnd(0, 0.03), Math.sin(a) * r); o.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3));
-      });
-      herb(); g.userData.top = 0.17;
-    } else if (look.kind === "rice") {
-      scatter(g, new THREE.SphereGeometry(0.011, 6, 4), 420, [base, base, 0xf6e7b8], (o) => {
-        const a = rnd(0, 6.3), r = Math.sqrt(Math.random()) * 0.27; o.position.set(Math.cos(a) * r, 0.03 + (0.27 - r) * 0.2 + rnd(0, 0.012), Math.sin(a) * r); o.scale.set(1, 0.6, 2); o.rotation.set(0, rnd(0, 3), 0);
-      });
-      scatter(g, new THREE.BoxGeometry(0.06, 0.012, 0.016), 9, accents, (o) => { const a = rnd(0, 6.3), r = rnd(0.04, 0.22); o.position.set(Math.cos(a) * r, 0.075 - r * 0.15, Math.sin(a) * r); o.rotation.set(0, rnd(0, 3), 0); });
-      scatter(g, new THREE.SphereGeometry(0.016, 8, 6), 12, [0x6bb34f], (o) => { const a = rnd(0, 6.3), r = rnd(0.03, 0.24); o.position.set(Math.cos(a) * r, 0.075 - r * 0.15, Math.sin(a) * r); });
-      g.userData.top = 0.12;
-    } else if (look.kind === "salad") {
-      scatter(g, new THREE.SphereGeometry(0.06, 12, 6), 46, [0x4f9a3c, 0x78bf55, 0x3b7f30, 0x9ccf6a], (o) => {
-        const a = rnd(0, 6.3), r = Math.sqrt(Math.random()) * 0.22; o.position.set(Math.cos(a) * r, 0.035 + (0.22 - r) * 0.42 + rnd(0, 0.03), Math.sin(a) * r); o.scale.set(1.3, 0.1, 0.8); o.rotation.set(rnd(-0.6, 0.6), rnd(0, 3), rnd(-0.6, 0.6));
-      });
-      scatter(g, new THREE.SphereGeometry(0.032, 14, 10), 7, [0xd8432a, ...accents.filter((c) => c !== 0x67a64a)], (o) => { const a = rnd(0, 6.3), r = rnd(0.04, 0.17); o.position.set(Math.cos(a) * r, 0.1 + rnd(0, 0.03), Math.sin(a) * r); });
-      g.userData.top = 0.16;
-    } else if (look.kind === "flat") {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.24, 0.06, 56), mat(base, 0.6));
-      body.position.y = 0.045; body.castShadow = true; g.add(body);
-      const dome = new THREE.Mesh(lumpy(new THREE.SphereGeometry(0.235, 48, 12, 0, Math.PI * 2, 0, Math.PI / 2), 0.015, seed), mat(new THREE.Color(base).offsetHSL(0, 0.05, -0.06).getHex(), 0.55));
-      dome.scale.y = 0.14; dome.position.y = 0.075; g.add(dome);
-      scatter(g, new THREE.CylinderGeometry(0.03, 0.03, 0.008, 16), 8, accents, (o) => { const a = rnd(0, 6.3), r = rnd(0.03, 0.17); o.position.set(Math.cos(a) * r, 0.105, Math.sin(a) * r); });
-      herb(); g.userData.top = 0.12;
-    } else {
-      const mound = new THREE.Mesh(lumpy(new THREE.SphereGeometry(0.21, 40, 20), 0.07, seed), mat(base, 0.5));
-      mound.scale.set(1, 0.42, 1); mound.position.y = 0.035; mound.castShadow = true; g.add(mound);
-      scatter(g, new THREE.SphereGeometry(0.03, 10, 8), 10, accents, (o) => { const a = rnd(0, 6.3), r = rnd(0.02, 0.15); o.position.set(Math.cos(a) * r, 0.1 - r * 0.25 + 0.02, Math.sin(a) * r); o.scale.set(1, 0.7, 1); });
-      herb(); g.userData.top = 0.14;
-    }
-    return g;
+  // Luz de «foto de comida»: cálida desde delante a la izquierda y contraluz que hace brillar las salsas
+  const foodKey = new THREE.SpotLight(0xffe0b8, 0, 5, 0.5, 0.7, 1.2);
+  foodKey.castShadow = true; foodKey.shadow.mapSize.set(1024, 1024); foodKey.shadow.bias = -0.0002; foodKey.shadow.radius = 5;
+  const foodRim = new THREE.SpotLight(0xfff4e0, 0, 5, 0.6, 0.8, 1.2);
+  scene.add(foodKey, foodKey.target, foodRim, foodRim.target);
+  function aimFoodLight(i) {
+    const p = plateSpot(i);
+    foodKey.position.set(p.x - 0.9, p.y + 1.6, p.z + 1.0); foodKey.target.position.copy(p);
+    foodRim.position.set(p.x + 0.5, p.y + 1.1, p.z - 1.0); foodRim.target.position.copy(p);
   }
+
+  let lightK = 0;
+  const lights = (on) => { const from = lightK; return tween(600, (k) => { lightK = from + (on - from) * k; foodKey.intensity = lightK * 6; foodRim.intensity = lightK * 2.2; key.intensity = 24 * (1 - lightK * 0.8); }); };
+
   function makePlate(recipe, i) {
-    const look = recipeLook(recipe);
     const g = new THREE.Group();
     const spin = new THREE.Group(); g.add(spin);
-    const [pc, rc] = PLATE_STYLES[i % 3];
-    if (look.kind !== "soup") {
-      const dish = new THREE.Mesh(PLATE, new THREE.MeshPhysicalMaterial({ color: pc, roughness: 0.22, clearcoat: 0.9, clearcoatRoughness: 0.08, side: THREE.DoubleSide }));
-      dish.castShadow = true; dish.receiveShadow = true; spin.add(dish);
-      const rimLine = new THREE.Mesh(new THREE.TorusGeometry(0.345, 0.0045, 8, 96), mat(rc, 0.4));
-      rimLine.rotation.x = Math.PI / 2; rimLine.position.y = 0.05; spin.add(rimLine);
-    } else {
-      const saucer = new THREE.Mesh(PLATE, new THREE.MeshPhysicalMaterial({ color: pc, roughness: 0.22, clearcoat: 0.9, side: THREE.DoubleSide }));
-      saucer.castShadow = true; spin.add(saucer);
-    }
-    const food = makeFood(look, i * 7.3 + 1); food.position.y = 0.012; spin.add(food);
+    const dish = buildDish(recipe, i);
+    spin.add(dish.group);
+    setting(g, i);
     const steam = [];
-    if (look.hot && !reduce) for (let k = 0; k < 5; k++) {
+    if (dish.hot && !reduce) for (let k = 0; k < 7; k++) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: soft, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }));
-      s.userData.phase = k / 5; s.userData.x = rnd(-0.1, 0.1); s.userData.z = rnd(-0.1, 0.1); g.add(s); steam.push(s);
+      s.userData.phase = k / 7; s.userData.x = rnd(-0.09, 0.09); s.userData.z = rnd(-0.09, 0.09); g.add(s); steam.push(s);
     }
-    g.userData = { spin, steam, top: food.userData.top, i };
+    g.userData = { spin, steam, top: dish.top, i, kind: dish.kind };
     g.visible = false; scene.add(g);
     return g;
   }
   function clearPlates() {
     for (const p of plates) {
       scene.remove(p);
-      p.traverse((o) => { if (o.geometry && o.geometry !== PLATE && o.geometry !== BOWL) o.geometry.dispose(); if (o.material && o.material.map !== soft) o.material.dispose?.(); });
+      p.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        const m = o.material; if (!m || m === napkinMat || m === forkMat) return;
+        if (m.map && m.map !== soft && !m.map.userData.shared) m.map.dispose();
+        m.dispose?.();
+      });
     }
     plates = [];
   }
@@ -422,10 +363,10 @@ export function createFridge(container, { adaptive = true } = {}) {
     }
     if (name === "scan") { const s = shot("inside"); s.pos.lerp(s.look, 0.12); return s; }
     const p = plateSpot(i);
-    if (wide) { const look = p.clone().add(new THREE.Vector3(-0.85, -0.05, 0)); const d = fit(0, 1.7); return { look, pos: look.clone().add(new THREE.Vector3(0.2, d * 0.55, d * 0.85)) }; }
-    const look = p.clone().add(new THREE.Vector3(0, -0.27, 0));
-    const d = fit(1.2, 0);
-    return { look, pos: look.clone().add(new THREE.Vector3(0, d * 0.62, d * 0.8)) };
+    if (wide) { const look = p.clone().add(new THREE.Vector3(-0.62, 0, 0.08)); const d = fit(0, 1.15); return { look, pos: look.clone().add(new THREE.Vector3(0.1, d * 0.77, d * 0.64)) }; }
+    const look = p.clone().add(new THREE.Vector3(0, 0, 0.24));
+    const d = fit(0.98, 0);
+    return { look, pos: look.clone().add(new THREE.Vector3(0, d * 0.83, d * 0.56)) };
   }
   function moveCam(name, ms = 1200, curve = E.inOut, i) {
     shotName = name; if (i !== undefined) focusI = i;
@@ -468,7 +409,7 @@ export function createFridge(container, { adaptive = true } = {}) {
     fridge.position.x = hum > 0 && !reduce ? Math.sin(t * 61) * 0.0018 * hum : 0;
     const open = Math.min(1, -doorAngle / 1.2);
     inside += ((open > 0.05 ? 1 : 0) - inside) * Math.min(1, dt * 6);
-    inLight.intensity = inside * 4.5; fill.intensity = inside * 0.7;
+    inLight.intensity = inside * 4.5 * (1 - lightK * 0.9); fill.intensity = inside * 0.7 * (1 - lightK);
     lampMat.color.setRGB(1, 0.95, 0.85).multiplyScalar(0.15 + inside * 2.4);
     gapMat.opacity = open > 0.02 ? 0 : hum * (0.55 + 0.45 * Math.sin(t * 5));
 
@@ -504,11 +445,11 @@ export function createFridge(container, { adaptive = true } = {}) {
     // Platos: giran despacio y echan humo
     for (const p of plates) {
       if (!p.visible) continue;
-      if (!reduce) { p.userData.spin.rotation.y += dt * 0.3; p.position.y = p.userData.y + Math.sin(t * 1.4 + p.userData.i) * 0.018; }
+      if (!reduce && p.userData.landed) p.userData.spin.rotation.y += dt * 0.12;
       for (const s of p.userData.steam) {
         const k = (t * 0.32 + s.userData.phase) % 1;
         s.position.set(s.userData.x + Math.sin(t * 1.3 + s.userData.phase * 9) * 0.04 * k, p.userData.top + 0.03 + k * 0.55, s.userData.z);
-        s.scale.setScalar(0.08 + k * 0.32); s.material.opacity = 0.22 * Math.sin(k * Math.PI) * (showing ? 1 : 0);
+        s.scale.setScalar(0.06 + k * 0.38); s.material.opacity = 0.2 * Math.sin(k * Math.PI) * (showing && p.userData.landed ? 1 : 0);
       }
     }
 
@@ -543,7 +484,10 @@ export function createFridge(container, { adaptive = true } = {}) {
   async function retractPlates() {
     if (!plates.length || !plates.some((p) => p.visible)) return;
     showing = false;
-    await Promise.all(plates.map((p, i) => { const from = p.position.clone(), to = new THREE.Vector3(0, 0, -0.1); return sleep(i * 70).then(() => tween(600, (k) => { p.position.lerpVectors(from, to, k); p.scale.setScalar(Math.max(0.001, 1 - k)); }, E.in)); }));
+    lights(0);
+    const t0 = table.position.y;
+    tween(700, (k) => { table.position.y = t0 + (TABLE_HIDE - t0) * k; }, E.in).then(() => { table.visible = false; });
+    await Promise.all(plates.map((p, i) => { p.userData.landed = false; const from = p.position.clone(), to = new THREE.Vector3(0, 0, -0.1); return sleep(i * 70).then(() => tween(600, (k) => { p.position.lerpVectors(from, to, k); p.scale.setScalar(Math.max(0.001, 1 - k)); }, E.in)); }));
     plates.forEach((p) => { p.visible = false; });
   }
   async function clearWords() {
@@ -627,19 +571,22 @@ export function createFridge(container, { adaptive = true } = {}) {
       mistRate = 16; emitMist(14, true);
       await setDoor(OPEN, 900, E.back);
       showing = true;
+      table.visible = true; table.position.y = TABLE_HIDE;
+      tween(1100, (k) => { table.position.y = TABLE_HIDE * (1 - k); }, E.out);
+      aimFoodLight(0); lights(1);
       const cam0 = moveCam("plates", 1700, E.inOut, 0);
       await Promise.all(plates.map((p, i) => {
-        const to = plateSpot(i); p.userData.y = to.y;
+        const to = plateSpot(i);
         const from = new THREE.Vector3(0, -0.42 + i * 0.36, -0.1);
-        p.position.copy(from); p.scale.setScalar(0.001); p.visible = true;
-        return sleep(reduce ? 0 : 200 + i * 160).then(() => tween(1250, (k) => {
-          p.position.lerpVectors(from, to, k); p.position.y += Math.sin(k * Math.PI) * 0.35;
-          p.scale.setScalar(Math.max(0.001, k));
-        }, E.out));
+        p.position.copy(from); p.scale.setScalar(0.001); p.visible = true; p.userData.landed = false;
+        return sleep(reduce ? 0 : 300 + i * 170).then(() => tween(1250, (k) => {
+          p.position.lerpVectors(from, to, k); p.position.y += Math.sin(k * Math.PI) * 0.45;
+          p.scale.setScalar(Math.max(0.001, Math.min(1, k * 1.3)));
+        }, E.out)).then(() => { p.userData.landed = true; });
       }));
       await cam0; mistRate = 2.5;
     },
-    focus(i) { if (!plates[i]) return Promise.resolve(); return moveCam("plates", 750, E.inOut, i); },
+    focus(i) { if (!plates[i]) return Promise.resolve(); aimFoodLight(i); return moveCam("plates", 750, E.inOut, i); },
     pick,
     async reset() {
       scanning = false; hum = 0; mistRate = 0;
