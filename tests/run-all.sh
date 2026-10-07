@@ -10,6 +10,7 @@ node tests/unit-luz.mjs
 node tests/unit-monetizacion.mjs
 node tests/unit-seo.mjs
 node tests/unit-luz-contenido.mjs
+node tests/unit-itp.mjs
 node tests/e2e.cjs
 node tests/e2e-captions.cjs
 node tests/e2e-luz.cjs

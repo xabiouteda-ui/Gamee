@@ -476,3 +476,33 @@ tr.is-best .bar-cell i { background: var(--ok); opacity: 1; }
 .solar-months { margin: 8px 0; }
 .solar-months summary { cursor: pointer; font-weight: 600; }
 .solar-months td:first-child { white-space: nowrap; }
+
+/* Calculadora del ITP de vehículos usados (/calculadora-itp-coche/) */
+.itp { display: grid; gap: 18px; }
+.itp-form select, .itp-form input[type="date"] { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
+.itp-form .gasto-form label { min-width: 0; }
+.itp-form .gasto-form .muted { font-weight: 400; }
+.itp-check { flex-direction: row !important; align-items: center; gap: 8px !important; align-self: end; min-height: 42px; }
+.itp-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.itp-sample { margin: 0 0 12px; }
+.linklike { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.itp-slip { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); overflow: hidden; }
+.itp-slip-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px dashed var(--border); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.itp-total { display: grid; gap: 4px; padding: 16px; }
+.itp-total strong { font-size: clamp(2rem, 6vw, 2.6rem); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.itp-pill { display: inline-block; font-size: .78rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); width: fit-content; }
+.itp-pill.fija { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.itp-lines { list-style: none; margin: 0; padding: 0 16px 4px; }
+.itp-lines li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--border); font-size: .93rem; max-width: none; }
+.itp-lines li span:last-child { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.itp-lines li.strong { font-weight: 700; }
+.itp-lines li.dim { color: var(--muted); }
+.itp-notes { display: grid; gap: 8px; padding: 0 16px 16px; }
+.itp-note { margin: 0; font-size: .9rem; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); max-width: none; }
+.itp-note.warn { background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.itp-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; max-width: none; }
+.itp-coef-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.itp-coef { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px; }
+.itp-coef span { font-size: .78rem; color: var(--muted); }
+.itp-coef strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.itp-coef.on { border-color: var(--accent); background: var(--accent-soft); }

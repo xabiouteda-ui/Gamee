@@ -8,6 +8,7 @@ en GitHub Pages y monetizable con Google AdSense:
 | Transcribe Libre | `/pasar-audio-a-texto/` (+ `/en/audio-to-text/`) | Audio/vídeo → texto, SRT y VTT con Whisper |
 | Subtítulos animados | `/subtitulos-animados/` (+ `/en/animated-captions/`) | Subtítulos karaoke grabados en el vídeo (MP4) |
 | ¿Qué tarifa de luz me conviene? | `/luz/` | Analiza el CSV de consumo y compara ofertas |
+| Calculadora ITP coche | `/calculadora-itp-coche/` | ITP de vehículos usados por comunidad autónoma (normativa 2026) |
 
 La portada (`/`) agrupa las herramientas bajo la marca común.
 

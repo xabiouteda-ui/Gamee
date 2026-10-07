@@ -248,3 +248,16 @@ alcanzaba la sección entera); se corrigió en el siguiente commit y ahora hay u
 9. **PWA** (instalable y sin conexión tras la primera visita) para aumentar las visitas recurrentes.
 10. **Medir**: Search Console para ver qué búsquedas traen tráfico y priorizar nuevas páginas con datos reales
     (las cifras de demanda de las investigaciones son estimaciones).
+
+## Fase 5 – Calculadora del ITP de coches de segunda mano ✅
+
+**Dónde:** `/calculadora-itp-coche/` (solo español).
+
+- **Qué hace:** calcula el ITP de turismos, motos y ciclomotores usados entre particulares: base = mayor entre precio
+  y valor de tablas × % de antigüedad (Anexo IV, Orden HAC/1501/2025), con tipos, tipos incrementados, cuotas fijas y
+  bonificaciones de las 15 comunidades de régimen común, Ceuta y Melilla (informe «Tributación Autonómica. Medidas
+  2026» de Hacienda y guía oficial de Aragón de mayo de 2026). Navarra y País Vasco (forales) no están incluidos.
+- **Código:** `assets/js/itp/core.js` (cálculo, sin DOM), `assets/js/itp/app.js`, `src/partials/itp.html`.
+- **Pruebas:** `tests/unit-itp.mjs`.
+- **Revisar:** cuota mínima de Cantabria (la calculadora aplica el 6 % y avisa) y cuota fija de Murcia para más de
+  2.000 cc (75 €, sin contrastar con la norma). Actualizar cada enero con la nueva Orden de precios medios.

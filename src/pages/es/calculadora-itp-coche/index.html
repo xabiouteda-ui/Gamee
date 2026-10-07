@@ -1,0 +1,81 @@
+<!--{
+  "slug": "calculadora-itp-coche/index.html",
+  "tool": "itp",
+  "appName": "Calculadora del ITP de coches de segunda mano",
+  "faqSchema": true,
+  "nav": "Calculadora ITP coche",
+  "title": "Calculadora ITP coche de segunda mano 2026 por comunidad autónoma",
+  "description": "Calcula gratis el ITP de un coche, moto o ciclomotor de segunda mano en 2026 con los tipos y cuotas fijas de cada comunidad autónoma y el valor de tablas de Hacienda."
+}-->
+<section class="hero">
+  <h1>Calculadora del ITP de un coche de segunda mano</h1>
+  <p class="lead">Calcula cuánto pagarás de Impuesto de Transmisiones Patrimoniales al comprar un coche, una moto o un ciclomotor usado a un particular, con los tipos y cuotas fijas de cada comunidad autónoma vigentes en 2026.</p>
+</section>
+
+{{tool}}
+
+<article class="content">
+  <h2>Cómo se calcula el ITP de un coche</h2>
+  <ol>
+    <li><strong>Hacienda fija un valor para tu coche.</strong> Toma el precio del modelo nuevo que publica cada año en sus tablas y lo multiplica por un porcentaje según los años que tiene el vehículo.</li>
+    <li><strong>Se compara con el precio que pagas.</strong> La base del impuesto es el mayor de los dos. Si compras barato un coche que Hacienda valora más, tributas por el valor de Hacienda.</li>
+    <li><strong>Se aplica el tipo de tu comunidad.</strong> Va del 3 % de Galicia al 8 % que aplican varias comunidades a los coches potentes. Algunas cambian el porcentaje por una cuota fija en coches antiguos.</li>
+  </ol>
+  <p class="itp-formula">Impuesto = mayor(precio de compra, valor de tablas × % por antigüedad) × tipo de la comunidad</p>
+
+  <h2>Porcentaje por antigüedad (Anexo IV de la Orden HAC/1501/2025)</h2>
+  <p>Qué parte del valor de un coche nuevo conserva tu vehículo a ojos de Hacienda. Se cuentan los años completos desde la primera matriculación.</p>
+  <div class="itp-coef-grid" id="itp-coef-grid"><div class="itp-coef" data-i="0"><span>Hasta 1 año</span><strong>100 %</strong></div><div class="itp-coef" data-i="1"><span>Más de 1</span><strong>84 %</strong></div><div class="itp-coef" data-i="2"><span>Más de 2</span><strong>67 %</strong></div><div class="itp-coef" data-i="3"><span>Más de 3</span><strong>56 %</strong></div><div class="itp-coef" data-i="4"><span>Más de 4</span><strong>47 %</strong></div><div class="itp-coef" data-i="5"><span>Más de 5</span><strong>39 %</strong></div><div class="itp-coef" data-i="6"><span>Más de 6</span><strong>34 %</strong></div><div class="itp-coef" data-i="7"><span>Más de 7</span><strong>28 %</strong></div><div class="itp-coef" data-i="8"><span>Más de 8</span><strong>24 %</strong></div><div class="itp-coef" data-i="9"><span>Más de 9</span><strong>19 %</strong></div><div class="itp-coef" data-i="10"><span>Más de 10</span><strong>17 %</strong></div><div class="itp-coef" data-i="11"><span>Más de 11</span><strong>13 %</strong></div><div class="itp-coef" data-i="12"><span>Más de 12</span><strong>10 %</strong></div></div>
+
+  {{ad:content}}
+
+  <h2>Tipos del ITP de vehículos por comunidad autónoma en 2026</h2>
+  <p>Paga el comprador y se aplica la normativa de la comunidad donde tiene su residencia fiscal, no la del vendedor.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Comunidad</th><th scope="col">Tipo general</th><th scope="col">Reglas especiales</th></tr></thead>
+      <tbody>
+        <tr><td>Andalucía</td><td>4 %</td><td>8 % turismos de más de 15 CVF. 1 % con etiqueta 0 emisiones.</td></tr>
+        <tr><td>Aragón</td><td>4 %</td><td>Más de 10 años: 0 € hasta 1.000 cc, 20 € hasta 1.500 cc y 30 € hasta 2.000 cc.</td></tr>
+        <tr><td>Asturias</td><td>4 %</td><td>8 % turismos de más de 15 CVF.</td></tr>
+        <tr><td>Illes Balears</td><td>4 %</td><td>0 % con etiqueta 0 emisiones y ciclomotores, 2 % con etiqueta ECO, 8 % turismos de más de 15 CVF.</td></tr>
+        <tr><td>Canarias</td><td>5,5 %</td><td>Turismos de más de 10 años: 40 € hasta 1.000 cc, 70 € hasta 1.500 cc y 115 € hasta 2.000 cc.</td></tr>
+        <tr><td>Cantabria</td><td>6 %</td><td>Cuotas mínimas según antigüedad y cilindrada.</td></tr>
+        <tr><td>Castilla-La Mancha</td><td>6 %</td><td>Sin reglas especiales.</td></tr>
+        <tr><td>Castilla y León</td><td>5 %</td><td>8 % turismos de más de 15 CVF.</td></tr>
+        <tr><td>Cataluña</td><td>5 %</td><td>Sin reglas especiales.</td></tr>
+        <tr><td>Comunitat Valenciana</td><td>6 %</td><td>8 % si vale 20.000 € o más, o si tiene hasta 5 años y más de 2.000 cc. Cuotas fijas de 10 € a 280 € para vehículos de más de 5 años que valen menos de 20.000 €.</td></tr>
+        <tr><td>Extremadura</td><td>6 %</td><td>Sin reglas especiales.</td></tr>
+        <tr><td>Galicia</td><td>3 %</td><td>0 % con etiqueta 0 emisiones. Turismos de 15 años o más: 22 € hasta 1.199 cc y 38 € hasta 1.599 cc.</td></tr>
+        <tr><td>Comunidad de Madrid</td><td>4 %</td><td>Sin reglas especiales.</td></tr>
+        <tr><td>Región de Murcia</td><td>4 %</td><td>Más de 12 años: 0 € hasta 1.000 cc, 30 € hasta 1.500 cc y 50 € hasta 2.000 cc.</td></tr>
+        <tr><td>La Rioja</td><td>4 %</td><td>Sin reglas especiales.</td></tr>
+        <tr><td>Ceuta y Melilla</td><td>4 %</td><td>Bonificación del 50 % de la cuota.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Navarra y el País Vasco tienen régimen foral propio y no se incluyen.</p>
+
+  <h2>Preguntas frecuentes</h2>
+  <details>
+    <summary>¿Quién paga el ITP, el comprador o el vendedor?</summary>
+    <div><p>El comprador. Lo presenta con el Modelo 620 (o el formulario propio de su comunidad) antes de hacer el cambio de titularidad en la DGT.</p></div>
+  </details>
+  <details>
+    <summary>¿Cuánto plazo tengo para pagarlo?</summary>
+    <div><p>En general, 30 días hábiles desde la compraventa. En Aragón el plazo es de un mes. Si te pasas, se añaden recargos.</p></div>
+  </details>
+  <details>
+    <summary>¿Dónde encuentro el valor de tablas de mi coche?</summary>
+    <div><p>En la Orden HAC/1501/2025, que publica el precio de cada modelo nuevo por marca, modelo, cilindrada y potencia. La mayoría de comunidades tienen además un simulador oficial donde eliges el modelo y te lo da calculado.</p></div>
+  </details>
+  <details>
+    <summary>¿Y si compro el coche en un concesionario?</summary>
+    <div><p>Si el vendedor es un profesional y te cobra IVA por el total, no pagas ITP. Esta calculadora es para compras entre particulares.</p></div>
+  </details>
+  <details>
+    <summary>¿Puedo declarar un precio más bajo para pagar menos?</summary>
+    <div><p>No te servirá: si el precio declarado es menor que el valor de tablas, Hacienda usa el valor de tablas. Declarar menos de lo que pagaste además puede acabar en una comprobación con recargos.</p></div>
+  </details>
+  <p class="muted small">Datos de 2026 según la Orden HAC/1501/2025 (BOE de 23 de diciembre de 2025), el informe «Tributación Autonómica. Medidas 2026» del Ministerio de Hacienda y las guías de las administraciones autonómicas. El resultado es orientativo: la cifra que cuenta es la que te calcule la administración tributaria de tu comunidad.</p>
+</article>
