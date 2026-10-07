@@ -7,8 +7,8 @@
 //   3. Cambia `adsEnabled` a true, haz commit y push.
 // El build genera automáticamente /ads.txt con tu ID.
 window.SITE_CONFIG = {
-  adsEnabled: false,
-  adsenseClient: "", // p. ej. "ca-pub-1234567890123456"
+  adsEnabled: true,
+  adsenseClient: "ca-pub-5682080498285633", // p. ej. "ca-pub-1234567890123456"
   slots: {
     top: "",      // debajo de la cabecera
     result: "",   // junto a la herramienta, visible mientras se transcribe

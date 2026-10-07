@@ -464,7 +464,7 @@ ${hreflang}
 <link rel="icon" href="${root}assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${root}assets/img/icon-180.png">
 <link rel="stylesheet" href="${root}assets/css/style.css">
-${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
+${/^ca-pub-\d+$/.test((adsCfg.adsenseClient || "").trim()) ? `<meta name="google-adsense-account" content="${esc(adsCfg.adsenseClient.trim())}">\n` : ""}${schemas.map((s) => `<script type="application/ld+json">${JSON.stringify(s)}</script>`).join("\n")}
 </head>
 <body>
 <a class="skip" href="#main">${ui.skip}</a>
