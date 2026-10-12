@@ -13,7 +13,7 @@ import { madridDate } from "./assets/js/luz/hoy.js";
 import { RULES } from "./assets/js/luz/core.js";
 import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 import { itpRegionPages, ITP_SLUGS } from "./scripts/itp-pages.mjs";
-import { sueldoPages, sueldoTabla, sueldoTablaMes } from "./scripts/sueldo-pages.mjs";
+import { sueldoPages, sueldoGuias, sueldoTabla, sueldoTablaMes } from "./scripts/sueldo-pages.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 // SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
@@ -116,7 +116,7 @@ function readPages() {
     }
   }
   pages.push(...itpRegionPages(site.ownerName));
-  pages.push(...sueldoPages(site.ownerName));
+  pages.push(...sueldoPages(site.ownerName), ...sueldoGuias(site.ownerName));
   if (!neveraOn) for (const p of pages) if (p.tool === "nevera") p.noindex = true;
   return pages;
 }

@@ -47,8 +47,8 @@ for (const lang of ["es", "en"]) {
 // Páginas generadas (ITP por comunidad).
 const { itpRegionPages } = await import("./itp-pages.mjs");
 for (const g of itpRegionPages(site.ownerName)) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: null });
-const { sueldoPages } = await import("./sueldo-pages.mjs");
-for (const g of sueldoPages(site.ownerName)) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: "sueldo" });
+const { sueldoPages, sueldoGuias } = await import("./sueldo-pages.mjs");
+for (const g of [...sueldoPages(site.ownerName), ...sueldoGuias(site.ownerName)]) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: "sueldo" });
 // Solo algunas páginas: node scripts/og-images.mjs <texto-del-slug>
 const only = process.argv[2];
 if (only) pages.splice(0, pages.length, ...pages.filter((p) => p.slug.includes(only)));

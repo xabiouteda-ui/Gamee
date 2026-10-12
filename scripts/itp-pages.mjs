@@ -40,6 +40,16 @@ function reglasEspeciales(key) {
   return [...seen.values()];
 }
 
+// Comunidades vecinas (régimen común) para comparar con datos propios de cada página.
+const VECINAS = {
+  andalucia: ["extremadura", "clm", "murcia"], aragon: ["cataluna", "valencia", "clm", "cyl", "rioja"], asturias: ["galicia", "cyl", "cantabria"],
+  baleares: ["cataluna", "valencia"], canarias: ["andalucia", "madrid"], cantabria: ["asturias", "cyl"], clm: ["madrid", "cyl", "aragon", "valencia", "murcia", "andalucia", "extremadura"],
+  cyl: ["galicia", "asturias", "cantabria", "rioja", "aragon", "madrid", "clm", "extremadura"], cataluna: ["aragon", "valencia"], valencia: ["cataluna", "aragon", "clm", "murcia"],
+  extremadura: ["cyl", "clm", "andalucia"], galicia: ["asturias", "cyl"], madrid: ["clm", "cyl"], murcia: ["valencia", "clm", "andalucia"], rioja: ["cyl", "aragon"],
+  ceuta: ["melilla", "andalucia"], melilla: ["ceuta", "andalucia"],
+};
+const MOTO = { tipoVeh: "moto", cc: 650, cvf: 6, etiqueta: "otra", historico: false, valorTablas: 8000, fechaVenta: VENTA };
+
 function ranking(extra) {
   const filas = Object.keys(ITP_SLUGS).map((k) => ({ k, cuota: calc(k, extra).cuota }));
   filas.sort((a, b) => a.cuota - b.cuota);
@@ -68,6 +78,16 @@ export function itpRegionPages(owner) {
       : `${pos <= rk.length / 2 ? "está entre las más baratas" : "está entre las más caras"} (puesto ${pos} de ${rk.length}, de más barata a más cara). ${Cap(txtB)} y ${txtC}.`
     ) + " Con tu coche puede cambiar: usa la calculadora de arriba con tus datos.";
 
+    const casosVec = [["Coche de 6 años, 9.500 €", { fechaMatric: matric(6), precio: 9500 }], ["Seminuevo de 2 años, 16.000 €", { fechaMatric: matric(2), precio: 16000 }], ["Coche de 11 años, 4.500 €", { fechaMatric: matric(11), precio: 4500 }]];
+    const vec = VECINAS[key] || [];
+    const filasVec = [key, ...vec].map((k) => `<tr${k === key ? ' class="here"' : ""}><td>${k === key ? esc(REGLAS[k].nombre) : `<a href="{{root}}calculadora-itp-coche/${ITP_SLUGS[k]}.html">${esc(REGLAS[k].nombre)}</a>`}</td>${casosVec.map(([, x]) => `<td>${eur(calc(k, x).cuota)}</td>`).join("")}</tr>`).join("");
+    const moto = calcular({ ...MOTO, ccaa: key, fechaMatric: matric(4), precio: 5000 });
+    const ahorroVec = vec.map((k) => ({ k, d: calc(k, casosVec[0][1]).cuota - mid.cuota })).sort((a, b) => a.d - b.d);
+    const masBarataVec = ahorroVec[0];
+    const fraseVec = !vec.length ? "" : masBarataVec.d < 0
+      ? `Con el coche de 6 años, quien tenga su residencia en ${esc(REGLAS[masBarataVec.k].nombre)} paga ${eur(-masBarataVec.d)} menos que en ${esc(corto)}.`
+      : `Con el coche de 6 años, ${esc(corto)} cobra lo mismo o menos que ${vec.length > 1 ? "todas sus vecinas" : esc(REGLAS[vec[0]].nombre)}.`;
+
     const filasEj = ej.map(({ txt, precio, anios, r }) => `<tr><td>${txt}</td><td>${eur(precio)}</td><td>${eur(r.valorFiscal)} <span class="muted small">(${COEF[Math.min(anios, 12)]}\u00a0%)</span></td><td><strong>${eur(r.cuota)}</strong><br>${r.regla.tipo === "fija" ? '<span class="muted small">cuota fija</span>' : `<span class="muted small">al ${pct(r.regla.rate)}${r.bonif ? " −50\u00a0%" : ""}</span>`}</td></tr>`).join("");
     const listaEsp = especiales.length
       ? `<ul>${especiales.map((r) => `<li>${esc(r.nota)}</li>`).join("")}</ul>`
@@ -95,6 +115,15 @@ export function itpRegionPages(owner) {
   </div>
   <p>${comparativa}</p>
 
+${vec.length ? `  <h2>${esc(corto)} frente a ${key === "canarias" || key === "baleares" || key === "ceuta" || key === "melilla" ? "otras comunidades" : "las comunidades vecinas"}</h2>
+  <p>Manda la residencia del comprador, no dónde está el coche${["canarias", "baleares", "ceuta", "melilla"].includes(key) ? "" : ": comprar al otro lado de la frontera autonómica no cambia lo que pagas"}. Sirve para saber cuánto pagaría un familiar o para comparar si te mudas. ${fraseVec}</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Comunidad</th>${casosVec.map(([t]) => `<th scope="col">${t}</th>`).join("")}</tr></thead>
+      <tbody>${filasVec}</tbody>
+    </table>
+  </div>
+` : ""}
   <h2>Reglas especiales del ITP de vehículos en ${esc(corto)}</h2>
   ${listaEsp}
 
@@ -112,6 +141,10 @@ export function itpRegionPages(owner) {
   <details>
     <summary>¿Cuánto es el ITP de un coche en ${esc(corto)} en 2026?</summary>
     <div><p>${tipoGeneral !== null ? `El tipo general es el ${pct(tipoGeneral)} de la base. ` : ""}Por ejemplo, un coche de 6 años comprado por 9.500 € paga ${eur(mid.cuota)} y uno de 16 años comprado por 2.000 € paga ${eur(ej[3].r.cuota)}.</p></div>
+  </details>
+  <details>
+    <summary>¿Cuánto es el ITP de una moto en ${esc(corto)}?</summary>
+    <div><p>Una moto de 650 cc y 4 años que nueva vale 8.000 € en las tablas de Hacienda, comprada por 5.000 €, paga ${eur(moto.cuota)}${moto.regla?.tipo === "fija" ? " (cuota fija)" : moto.regla?.rate !== undefined ? ` (al ${pct(moto.regla.rate)} sobre ${eur(moto.base)})` : ""}. Las motos se calculan igual que los coches, con su propio valor de tablas.</p></div>
   </details>
   <details>
     <summary>¿Y si compro el coche más barato de lo que dice Hacienda?</summary>
