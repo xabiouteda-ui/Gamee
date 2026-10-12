@@ -147,6 +147,21 @@ function languageOptions(lang, autoLabel) {
 
 // Resumen estático de los precios del PVPC de hoy (el día en que se genera la web), para buscadores y para
 // quien no tenga JavaScript. En el navegador se sustituye por los datos más recientes y los gráficos.
+// Dato del día en la portada: el último día publicado por Red Eléctrica (mañana a partir de las ~20:30).
+function homeLuz(root) {
+  const f = join(ROOT, "data", "pvpc.json");
+  if (!existsSync(f)) return "";
+  const pvpc = JSON.parse(readFileSync(f, "utf8"));
+  const off = dayStats(pvpc, madridDate(1)) ? 1 : 0;
+  const st = dayStats(pvpc, madridDate(off));
+  if (!st) return "";
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const date = new Date(st.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  const p = (x) => x.toFixed(3).replace(".", ",") + "\u00a0€/kWh";
+  const href = root + (off ? "luz/precio-luz-manana.html" : "luz/precio-luz-hoy.html");
+  return `<p class="home-luz"><span class="home-luz-tag">Luz · ${date}</span> La hora más barata es de <strong>${hh(st.min.h)} a ${hh(st.min.h + 1)}</strong> (${p(st.min.p)}) y la más cara de ${hh(st.max.h)} a ${hh(st.max.h + 1)}. <a href="${href}">Ver las 24 horas</a></p>`;
+}
+
 function pvpcSnapshot(mode) {
   const f = join(ROOT, "data", "pvpc.json");
   if (!existsSync(f)) return "";
@@ -426,7 +441,7 @@ function layout(page, pagesBySlug) {
     schemas.push({ "@context": "https://schema.org", "@type": "WebSite", name: site.siteName, url: `${siteUrl}/`, inLanguage: lang });
   }
   if (page.slug === "index.html" || page.slug === "en/index.html") {
-    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-512.png`, ...(site.telegram ? { sameAs: [site.telegram] } : {}) });
+    schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-512.png`, ...((site.telegram || site.social?.length) ? { sameAs: [site.telegram, ...(site.social || [])].filter(Boolean) } : {}) });
   }
   if (page.dataset) schemas.push(datasetSchema(page, url));
 
@@ -463,6 +478,7 @@ function layout(page, pagesBySlug) {
     .replace("{{study}}", () => studyHtml())
     .replace("{{sueldoTabla}}", () => sueldoTabla(page.sueldo?.bruto ?? null, root))
     .replace("{{sueldoTablaMes}}", () => sueldoTablaMes())
+    .replace("{{homeLuz}}", () => homeLuz(root))
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{siteUrl\}\}/g, siteUrl)

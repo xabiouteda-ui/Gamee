@@ -13,6 +13,7 @@ Todo está listo para copiar y pegar. Nada se ha publicado: lo publicas tú.
 | [producthunt.md](producthunt.md) | Textos en inglés para Product Hunt y Show HN |
 | [telegram.md](telegram.md) | Mensajes extra y cómo hacer crecer el canal |
 | [afiliados.md](afiliados.md) | Programas de afiliados, requisitos y texto para el formulario |
+| [sueldo.md](sueldo.md) | Vídeo, textos y respuestas para foros de la calculadora de sueldo neto |
 
 **Reglas que he seguido:** ningún dato inventado. Las cifras de terceros (comisiones, precios de directorios,
 contactos) salen de sus webs o de búsquedas del 29/09/2026 y están marcadas para que las compruebes antes de

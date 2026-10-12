@@ -735,6 +735,10 @@ body.immersive { overflow-x: clip; }
 .sn-table tr.here td { background: var(--accent-soft); font-weight: 700; }
 @media (min-width: 860px) { .sn { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; } .sn-slip { position: sticky; top: 16px; } }
 
+/* ---------- Dato de la luz en la portada ---------- */
+.home-luz { margin: 0 0 18px; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); font-size: .95rem; max-width: none; }
+.home-luz-tag { display: inline-block; margin-right: 6px; padding: 1px 10px; border-radius: 99px; background: color-mix(in srgb, #f59e0b 18%, transparent); color: var(--text); font-weight: 700; font-size: .8rem; }
+
 /* ---------- Lo más buscado (portada) ---------- */
 .popular { margin-top: 36px; }
 .popular-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px 22px; }
