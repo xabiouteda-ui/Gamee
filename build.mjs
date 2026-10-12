@@ -48,7 +48,7 @@ const UI = {
   es: {
     home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", money: "Cómo ganamos dinero", about: "Quién lo hace", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
-    footerNote: "Herramientas gratuitas financiadas con publicidad. Tus archivos se procesan en tu dispositivo.",
+    footerNote: "Herramientas gratuitas financiadas con publicidad. Tus audios y vídeos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
     otherLang: "English", otherLangLabel: "Read in English",
   },
@@ -362,6 +362,10 @@ function adSlot(slot) {
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 13v6M12 10v12M16 7v18M20 11v10M24 14v4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
+// Endurecimiento sin romper AdSense ni los CDN: GitHub Pages no deja poner cabeceras, así que va en <meta>.
+const SECURITY_META = `<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">`;
+
 // Página «desnuda» para insertar en otras webs con un iframe (widget): sin cabecera, menú, pie ni anuncios.
 function bareLayout(page, url, root) {
   const body = page.body.replace(/\{\{root\}\}/g, root).replace(/\{\{siteUrl\}\}/g, siteUrl);
@@ -370,6 +374,7 @@ function bareLayout(page, url, root) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${SECURITY_META}
 <title>${esc(page.title)}</title>
 <meta name="description" content="${esc(page.description)}">
 <link rel="canonical" href="${url}">
@@ -459,6 +464,7 @@ function layout(page, pagesBySlug) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${SECURITY_META}
 <title>${esc(page.title)}</title>
 <meta name="description" content="${esc(page.description)}">
 <link rel="canonical" href="${url}">
@@ -538,6 +544,12 @@ function build() {
   // Datos de las herramientas (tarifas de luz a mano; data/pvpc.json lo genera scripts/fetch-pvpc.mjs en Actions).
   if (existsSync(join(ROOT, "data"))) cpSync(join(ROOT, "data"), join(OUT, "data"), { recursive: true, filter: (src) => !/\/\./.test(src.slice(ROOT.length)) });
   writeFileSync(join(OUT, ".nojekyll"), "");
+  // security.txt (RFC 9116): a quién avisar si alguien encuentra un fallo de seguridad.
+  if (site.contactEmail && !/^\[/.test(site.contactEmail)) {
+    mkdirSync(join(OUT, ".well-known"), { recursive: true });
+    const expires = new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d+Z$/, ".000Z");
+    writeFileSync(join(OUT, ".well-known", "security.txt"), `Contact: mailto:${site.contactEmail}\nExpires: ${expires}\nPreferred-Languages: es, en\nCanonical: ${siteUrl}/.well-known/security.txt\n`);
+  }
   // Versión ligera del PVPC para el widget (de ayer a pasado mañana): ~1 KB en vez de todo el año.
   if (existsSync(join(ROOT, "data", "pvpc.json"))) {
     const pv = JSON.parse(readFileSync(join(ROOT, "data", "pvpc.json"), "utf8"));

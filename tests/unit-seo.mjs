@@ -132,4 +132,16 @@ await test("Cloudflare Web Analytics: beacon en todas las páginas con el token 
   for (const f of pages) assert.equal(readFileSync(f, "utf8").split(tag).length - 1, 1, `${f} lleva el beacon una vez`);
 });
 
+await test("Seguridad: CSP básica y referrer en todas las páginas, security.txt en /.well-known", () => {
+  const pages = readdirSync(SITE, { recursive: true }).filter((f) => f.endsWith(".html")).map((f) => join(SITE, f));
+  for (const f of pages) {
+    const html = readFileSync(f, "utf8");
+    assert.ok(html.includes(`content="object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"`), `${f} lleva la CSP`);
+    assert.ok(html.includes('<meta name="referrer" content="strict-origin-when-cross-origin">'), `${f} lleva la política de referrer`);
+  }
+  const sec = readFileSync(join(SITE, ".well-known", "security.txt"), "utf8");
+  assert.match(sec, /^Contact: mailto:\S+@\S+$/m);
+  assert.ok(new Date(sec.match(/^Expires: (.+)$/m)[1]) > new Date(), "security.txt no caducado");
+});
+
 console.log(`${n} pruebas de SEO correctas.`);

@@ -90,7 +90,7 @@ function renderCard() {
   $("nv-name").textContent = r.nombre;
   $("nv-desc").textContent = r.descripcion;
   const falta = r.falta.length ? `<span class="miss">Te falta: ${esc(r.falta.join(", "))}</span>` : '<span class="ok">No te falta nada</span>';
-  $("nv-meta").innerHTML = `<span>${r.minutos} min</span><span>${esc(r.dificultad)}</span>${falta}`;
+  $("nv-meta").innerHTML = `<span>${Number(r.minutos) || 0} min</span><span>${esc(r.dificultad)}</span>${falta}`;
   $("nv-prev").disabled = index === 0;
   $("nv-next").disabled = index === recipes.length - 1;
   [...$("nv-dots").children].forEach((d, i) => { d.hidden = i >= recipes.length; d.classList.toggle("on", i === index); });
@@ -126,7 +126,7 @@ function recipeSheet(i) {
   const r = recipes[i]; if (!r) return;
   const have = new Set(ingredients);
   openSheet(`
-    <p class="nv-kicker">${r.minutos} min · dificultad ${esc(r.dificultad)}</p>
+    <p class="nv-kicker">${Number(r.minutos) || 0} min · dificultad ${esc(r.dificultad)}</p>
     <h2 id="nv-sheet-title" class="nv-sheet-title">${esc(r.nombre)}</h2>
     <p class="nv-sheet-desc">${esc(r.descripcion)}</p>
     <h3>Ingredientes</h3>
