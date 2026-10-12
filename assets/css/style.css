@@ -693,6 +693,48 @@ body.immersive { overflow-x: clip; }
   .nv *, .nv *::before, .nv *::after { animation: none !important; transition-duration: .01ms !important; }
 }
 
+
+/* ---------- Calculadora de sueldo neto (/calculadora-sueldo-neto/) ---------- */
+.sn { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+.sn > *, .sn-form > *, .sn-form .gasto-form > label, .sn-main > * { min-width: 0; }
+.sn-seg { min-inline-size: 0; }
+.sn-form { display: grid; gap: 14px; }
+.sn-form select, .sn-form input[type="number"] { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 42px; min-width: 0; width: 100%; max-width: 100%; }
+.sn-main { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; }
+.sn-bruto { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; font-weight: 600; color: var(--muted); flex: 1 1 280px; }
+.sn-bruto .muted { font-weight: 400; }
+.sn-bruto-row { display: flex; gap: 8px; }
+.sn-bruto-row input { flex: 1 1 auto; width: auto !important; font-size: 1.5rem !important; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 54px !important; }
+.sn-bruto-row select { flex: 0 0 auto; width: auto !important; }
+.sn-seg { border: 0; padding: 0; margin: 0; display: inline-flex; flex-wrap: wrap; gap: 0; align-items: center; }
+.sn-seg legend { font-size: .88rem; font-weight: 600; color: var(--muted); padding: 0; margin-bottom: 4px; width: 100%; }
+.sn-seg label { position: relative; cursor: pointer; padding: 12px 22px; border: 1px solid var(--border); background: var(--surface); font-weight: 700; font-variant-numeric: tabular-nums; transition: background .2s, color .2s, border-color .2s; }
+.sn-seg label:first-of-type { border-radius: 10px 0 0 10px; }
+.sn-seg label:last-of-type { border-radius: 0 10px 10px 0; border-left: 0; }
+.sn-seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.sn-seg label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) { .sn-seg label:has(input:checked) { color: #0f0f14; } }
+.sn-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sn-more { margin: 0; }
+.sn-more .gasto-form { padding: 6px 0 14px; }
+.sn-slip { border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); overflow: hidden; }
+.sn-total { display: grid; gap: 2px; padding: 18px 16px 10px; }
+.sn-total strong { font-size: clamp(2.2rem, 7vw, 3rem); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.sn-extra { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; min-height: 1.4em; }
+.sn-bar { display: flex; height: 14px; margin: 6px 16px 8px; border-radius: 99px; overflow: hidden; background: var(--border); }
+.sn-bar i { display: block; height: 100%; transition: width .45s cubic-bezier(.2, .8, .2, 1); }
+.sn-bar .neto, .sn-legend .neto { background: var(--accent); }
+.sn-bar .irpf, .sn-legend .irpf { background: #e8705a; }
+.sn-bar .ss, .sn-legend .ss { background: #e9b949; }
+.sn-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0 16px 10px; font-size: .85rem; color: var(--muted); }
+.sn-legend li { display: flex; align-items: center; gap: 6px; }
+.sn-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sn-legend b { color: var(--text); font-variant-numeric: tabular-nums; }
+.sn-actions { padding: 0 16px 16px; margin: 0; }
+.sn-table td:not(:first-child), .sn-table th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sn-table tr.here td { background: var(--accent-soft); font-weight: 700; }
+@media (min-width: 860px) { .sn { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; } .sn-slip { position: sticky; top: 16px; } }
+
 /* ---------- Lo más buscado (portada) ---------- */
 .popular { margin-top: 36px; }
 .popular-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px 22px; }

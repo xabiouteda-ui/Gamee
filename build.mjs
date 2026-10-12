@@ -13,6 +13,7 @@ import { madridDate } from "./assets/js/luz/hoy.js";
 import { RULES } from "./assets/js/luz/core.js";
 import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 import { itpRegionPages, ITP_SLUGS } from "./scripts/itp-pages.mjs";
+import { sueldoPages, sueldoTabla, sueldoTablaMes } from "./scripts/sueldo-pages.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 // SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
@@ -46,7 +47,7 @@ function proBuy() {
 
 const UI = {
   es: {
-    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", sueldo: "Sueldo neto", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", money: "Cómo ganamos dinero", about: "Quién lo hace", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramientas gratuitas financiadas con publicidad. Tus audios y vídeos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
@@ -62,7 +63,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html", about: "sobre-nosotros.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", sueldo: "calculadora-sueldo-neto/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html", about: "sobre-nosotros.html" },
   en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
@@ -91,6 +92,10 @@ const CARDS = [
     es: { title: "¿Qué cocino con lo que tengo?", text: "Haz una foto de tu nevera y te proponemos 3 recetas con lo que hay." },
   },
   {
+    tool: "sueldo", icon: "M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Zm2 0v12h14V6H5Zm7 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm0 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM6.5 8h2v2h-2V8Zm9 6h2v2h-2v-2Z",
+    es: { title: "Calculadora de sueldo neto", text: "De bruto a neto en 2026 con el método oficial de Hacienda: IRPF, Seguridad Social y 12 o 14 pagas." },
+  },
+  {
     tool: "itp", icon: "M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H4a1 1 0 0 1-1-1v-4a2 2 0 0 1 2-2Zm2.1 0h9.8l-1.2-3.6a.6.6 0 0 0-.5-.4H8.8a.6.6 0 0 0-.5.4L7.1 11ZM7 15.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
     es: { title: "Calculadora ITP coche", text: "Cuánto pagas de impuesto al comprar un coche o una moto de segunda mano en tu comunidad." },
   },
@@ -111,6 +116,7 @@ function readPages() {
     }
   }
   pages.push(...itpRegionPages(site.ownerName));
+  pages.push(...sueldoPages(site.ownerName));
   if (!neveraOn) for (const p of pages) if (p.tool === "nevera") p.noindex = true;
   return pages;
 }
@@ -127,6 +133,7 @@ const TOOLS = {
   coche: { partial: "coche.html", strings: LUZ_STRINGS, script: "assets/js/luz/coste.js", category: "UtilitiesApplication" },
   nevera: { partial: "nevera.html", strings: { es: {}, en: {} }, script: "assets/js/nevera/app.js", category: "LifestyleApplication" },
   itp: { partial: "itp.html", strings: { es: {}, en: {} }, script: "assets/js/itp/app.js", category: "FinanceApplication" },
+  sueldo: { partial: "sueldo.html", strings: { es: {}, en: {} }, script: "assets/js/sueldo/app.js", category: "FinanceApplication" },
 };
 const toolOf = (page) => (page.tool === true ? "transcribe" : page.tool || null);
 
@@ -245,6 +252,13 @@ function toolHtml(tool, lang, page) {
     .replace(page.itpCcaa ? `<option value="${page.itpCcaa}">` : /$^/, `<option value="${page.itpCcaa}" selected>`)
     .replace(page.itpCcaa ? "comprado en Madrid." : /$^/, () => `comprado en ${page.itpNombre}.`)
     .replace(page.itpCcaa ? '<span id="itp-slip-ccaa">Comunidad de Madrid</span>' : /$^/, () => `<span id="itp-slip-ccaa">${page.itpNombre}</span>`)
+    .replace(/\{\{s\.(\w+)\}\}/g, (_, k) => {
+      const sd = page.sueldo || {};
+      if (k === "bruto") return String(sd.bruto || 30000);
+      if (k === "pagas12") return sd.pagas === 14 ? "" : " checked";
+      if (k === "pagas14") return sd.pagas === 14 ? " checked" : "";
+      throw new Error(`Dato de sueldo desconocido: ${k}`);
+    })
     .replace(/\{\{t\.(\w+)\}\}/g, (_, k) => {
       if (!(k in t)) throw new Error(`Texto sin traducir (${tool}/${lang}): ${k}`);
       return esc(t[k]);
@@ -283,7 +297,7 @@ function appSchema(page, url) {
 
 // Secciones del sitio: cada página de guía se agrupa con su herramienta para las migas de pan y el enlazado interno.
 const SECTIONS = {
-  es: { itp: { href: "calculadora-itp-coche/", label: "ITP coches" }, luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
+  es: { sueldo: { href: "calculadora-sueldo-neto/", label: "Sueldo neto" }, itp: { href: "calculadora-itp-coche/", label: "ITP coches" }, luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
   en: { captions: { href: "en/animated-captions/", label: "Captions" }, transcribe: { href: "en/audio-to-text/", label: "Audio to text" } },
 };
 function sectionOf(page) {
@@ -291,6 +305,7 @@ function sectionOf(page) {
   const dir = page.slug.includes("/") ? page.slug.replace(/^en\//, "").split("/")[0] : "";
   if (dir === "luz") return "luz";
   if (dir === "calculadora-itp-coche") return "itp";
+  if (dir === "calculadora-sueldo-neto") return "sueldo";
   if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";
   if (dir === "pasar-audio-a-texto" || dir === "audio-to-text") return "transcribe";
   if (toolOf(page) === "transcribe") return "transcribe";
@@ -446,6 +461,8 @@ function layout(page, pagesBySlug) {
     .replace("{{toolCards}}", () => `<div class="tool-cards">${cards(null)}</div>`)
     .replace("{{pvpcAverages}}", () => pvpcAverages())
     .replace("{{study}}", () => studyHtml())
+    .replace("{{sueldoTabla}}", () => sueldoTabla(page.sueldo?.bruto ?? null, root))
+    .replace("{{sueldoTablaMes}}", () => sueldoTablaMes())
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{siteUrl\}\}/g, siteUrl)
@@ -497,7 +514,7 @@ ${page.fonts ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossori
   <div class="wrap header-inner">
     <a class="brand" href="${href(L.home)}">${LOGO}<span>${esc(site.siteName)}</span></a>
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
-      ${["transcribe", "captions", "luz"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
+      ${["transcribe", "captions", "luz", "sueldo"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
     </nav>
     ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>

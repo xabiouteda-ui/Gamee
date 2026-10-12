@@ -1,0 +1,90 @@
+<section class="tool card sn" id="calculadora" aria-label="Calculadora de sueldo neto 2026">
+  <form class="sn-form" id="sn-form" novalidate>
+    <div class="sn-main">
+      <label class="sn-bruto">Sueldo bruto
+        <span class="sn-bruto-row">
+          <input type="number" id="sn-bruto" min="0" step="100" inputmode="decimal" value="{{s.bruto}}" aria-describedby="sn-bruto-help">
+          <select id="sn-periodo" aria-label="Periodo del sueldo bruto">
+            <option value="anual" selected>al año</option>
+            <option value="mensual">al mes</option>
+          </select>
+        </span>
+        <span class="muted small" id="sn-bruto-help">El que pone en tu contrato o en la oferta, antes de impuestos.</span>
+      </label>
+      <fieldset class="sn-seg">
+        <legend>Pagas</legend>
+        <label><input type="radio" name="sn-pagas" value="12"{{s.pagas12}}> 12</label>
+        <label><input type="radio" name="sn-pagas" value="14"{{s.pagas14}}> 14</label>
+      </fieldset>
+    </div>
+    <div class="gasto-form">
+      <label>Edad
+        <input type="number" id="sn-edad" min="16" max="99" step="1" inputmode="numeric" value="30">
+      </label>
+      <label>Contrato
+        <select id="sn-contrato">
+          <option value="indefinido" selected>Indefinido</option>
+          <option value="temporal">Temporal de un año o más</option>
+          <option value="corto">Temporal de menos de un año</option>
+        </select>
+      </label>
+      <label class="wide">Situación familiar
+        <select id="sn-situacion">
+          <option value="3" selected>Soltero, o casado con pareja que gana más de 1.500 € al año</option>
+          <option value="2">Casado y mi pareja gana menos de 1.500 € al año</option>
+          <option value="1">Familia monoparental: vivo solo con mis hijos</option>
+        </select>
+      </label>
+      <label>Hijos menores de 25 que viven contigo
+        <input type="number" id="sn-hijos" min="0" max="12" step="1" inputmode="numeric" value="0">
+      </label>
+      <label>De ellos, menores de 3 años
+        <input type="number" id="sn-hijos3" min="0" max="12" step="1" inputmode="numeric" value="0">
+      </label>
+      <label class="itp-check wide" id="sn-mitad-wrap" hidden><input type="checkbox" id="sn-mitad" checked> Los hijos cuentan a medias porque también están a cargo del otro progenitor</label>
+    </div>
+    <details class="sn-more">
+      <summary>Más situaciones (discapacidad, padres a cargo, Ceuta y Melilla…)</summary>
+      <div class="gasto-form">
+        <label>Discapacidad
+          <select id="sn-disc">
+            <option value="no" selected>No</option>
+            <option value="33">Del 33 % al 64 %</option>
+            <option value="65">Del 65 % o más</option>
+          </select>
+        </label>
+        <label>Padres o abuelos a tu cargo de 65 a 74 años
+          <input type="number" id="sn-asc65" min="0" max="4" step="1" inputmode="numeric" value="0">
+        </label>
+        <label>Padres o abuelos a tu cargo de 75 años o más
+          <input type="number" id="sn-asc75" min="0" max="4" step="1" inputmode="numeric" value="0">
+        </label>
+        <label class="itp-check"><input type="checkbox" id="sn-movred"> Movilidad reducida o necesito ayuda de otra persona</label>
+        <label class="itp-check"><input type="checkbox" id="sn-movgeo"> Me he mudado de municipio por este trabajo</label>
+        <label class="itp-check"><input type="checkbox" id="sn-vivienda"> Pago la hipoteca de mi casa, comprada antes de 2013</label>
+        <label class="itp-check"><input type="checkbox" id="sn-ceuta"> Vivo y trabajo en Ceuta, Melilla o La Palma</label>
+      </div>
+    </details>
+  </form>
+
+  <div class="sn-slip" aria-live="polite">
+    <div class="itp-slip-head"><span>Nómina estimada · 2026</span><span id="sn-head-pagas">12 pagas</span></div>
+    <div class="sn-total">
+      <span class="muted small" id="sn-total-label">Cobras al mes</span>
+      <strong id="sn-mes">—</strong>
+      <span class="sn-extra" id="sn-extra"></span>
+    </div>
+    <div class="sn-bar" id="sn-bar" role="img" aria-label="Reparto del sueldo bruto">
+      <i class="neto"></i><i class="irpf"></i><i class="ss"></i>
+    </div>
+    <ul class="sn-legend" id="sn-legend">
+      <li><i class="neto"></i>Para ti <b id="sn-l-neto"></b></li>
+      <li><i class="irpf"></i>IRPF <b id="sn-l-irpf"></b></li>
+      <li><i class="ss"></i>Seguridad Social <b id="sn-l-ss"></b></li>
+    </ul>
+    <ul class="itp-lines" id="sn-lines"></ul>
+    <div class="itp-notes" id="sn-notes"></div>
+    <p class="sn-actions"><button type="button" class="btn btn-ghost" id="sn-copy">Copiar enlace con estos datos</button></p>
+  </div>
+  <noscript><p>Esta calculadora necesita JavaScript. Mientras, consulta la tabla de sueldos netos más abajo.</p></noscript>
+</section>

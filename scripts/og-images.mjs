@@ -21,10 +21,12 @@ const TAGS = {
   luz: { es: "Luz", color: "#f59e0b" },
   captions: { es: "Subtítulos", en: "Captions", color: "#ec4899" },
   transcribe: { es: "Audio a texto", en: "Audio to text", color: "#10b981" },
+  sueldo: { es: "Sueldo neto 2026", color: "#34d399" },
 };
 function sectionOf(meta, slug) {
   const dir = slug.includes("/") ? slug.replace(/^en\//, "").split("/")[0] : "";
   if (dir === "luz") return "luz";
+  if (dir === "calculadora-sueldo-neto") return "sueldo";
   if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";
   if (dir === "pasar-audio-a-texto" || dir === "audio-to-text" || meta.tool === true) return "transcribe";
   return null;
@@ -45,6 +47,8 @@ for (const lang of ["es", "en"]) {
 // Páginas generadas (ITP por comunidad).
 const { itpRegionPages } = await import("./itp-pages.mjs");
 for (const g of itpRegionPages(site.ownerName)) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: null });
+const { sueldoPages } = await import("./sueldo-pages.mjs");
+for (const g of sueldoPages(site.ownerName)) pages.push({ lang: "es", slug: g.slug, title: g.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1], lead: g.description, section: "sueldo" });
 // Solo algunas páginas: node scripts/og-images.mjs <texto-del-slug>
 const only = process.argv[2];
 if (only) pages.splice(0, pages.length, ...pages.filter((p) => p.slug.includes(only)));
