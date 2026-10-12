@@ -44,7 +44,7 @@ const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill(
   const srv = await serve();
   const browser = await chromium.launch();
   const { check, failures } = checker();
-  const withPvpc = { [srv.base + "/data/pvpc.json"]: pvpcJson };
+  const withPvpc = { [srv.base + "/data/pvpc.json"]: pvpcJson, [srv.base + "/data/pvpc-hoy.json"]: pvpcJson };
   const nCatalog = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "ofertas.json"), "utf8")).offers.length;
 
   const { ctx, external } = await newContext(browser, srv, { viewport: { width: 1280, height: 900 } }, withPvpc);
@@ -202,7 +202,7 @@ const noPvpc = (ctx) => ctx.route(/\/data\/pvpc(-hoy)?\.json/, (r) => r.fulfill(
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(srv.base + "/luz/widget-precio-luz.html");
     const code = await page.inputValue("#widget-code");
-    check(code.includes('<iframe src="https://') && code.includes("/widget/luz-hoy.html") && /<a href="https:\/\/[^"]+\/luz\/precio-luz-hoy\.html">/.test(code), "Página del widget: código con iframe y enlace de atribución absolutos");
+    check(code.includes('<iframe src="https://') && code.includes("/widget/luz-hoy.html") && /<a href="https:\/\/[^"]+\/luz\/precio-luz-hoy\.html"[^>]*>/.test(code), "Página del widget: código con iframe y enlace de atribución absolutos");
     await page.selectOption("#w-tema", "oscuro");
     check((await page.inputValue("#widget-code")).includes("?tema=oscuro"), "Página del widget: el código cambia con el tema");
     await ctx.close();

@@ -40,17 +40,23 @@ dominio es nuevo (Google rastrea poco) y casi no hay enlaces externos. Los víde
 
 ## 4. Plan por fases
 
-### Fase 1 · Semana del 12/10 — Herramienta estrella de nómina ✦ en curso
-- [x] Seguridad básica, enlazado interno desde la portada y animaciones (12/10).
-- [ ] **Calculadora de sueldo neto 2026** con el algoritmo oficial de retenciones de la AEAT (versión del 10/09/2026)
+### Fase 1 · Semana del 12/10 — Herramienta estrella de nómina ✅ (12/10)
+- [x] Seguridad básica, enlazado interno desde la portada y animaciones.
+- [x] **Calculadora de sueldo neto 2026** con el algoritmo oficial de retenciones de la AEAT (versión del 10/09/2026)
       y las cotizaciones de 2026 (incluida la cotización de solidaridad). 12 o 14 pagas, hijos, edad, discapacidad,
-      contrato temporal, Ceuta/Melilla/La Palma y coste para la empresa.
-- [ ] **Páginas «X euros brutos en netos»** (de 15.000 € a 100.000 €) con la tabla de cada salario calculada.
-- [ ] Guías de apoyo: tipo de retención por salario, cotización de solidaridad, 12 o 14 pagas.
-- [ ] Revisión de calidad para AdSense (páginas del ITP por comunidad: que no parezcan plantillas).
-- [ ] Vídeo y textos para redes sobre el sueldo neto (listos para publicar con tu OK).
+      contrato temporal, Ceuta/Melilla/La Palma y coste para la empresa. 26 pruebas + contraste con una
+      implementación independiente en 1.896 casos.
+- [x] **29 páginas «X euros brutos en netos»** (de 15.000 € a 100.000 €) con nómina, casos familiares y coste empresa.
+- [x] Guías: **salario mínimo 2026 en neto** (la retención de 37,36 €/mes coincide con la que publica la prensa) y
+      **tabla de retenciones IRPF 2026**.
+- [x] Revisión de calidad para AdSense: ITP por comunidad con comparativa propia frente a las vecinas y la moto.
+- [x] Portada: dato de la luz del día (se rehace cada tarde), «Lo más buscado» y la nueva sección en el menú.
+- [x] Vídeo y textos del sueldo neto (`marketing/sueldo.md`), pendientes de tu OK para publicar.
+- [x] Pruebas automáticas al día (las de anuncios asumían AdSense apagado) y redirección a https mientras no se active
+      «Enforce HTTPS» en GitHub Pages.
 
 ### Fase 2 · 13/10 – 31/10 — Indexación y primeros enlaces
+- [ ] **Tú:** GitHub → Settings → Pages → marcar «Enforce HTTPS» (hoy la web también responde por http).
 - [ ] Pedir indexación manual en Search Console de las 10 páginas más importantes (máx. ~10 al día).
 - [ ] Altas en directorios y foros de la carpeta `marketing/` (las que piden datos personales, las haces tú).
 - [ ] 5 contactos a medios/blogs de ahorro y empleo con un dato propio (estudio de la luz 2026, sueldo neto).
@@ -80,7 +86,7 @@ dominio es nuevo (Google rastrea poco) y casi no hay enlaces externos. Los víde
 | Brutos → netos por salario | Alto | Bajo | Fase 1, reutiliza el cálculo |
 | Calendario laboral 2027 | Muy alto (estacional) | Medio | Fase 3, depende del BOE |
 | Calculadora de finiquito | Alto | Alto | Riesgo legal: solo con convenio general y avisos claros |
-| Calculadora de paro (prestación) | Alto | Medio | Datos SEPE 2026 |
+| Calculadora de paro (prestación) | Alto | Medio | Topes 2026 verificados (560–1.575 €); falta confirmar en fuente oficial el descuento de Seguridad Social (4,70 % o el 65 % de esa cuota) antes de publicar |
 | Días hábiles entre fechas | Medio | Bajo | Útil para plazos administrativos |
 | Precio de la luz en la portada (dato del día) | Medio | Bajo | Más frescura para Google |
 | Versión inglesa del resto de herramientas | Bajo | Medio | Poca demanda frente al español |

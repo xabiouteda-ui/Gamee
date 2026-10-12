@@ -13,6 +13,7 @@ const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || "playwright");
 
 const SITE = path.join(__dirname, "..", "_site");
+const ADS_OFF = fs.readFileSync(path.join(SITE, "assets/js/config.js"), "utf8").replace(/adsEnabled:\s*true/, "adsEnabled: false");
 const OUT = process.env.SHOTS || path.join(__dirname, "..", "test-results");
 const LIB_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0/dist/transformers.min.js";
 
@@ -105,7 +106,7 @@ function check(cond, msg) {
     await ctx.route("**/*", async (route) => {
       const url = route.request().url();
       if (url === LIB_URL) return route.fulfill({ contentType: "text/javascript", body: lib, headers: { "Access-Control-Allow-Origin": "*" } });
-      if (config && url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: config });
+      if (url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: config ?? ADS_OFF });
       if (pro && url.endsWith("/data/pro.json")) return route.fulfill({ contentType: "application/json", body: pro });
       if (affiliates && url.endsWith("/data/afiliados.json")) return route.fulfill({ contentType: "application/json", body: affiliates });
       if (url.startsWith(origin)) return route.continue();

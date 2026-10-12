@@ -394,7 +394,8 @@ const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect wid
 
 // Endurecimiento sin romper AdSense ni los CDN: GitHub Pages no deja poner cabeceras, así que va en <meta>.
 const SECURITY_META = `<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
-<meta name="referrer" content="strict-origin-when-cross-origin">`;
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>if(location.protocol==="http:"&&/(^|\\.)herramientaslibres\\.es$/.test(location.hostname))location.replace("https:"+location.href.slice(5))</script>`;
 
 // Página «desnuda» para insertar en otras webs con un iframe (widget): sin cabecera, menú, pie ni anuncios.
 function bareLayout(page, url, root) {

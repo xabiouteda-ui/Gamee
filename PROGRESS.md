@@ -2,6 +2,22 @@
 
 Resumen para revisar desde el móvil. Lo más reciente, arriba.
 
+## Sesión 6 (12/10/2026) – roadmap, sueldo neto y calidad (terminada)
+
+Plan completo en **ROADMAP.md** (objetivos a 90 días, métricas, fases y backlog).
+
+- **Calculadora de sueldo neto 2026** (`/calculadora-sueldo-neto/`): algoritmo oficial de retenciones de la AEAT y
+  cotizaciones de 2026. 12/14 pagas, bruto anual o mensual, hijos, situación familiar, edad, contrato, discapacidad,
+  ascendientes, Ceuta/Melilla/La Palma, coste empresa y enlace para compartir. En el menú y en la portada.
+- **31 páginas nuevas**: 29 de «X € brutos en netos», salario mínimo 2026 en neto y tabla de retenciones IRPF 2026.
+- **ITP por comunidad**: comparativa con las comunidades vecinas y el ITP de una moto (menos «plantilla»).
+- **Portada**: dato de la luz del día, «Lo más buscado», perfiles de Facebook y TikTok en los datos estructurados.
+- **Seguridad**: CSP básica, referrer, security.txt, redirección a https (activa tú «Enforce HTTPS» en GitHub Pages).
+- **Pruebas**: `bash tests/run-all.sh` en verde (105 páginas, accesibilidad clara y oscura).
+- **Vídeo** `sueldo-neto-30000.mp4` y textos en `marketing/sueldo.md` (sin publicar).
+
+---
+
 ## Sesión 5 (29/09/2026) – dominio, SEO y marketing (terminada: PR #4 lista para fusionar)
 
 | Bloque | Estado |

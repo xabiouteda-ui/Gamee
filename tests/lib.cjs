@@ -41,6 +41,9 @@ function serve() {
   }));
 }
 
+// Las pruebas comprueban la web con los anuncios apagados (los activados tienen su propia prueba con un config simulado).
+const ADS_OFF = fs.readFileSync(path.join(SITE, "assets/js/config.js"), "utf8").replace(/adsEnabled:\s*true/, "adsEnabled: false");
+
 // libs: { [cdnUrl]: contenido JS } ; lo demás de fuera del servidor local se bloquea y se anota.
 async function newContext(browser, srv, opts = {}, libs = {}) {
   const ctx = await browser.newContext({ acceptDownloads: true, ...opts });
@@ -48,6 +51,7 @@ async function newContext(browser, srv, opts = {}, libs = {}) {
   await ctx.route("**/*", async (route) => {
     const url = route.request().url();
     if (libs[url] != null) return route.fulfill({ contentType: "text/javascript", body: libs[url], headers: { "Access-Control-Allow-Origin": "*" } });
+    if (url.startsWith(srv.origin) && url.endsWith("/assets/js/config.js")) return route.fulfill({ contentType: "text/javascript", body: ADS_OFF });
     if (url.startsWith(srv.origin)) return route.continue();
     // El beacon de Cloudflare Web Analytics (sin cookies) se sustituye por un script vacío.
     if (url.startsWith("https://static.cloudflareinsights.com/")) return route.fulfill({ contentType: "text/javascript", body: "" });
@@ -70,4 +74,4 @@ function checker() {
   return { check, failures: () => failures };
 }
 
-module.exports = { SITE, PUBLIC_URL, BASE_PATH, CDN, localMediabunny, serve, newContext, checker };
+module.exports = { ADS_OFF, SITE, PUBLIC_URL, BASE_PATH, CDN, localMediabunny, serve, newContext, checker };
