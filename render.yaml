@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: hordalia-arena
+    runtime: node
+    plan: free
+    branch: hordalia-arena
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: OFFICIAL_CA
+        sync: false
