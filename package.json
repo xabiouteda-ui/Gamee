@@ -1,0 +1,15 @@
+{
+  "name": "hordalia-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor de Hordalia Arena: partidas .io de 12 jugadores y ranking semanal de memecoins",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "build": "python3 build.py"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}
