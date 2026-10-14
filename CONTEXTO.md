@@ -67,7 +67,7 @@ Aviso del plan gratuito de Render: se duerme tras 15 min sin visitas (la primera
 
 ## Plan de crecimiento (en este orden)
 
-1. **Quitar la espera de 30-50 s** cuando el servidor está dormido: mata la conversión de cada clic desde X y además X no genera la tarjeta si el servidor tarda. Opciones: UptimeRobot gratis haciendo ping a `/health` cada 5 min (750 h gratis de Render bastan para 24/7) o plan Starter de Render (unos 7 $/mes) cuando haya tráfico.
+1. **Hecho: servidor siempre despierto.** UptimeRobot (plan gratuito, cuenta con GitHub) visita https://hordalia-arena.onrender.com/health cada 5 min, así Render no se duerme. Ojo: Render gratis da 750 h/mes por cuenta, justo para un solo servicio 24/7; un segundo servicio gratis ya no cabría.
 2. **Llevar tráfico con las comunidades de memecoins:** el bucle viral ya está (enlace `?ca=`, tarjeta, ranking semanal). Falta moverlo: mensajes a comunidades pequeñas en X y Telegram, clips cortos y un «torneo semanal» con mención al ganador.
 3. **Versión para portales (CrazyGames/Poki)** con su SDK de anuncios: es la vía de ingresos por anuncios con tráfico propio del portal. Probablemente sin la parte de memecoins (hay que comprobar sus normas sobre cripto antes de enviarlo), con un interruptor en `CONFIG`.
 4. **Protección contra trampas antes de lanzar $HORDA:** límite de conexiones por IP, que las victorias contra solo bots cuenten menos y vigilar cuentas que solo farmean.
