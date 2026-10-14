@@ -20,7 +20,9 @@ function coinHue(ca){let h=7;for(const ch of String(ca))h=(Math.imul(h,31)+ch.ch
 const clean=(s,n)=>String(s||'').replace(/[^\p{L}\p{N}_.\- ]/gu,'').trim().slice(0,n);
 const validCA=ca=>typeof ca==='string'&&(/^[1-9A-HJ-NP-Za-km-z]{32,48}$/.test(ca)||/^0x[0-9a-fA-F]{40}$/.test(ca));
 const coinCache=new Map();
-async function verifyCoin(ca){
+// DexScreener a veces falla en la primera llamada tras despertar el servidor: un reintento antes de dar la moneda por no verificada
+async function verifyCoin(ca){const d=await verifyCoinOnce(ca);if(d||coinCache.has(ca))return d;await new Promise(r=>setTimeout(r,1500));return verifyCoinOnce(ca);}
+async function verifyCoinOnce(ca){
   const c=coinCache.get(ca);if(c&&Date.now()-c.at<60000)return c.data;
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
   try{

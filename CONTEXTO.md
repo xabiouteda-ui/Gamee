@@ -59,7 +59,7 @@ Detalles importantes:
 ## Estado actual y siguiente paso
 
 - **Publicado en Render:** https://hordalia-arena.onrender.com (Blueprint «hordalia», servicio hordalia-arena, plan gratuito, se despliega solo con cada push a hordalia-arena). `/health` y `/ranking` responden y dos jugadores entran en la misma sala. `CONFIG.shareUrl` ya apunta ahí.
-- **Ranking en Supabase:** código hecho y probado. Pendiente: crear el proyecto en Supabase, ejecutar `server/sql/ranking.sql` y poner `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` en Render → Environment (la clave la pega el usuario).
+- **Ranking en Supabase: funcionando.** Proyecto «hordalia» (organización Hordalia, plan gratuito, Europa), tabla `ranking` con RLS activado y sin políticas. En Render están `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` (clave secreta `sb_secret_`, no la publishable). Probado: una partida se guarda y el ranking sobrevive a un reinicio. La verificación de DexScreener se reintenta una vez si falla.
 
 Aviso del plan gratuito de Render: se duerme tras 15 min sin visitas (la primera carga tarda 30-50 s). El plan de pago (unos 7 $/mes) lo evita.
 
