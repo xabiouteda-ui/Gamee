@@ -502,7 +502,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
   <div class="panel narrow">
     <header class="ph"><button class="back" data-back>‹ Volver</button><h2>Ranking de comunidades</h2><span class="sub" id="boardSub"></span></header>
     <div id="boardList" class="blist"></div>
-    <button class="btn big" id="bShare">Copiar mensaje para X</button>
+    <button class="btn big" id="bShare">Compartir en X</button>
     <textarea id="shareTxt" readonly hidden aria-label="Mensaje para compartir"></textarea>
     <p class="note" id="boardNote"></p>
   </div>
@@ -1992,10 +1992,14 @@ function renderBoard(){
 }
 $('bShare').onclick=()=>{
   const cn=coinView();if(!cn)return;const r=myRank(),row=BOARD.rows[r-1],w=row?row.w:0;
-  const txt=(r?`Mi comunidad $${cn.t} va #${r} en Hordalia esta semana con ${w} ${w===1?'victoria':'victorias'}.`:`Juego por $${cn.t} en Hordalia.`)+' ¿Tu moneda puede más?'+(CONFIG.shareUrl?' '+CONFIG.shareUrl:'');
+  // el enlace lleva el contrato: quien lo abre entra ya jugando por esa moneda
+  const link=CONFIG.shareUrl?CONFIG.shareUrl+(cn.live&&validCA(cn.ca)?'/?ca='+cn.ca:''):'';
+  const txt=(r?`Mi comunidad $${cn.t} va #${r} en Hordalia esta semana con ${w} ${w===1?'victoria':'victorias'}.`:`Juego por $${cn.t} en Hordalia.`)+` ¿Tu moneda puede más? Entra y pelea por $${cn.t}:`+(link?' '+link:'');
   const ta=$('shareTxt');ta.value=txt;
   const fallback=()=>{ta.hidden=false;ta.focus();ta.select();toast('Selecciona el texto y cópialo');};
-  try{navigator.clipboard.writeText(txt).then(()=>toast('Copiado. Pégalo en X.'),fallback);}catch(e){fallback();}
+  try{navigator.clipboard.writeText(txt).catch(()=>{});}catch(e){}
+  const wnd=window.open('https://x.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
+  if(!wnd)fallback();else toast('Abriendo X… (el mensaje también está copiado)');
 };
 $('bBoard').onclick=()=>{$('shareTxt').hidden=true;renderBoard();showScreen('board');if(BOARD.mode==='server')boardServer();};
 
@@ -2339,7 +2343,16 @@ function frame(now){
   drawLive();if(!$('summon').hidden)drawSummonFx(dt);
   requestAnimationFrame(frame);
 }
-initV3();renderCoinChip();boardInit();toMenu();if(save.coin&&save.coin.live)refreshCoin();
+/* enlace de comunidad: ?ca=CONTRATO elige esa moneda al entrar (es el enlace que se comparte en X y Telegram) */
+async function coinFromUrl(){
+  let ca='';try{ca=(new URLSearchParams(location.search).get('ca')||'').trim();}catch(e){}
+  if(!ca)return false;
+  try{const u=new URL(location.href);u.searchParams.delete('ca');history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
+  if(!validCA(ca))return false;
+  if(save.coin&&!save.coin.sim&&save.coin.ca===ca)return false;
+  try{const c=await fetchCoin(ca);if(!c||c.notFound)return false;setCoin(c,true);toast(`Juegas por $${c.t}. ¡Gana para tu comunidad!`);return true;}catch(e){return false;}
+}
+initV3();renderCoinChip();boardInit();toMenu();coinFromUrl().then(ok=>{if(!ok&&save.coin&&save.coin.live)refreshCoin();});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
 requestAnimationFrame(frame);
 })();

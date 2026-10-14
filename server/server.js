@@ -145,11 +145,28 @@ function tick(){
 setInterval(tick,TICK*1000);
 
 /* ---------- HTTP ---------- */
+// enlace de comunidad (?ca=): la tarjeta de X/Telegram muestra el logo y el ticker de la moneda
+const escAttr=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+async function coinPage(html,ca){
+  const d=await Promise.race([verifyCoin(ca),new Promise(r=>setTimeout(()=>r(null),3000))]);
+  if(!d)return html;
+  const T=String(d.t).toUpperCase(),base='https://'+(process.env.RENDER_EXTERNAL_HOSTNAME||'hordalia-arena.onrender.com'),link=base+'/?ca='+ca,img=d.img||base+'/og.png';
+  const og=['<!--OG-->','<meta property="og:type" content="website">','<meta property="og:site_name" content="Hordalia">',
+    `<meta property="og:title" content="${escAttr('$'+T+' pelea en Hordalia')}">`,
+    `<meta property="og:description" content="${escAttr('Únete a la comunidad $'+T+': gana partidas en la Arena y súbela en el ranking semanal. Gratis en el navegador.')}">`,
+    `<meta property="og:url" content="${escAttr(link)}">`,`<meta property="og:image" content="${escAttr(img)}">`,
+    `<meta name="twitter:card" content="${d.img?'summary':'summary_large_image'}">`,`<meta name="twitter:image" content="${escAttr(img)}">`,'<!--/OG-->'].join('\n');
+  return html.replace(/<!--OG-->[\s\S]*?<!--\/OG-->/,()=>og);
+}
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://x');
   if(url.pathname==='/ranking'){res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'no-store'});res.end(JSON.stringify({week:RANK.week,rows:rankRows()}));return;}
   if(url.pathname==='/health'){res.writeHead(200,{'Content-Type':'text/plain'});res.end('ok '+rooms.size);return;}
-  if(url.pathname==='/'||url.pathname==='/index.html'){fs.readFile(path.join(PUBLIC_DIR,'index.html'),(e,b)=>{if(e){res.writeHead(404);res.end('Falta public/index.html');return;}res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});res.end(b);});return;}
+  if(url.pathname==='/og.png'){fs.readFile(path.join(PUBLIC_DIR,'og.png'),(e,b)=>{if(e){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':'image/png','Cache-Control':'public, max-age=86400'});res.end(b);});return;}
+  if(url.pathname==='/'||url.pathname==='/index.html'){fs.readFile(path.join(PUBLIC_DIR,'index.html'),'utf8',async(e,html)=>{if(e){res.writeHead(404);res.end('Falta public/index.html');return;}
+    const ca=url.searchParams.get('ca')||'';
+    if(validCA(ca)){try{html=await coinPage(html,ca);}catch(er){}}
+    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});res.end(html);});return;}
   res.writeHead(404);res.end('No encontrado');
 });
 const wss=new WebSocketServer({server,maxPayload:2048});
