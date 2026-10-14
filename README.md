@@ -42,7 +42,17 @@ Pon también tu contrato en `CONFIG.official.ca` (al principio del bloque de mem
 ### Avisos de la versión gratuita de Render
 
 - **Se duerme** tras 15 minutos sin visitas. La primera persona que entra espera unos 30-50 segundos a que cargue la página. Con el plan Starter (unos 7 $/mes) no se duerme.
-- **El disco no es permanente**: el ranking (`server/data/ranking.json`) se borra en cada despliegue o reinicio. Para un ranking que dure, añade un disco persistente en Render (plan de pago) y apunta `DATA_DIR` a él, o pasa el ranking a una base de datos (Supabase).
+- **El disco no es permanente**: sin Supabase, el ranking (`server/data/ranking.json`) se borra en cada despliegue o reinicio. Con Supabase (abajo) se conserva.
+
+## Ranking permanente con Supabase
+
+1. Crea un proyecto en supabase.com (plan gratuito).
+2. En **SQL Editor**, ejecuta el contenido de `server/sql/ranking.sql`.
+3. En **Project Settings → API**, copia la **Project URL** y la clave **service_role** (es secreta: nunca la pongas en `src/game.html` ni en GitHub).
+4. En Render, en el servicio → **Environment**, pon `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` con esos valores y guarda. Render reinicia el servidor.
+5. En los registros (Logs) de Render verás «ranking cargado de Supabase» al arrancar si ya había datos.
+
+Sin esas dos variables el servidor usa el archivo local como antes.
 
 ## Si alojas la web en otro sitio (Vercel, Netlify…)
 

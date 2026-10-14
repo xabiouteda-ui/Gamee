@@ -46,10 +46,40 @@ function baseCoin(c){
 /* ---------- ranking semanal ---------- */
 function weekKey(d=new Date()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=t.getUTCFullYear();const w=Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7);return y+'-W'+String(w).padStart(2,'0');}
 const RFILE=path.join(DATA_DIR,'ranking.json');
+// Si hay SUPABASE_URL y SUPABASE_SERVICE_KEY, el ranking se guarda en Supabase (tabla "ranking", una fila por semana)
+// y sobrevive a reinicios y despliegues. Si no, se usa el archivo local como antes.
+const SB_URL=(process.env.SUPABASE_URL||'').replace(/\/+$/,''),SB_KEY=process.env.SUPABASE_SERVICE_KEY||'';
+const SB=!!(SB_URL&&SB_KEY);
+const sbHeaders=extra=>Object.assign({apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},extra);
+async function sbLoad(week){
+  const r=await fetch(SB_URL+'/rest/v1/ranking?select=data&week=eq.'+encodeURIComponent(week),{headers:sbHeaders()});
+  if(!r.ok)throw new Error('supabase load http '+r.status+' '+(await r.text()).slice(0,200));
+  const rows=await r.json();return rows[0]&&rows[0].data;
+}
+async function sbSave(rank){
+  const r=await fetch(SB_URL+'/rest/v1/ranking?on_conflict=week',{method:'POST',headers:sbHeaders({Prefer:'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify({week:rank.week,data:rank,updated_at:new Date().toISOString()})});
+  if(!r.ok)throw new Error('supabase save http '+r.status+' '+(await r.text()).slice(0,200));
+}
 let RANK={week:weekKey(),coins:{}};
-try{const r=JSON.parse(fs.readFileSync(RFILE,'utf8'));if(r&&r.coins)RANK=r;}catch(e){}
-let saveT=null;
-function saveRank(){clearTimeout(saveT);saveT=setTimeout(()=>{try{fs.mkdirSync(DATA_DIR,{recursive:true});fs.writeFileSync(RFILE,JSON.stringify(RANK));}catch(e){console.error('ranking save',e.message);}},2000);}
+if(!SB){try{const r=JSON.parse(fs.readFileSync(RFILE,'utf8'));if(r&&r.coins)RANK=r;}catch(e){}}
+// carga inicial desde Supabase; las partidas que acaben antes se suman encima
+const rankReady=SB?sbLoad(RANK.week).then(d=>{
+  if(!d||!d.coins||d.week!==RANK.week)return;
+  for(const[ca,e]of Object.entries(RANK.coins)){const o=d.coins[ca];if(!o){d.coins[ca]=e;continue;}o.w+=e.w;o.r+=e.r;o.k+=e.k;for(const id of e.p)if(!o.p.includes(id))o.p.push(id);}
+  RANK=d;console.log('ranking cargado de Supabase:',Object.keys(d.coins).length,'monedas');
+}).catch(e=>console.error('ranking load',e.message)):Promise.resolve();
+let saveT=null,saving=Promise.resolve();
+function writeRank(){
+  const snap=JSON.parse(JSON.stringify(RANK));
+  if(SB)saving=saving.then(()=>rankReady).then(()=>sbSave(snap)).catch(e=>console.error('ranking save',e.message));
+  else{try{fs.mkdirSync(DATA_DIR,{recursive:true});fs.writeFileSync(RFILE,JSON.stringify(snap));}catch(e){console.error('ranking save',e.message);}}
+  return saving;
+}
+function saveRank(){clearTimeout(saveT);saveT=setTimeout(writeRank,2000);}
+// Render manda SIGTERM al reiniciar o desplegar: guarda lo pendiente antes de salir
+for(const sig of['SIGTERM','SIGINT'])process.on(sig,()=>{const t=saveT;clearTimeout(saveT);saveT=null;
+  (t?writeRank():saving).finally(()=>process.exit(0));setTimeout(()=>process.exit(0),5000).unref();});
 function rankRoll(){const w=weekKey();if(RANK.week!==w){RANK={week:w,coins:{}};}}
 // cuenta una partida al caer el jugador (o al ganar); solo jugadores reales con moneda verificada
 function recordRun(f,won){

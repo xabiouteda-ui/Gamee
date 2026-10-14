@@ -52,23 +52,20 @@ Detalles importantes:
 - El navegador solo envía «hacia dónde me muevo», «esquivo» y «elijo mejora». El servidor decide todo lo demás.
 - Si no hay servidor (por ejemplo, abriendo el HTML suelto), el juego hace una partida de práctica con bots usando la misma simulación.
 - Las monedas y gemas del jugador se guardan en su navegador (localStorage). Si algún día se vende algo con dinero real, eso tiene que pasar al servidor.
-- Variables de entorno del servidor: `PORT`, `LOBBY_WAIT` (ms), `OFFICIAL_CA`, `DATA_DIR`, `SIM_SPEED` (solo para pruebas).
+- Variables de entorno del servidor: `PORT`, `LOBBY_WAIT` (ms), `OFFICIAL_CA`, `DATA_DIR`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SIM_SPEED` (solo para pruebas).
+- Ranking: si están `SUPABASE_URL` y `SUPABASE_SERVICE_KEY`, se guarda en la tabla `ranking` de Supabase (una fila por semana, SQL en `server/sql/ranking.sql`); si no, en `server/data/ranking.json`. Al recibir SIGTERM guarda lo pendiente.
 - Lo probé en local con 3 navegadores a la vez: entran en la misma partida, se ven entre ellos, y la verificación de BONK y el ranking funcionan.
 
 ## Estado actual y siguiente paso
 
-**Pendiente ahora mismo: publicarlo en Render.**
+- **Publicado en Render:** https://hordalia-arena.onrender.com (Blueprint «hordalia», servicio hordalia-arena, plan gratuito, se despliega solo con cada push a hordalia-arena). `/health` y `/ranking` responden y dos jugadores entran en la misma sala. `CONFIG.shareUrl` ya apunta ahí.
+- **Ranking en Supabase:** código hecho y probado. Pendiente: crear el proyecto en Supabase, ejecutar `server/sql/ranking.sql` y poner `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` en Render → Environment (la clave la pega el usuario).
 
-1. Usa mi Chrome. Entra en render.com; si no tengo cuenta, déjame en la pantalla de «Sign up with GitHub» y espera a que la cree.
-2. New → Blueprint → repositorio Gamee → rama hordalia-arena → Apply. Deja `OFFICIAL_CA` vacía.
-3. Cuando termine el despliegue, comprueba que `/health` responde y que la portada carga el juego. Abre dos pestañas, pulsa «Jugar Arena» en las dos y confirma que entran en la misma partida.
-4. Dame la dirección pública. Ponla en `CONFIG.shareUrl` de `src/game.html`, ejecuta `python3 build.py` y sube el cambio a la rama hordalia-arena.
-
-Avisos del plan gratuito de Render: se duerme tras 15 min sin visitas (la primera carga tarda 30-50 s) y el ranking se borra en cada reinicio. Soluciones: plan de pago de unos 7 $/mes con disco persistente, o pasar el ranking a Supabase.
+Aviso del plan gratuito de Render: se duerme tras 15 min sin visitas (la primera carga tarda 30-50 s). El plan de pago (unos 7 $/mes) lo evita.
 
 ## Ideas para después
 
-- Ranking persistente en Supabase y algo de protección contra trampas.
+- Algo de protección contra trampas.
 - Predecir tu propio movimiento en el navegador si se nota retraso online.
 - Segunda zona (desierto o hielo) con enemigos y jefe nuevos.
 - Skins cosméticas de pago para el zorrito.
