@@ -50,7 +50,8 @@ const RFILE=path.join(DATA_DIR,'ranking.json');
 // y sobrevive a reinicios y despliegues. Si no, se usa el archivo local como antes.
 const SB_URL=(process.env.SUPABASE_URL||'').replace(/\/+$/,''),SB_KEY=process.env.SUPABASE_SERVICE_KEY||'';
 const SB=!!(SB_URL&&SB_KEY);
-const sbHeaders=extra=>Object.assign({apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},extra);
+// claves nuevas (sb_secret_...) solo van en "apikey"; las antiguas service_role (JWT) también como Bearer
+const sbHeaders=extra=>Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},SB_KEY.startsWith('eyJ')?{Authorization:'Bearer '+SB_KEY}:{},extra);
 async function sbLoad(week){
   const r=await fetch(SB_URL+'/rest/v1/ranking?select=data&week=eq.'+encodeURIComponent(week),{headers:sbHeaders()});
   if(!r.ok)throw new Error('supabase load http '+r.status+' '+(await r.text()).slice(0,200));

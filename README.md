@@ -48,7 +48,7 @@ Pon también tu contrato en `CONFIG.official.ca` (al principio del bloque de mem
 
 1. Crea un proyecto en supabase.com (plan gratuito).
 2. En **SQL Editor**, ejecuta el contenido de `server/sql/ranking.sql`.
-3. En **Project Settings → API**, copia la **Project URL** y la clave **service_role** (es secreta: nunca la pongas en `src/game.html` ni en GitHub).
+3. En **Project Settings → API Keys**, copia una **secret key** (`sb_secret_…`, o la antigua **service_role**). Es secreta: nunca la pongas en `src/game.html` ni en GitHub. La Project URL es `https://<id-del-proyecto>.supabase.co`.
 4. En Render, en el servicio → **Environment**, pon `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` con esos valores y guarda. Render reinicia el servidor.
 5. En los registros (Logs) de Render verás «ranking cargado de Supabase» al arrancar si ya había datos.
 
