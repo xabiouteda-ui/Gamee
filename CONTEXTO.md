@@ -61,7 +61,16 @@ Detalles importantes:
 - **Publicado en Render:** https://hordalia-arena.onrender.com (Blueprint «hordalia», servicio hordalia-arena, plan gratuito, se despliega solo con cada push a hordalia-arena). `/health` y `/ranking` responden y dos jugadores entran en la misma sala. `CONFIG.shareUrl` ya apunta ahí.
 - **Ranking en Supabase: funcionando.** Proyecto «hordalia» (organización Hordalia, plan gratuito, Europa), tabla `ranking` con RLS activado y sin políticas. En Render están `SUPABASE_URL` y `SUPABASE_SERVICE_KEY` (clave secreta `sb_secret_`, no la publishable). Probado: una partida se guarda y el ranking sobrevive a un reinicio. La verificación de DexScreener se reintenta una vez si falla.
 
+- **Enlaces de comunidad:** `https://hordalia-arena.onrender.com/?ca=CONTRATO` entra ya jugando por esa moneda. El botón «Compartir en X» del ranking abre X con el mensaje y ese enlace. En X, Telegram y Discord el enlace muestra una tarjeta con el logo y el ticker de la moneda (el servidor reescribe el bloque `<!--OG-->`); sin `?ca=` sale `og.png` (captura del campamento, en `assets/og.png`, que `build.py` copia a `web/` y `server/public/`).
+
 Aviso del plan gratuito de Render: se duerme tras 15 min sin visitas (la primera carga tarda 30-50 s). El plan de pago (unos 7 $/mes) lo evita.
+
+## Plan de crecimiento (en este orden)
+
+1. **Quitar la espera de 30-50 s** cuando el servidor está dormido: mata la conversión de cada clic desde X y además X no genera la tarjeta si el servidor tarda. Opciones: UptimeRobot gratis haciendo ping a `/health` cada 5 min (750 h gratis de Render bastan para 24/7) o plan Starter de Render (unos 7 $/mes) cuando haya tráfico.
+2. **Llevar tráfico con las comunidades de memecoins:** el bucle viral ya está (enlace `?ca=`, tarjeta, ranking semanal). Falta moverlo: mensajes a comunidades pequeñas en X y Telegram, clips cortos y un «torneo semanal» con mención al ganador.
+3. **Versión para portales (CrazyGames/Poki)** con su SDK de anuncios: es la vía de ingresos por anuncios con tráfico propio del portal. Probablemente sin la parte de memecoins (hay que comprobar sus normas sobre cripto antes de enviarlo), con un interruptor en `CONFIG`.
+4. **Protección contra trampas antes de lanzar $HORDA:** límite de conexiones por IP, que las victorias contra solo bots cuenten menos y vigilar cuentas que solo farmean.
 
 ## Ideas para después
 
