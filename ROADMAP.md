@@ -10,7 +10,7 @@ Revisado el 12/10/2026. Se actualiza al final de cada sesión de trabajo.
 | Páginas indexadas en Google | 34 · 34 «descubiertas, sin indexar» (casi todas del ITP por comunidad, publicadas el 5/10) | Search Console |
 | Clics desde Google | 3 en las últimas semanas | Search Console |
 | Visitas | ~2 a la semana | Cloudflare Web Analytics |
-| AdSense | Código puesto, cuenta en revisión («Preparando») | AdSense |
+| AdSense | Rechazado el 16/10 por «contenido de poco valor»; corregido el mismo día (guías firmadas, fuera de Google lo repetido). Volver a pedir revisión hacia el 20/11 | AdSense |
 | Rendimiento (Lighthouse, portada) | Rendimiento 90 · Accesibilidad 100 · Buenas prácticas 96 · SEO 100 | Lighthouse local |
 | Redes | Página de Facebook (0 seguidores, ~250 reproducciones por reel) · TikTok con alcance casi nulo | Meta / TikTok Studio |
 
@@ -55,7 +55,11 @@ dominio es nuevo (Google rastrea poco) y casi no hay enlaces externos. Los víde
 - [x] Pruebas automáticas al día (las de anuncios asumían AdSense apagado) y redirección a https mientras no se active
       «Enforce HTTPS» en GitHub Pages.
 
-### Fase 2 · 13/10 – 31/10 — Indexación y primeros enlaces
+### Fase 2 · 13/10 – 31/10 — Indexación, primeros enlaces y calidad para AdSense
+- [x] 16/10: rechazo de AdSense por «contenido de poco valor». Sección de guías firmadas (4 artículos), «Sobre nosotros»
+      en primera persona y noindex para el inglés, 19 sueldos poco buscados y 3 páginas de subtítulos repetidas.
+- [ ] Una guía nueva por semana hasta pedir la revisión (próximas: PVPC o mercado libre con datos reales, paro, finiquito).
+- [ ] Pedir indexación de las guías en Search Console y volver a pedir revisión de AdSense hacia el 20/11.
 - [ ] **Tú:** GitHub → Settings → Pages → marcar «Enforce HTTPS» (hoy la web también responde por http).
 - [ ] Pedir indexación manual en Search Console de las 10 páginas más importantes (máx. ~10 al día).
 - [ ] Altas en directorios y foros de la carpeta `marketing/` (las que piden datos personales, las haces tú).
