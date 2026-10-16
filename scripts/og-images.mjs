@@ -22,9 +22,11 @@ const TAGS = {
   captions: { es: "Subtítulos", en: "Captions", color: "#ec4899" },
   transcribe: { es: "Audio a texto", en: "Audio to text", color: "#10b981" },
   sueldo: { es: "Sueldo neto 2026", color: "#34d399" },
+  guias: { es: "Guía", color: "#a5b4fc" },
 };
 function sectionOf(meta, slug) {
   const dir = slug.includes("/") ? slug.replace(/^en\//, "").split("/")[0] : "";
+  if (dir === "guias") return "guias";
   if (dir === "luz") return "luz";
   if (dir === "calculadora-sueldo-neto") return "sueldo";
   if (dir === "subtitulos-animados" || dir === "animated-captions") return "captions";

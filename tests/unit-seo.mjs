@@ -99,7 +99,9 @@ await test("hreflang recíproco: si A apunta a B como traducción, B apunta a A"
     alts.set(loc, others);
   }
   for (const [loc, others] of alts) for (const o of others) assert.ok((alts.get(o) || []).includes(loc), `${o} no enlaza de vuelta a ${loc}`);
-  assert.ok([...alts.values()].filter((o) => o.length).length >= 20, "hay páginas traducidas");
+  // La versión inglesa está fuera de Google (noindex, calidad para AdSense): sin hreflang hacia ella.
+  assert.ok([...alts.values()].every((o) => !o.some((u) => u.includes("/en/"))), "sin hreflang hacia páginas en inglés con noindex");
+  assert.ok(!read("sitemap.xml").includes("/en/"), "el inglés no está en el sitemap");
 });
 
 await test("AdSense y GoatCounter: apagados por defecto; al activarlos, hueco reservado y script sin cookies", async () => {

@@ -14,6 +14,8 @@ import { RULES } from "./assets/js/luz/core.js";
 import { computeStudy, studyCSV } from "./assets/js/luz/estudio.js";
 import { itpRegionPages, ITP_SLUGS } from "./scripts/itp-pages.mjs";
 import { sueldoPages, sueldoGuias, sueldoTabla, sueldoTablaMes } from "./scripts/sueldo-pages.mjs";
+// Sueldos «X euros brutos» que se quedan en Google (los más buscados); el resto lleva noindex.
+const SUELDOS_INDEXADOS = [18000, 20000, 22000, 24000, 25000, 28000, 30000, 35000, 40000, 50000];
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 // SITE_OUT y ADS_CONFIG solo se usan en las pruebas (generar en otra carpeta y con otra configuración de anuncios).
@@ -47,7 +49,7 @@ function proBuy() {
 
 const UI = {
   es: {
-    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", sueldo: "Sueldo neto", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
+    home: "Inicio", transcribe: "Audio a texto", captions: "Subtítulos", luz: "Tarifa de luz", sueldo: "Sueldo neto", guias: "Guías", faq: "Preguntas frecuentes", privacy: "Privacidad", legal: "Aviso legal",
     contact: "Contacto", money: "Cómo ganamos dinero", about: "Quién lo hace", skip: "Saltar al contenido", tagline: "Transcripción de audio y vídeo gratis y privada",
     footerNote: "Herramientas gratuitas financiadas con publicidad. Tus audios y vídeos se procesan en tu dispositivo.",
     related: "Más herramientas gratis",
@@ -63,7 +65,7 @@ const UI = {
 };
 
 const LINKS = {
-  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", sueldo: "calculadora-sueldo-neto/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html", about: "sobre-nosotros.html" },
+  es: { home: "", transcribe: "pasar-audio-a-texto/", captions: "subtitulos-animados/", luz: "luz/", luzhoy: "luz/precio-luz-hoy.html", itp: "calculadora-itp-coche/", sueldo: "calculadora-sueldo-neto/", guias: "guias/", nevera: "que-cocinar-con-lo-que-tengo/", faq: "preguntas-frecuentes.html", privacy: "privacidad.html", legal: "aviso-legal.html", contact: "contacto.html", money: "como-ganamos-dinero.html", about: "sobre-nosotros.html" },
   en: { home: "en/", transcribe: "en/audio-to-text/", captions: "en/animated-captions/", faq: "en/faq.html", privacy: "en/privacy.html", legal: "en/legal.html", contact: "en/contact.html", money: "en/how-we-make-money.html" },
 };
 
@@ -118,6 +120,15 @@ function readPages() {
   pages.push(...itpRegionPages(site.ownerName));
   pages.push(...sueldoPages(site.ownerName), ...sueldoGuias(site.ownerName));
   if (!neveraOn) for (const p of pages) if (p.tool === "nevera") p.noindex = true;
+  // Calidad para AdSense («contenido de poco valor»): la versión inglesa es escasa y casi nadie la busca, y las
+  // páginas «X euros brutos» se parecen mucho entre sí. Siguen accesibles, pero fuera de Google y del sitemap,
+  // salvo los sueldos más buscados.
+  for (const p of pages) {
+    if (p.lang === "en") p.noindex = true;
+    if (/\/\d+-euros-brutos\.html$/.test(p.slug) && !SUELDOS_INDEXADOS.includes(p.sueldo.bruto)) p.noindex = true;
+  }
+  const bySlug = new Map(pages.map((p) => [p.slug, p]));
+  for (const p of pages) if (p.alt != null && bySlug.get(p.alt)?.noindex) delete p.alt;
   return pages;
 }
 
@@ -312,12 +323,13 @@ function appSchema(page, url) {
 
 // Secciones del sitio: cada página de guía se agrupa con su herramienta para las migas de pan y el enlazado interno.
 const SECTIONS = {
-  es: { sueldo: { href: "calculadora-sueldo-neto/", label: "Sueldo neto" }, itp: { href: "calculadora-itp-coche/", label: "ITP coches" }, luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
+  es: { guias: { href: "guias/", label: "Guías" }, sueldo: { href: "calculadora-sueldo-neto/", label: "Sueldo neto" }, itp: { href: "calculadora-itp-coche/", label: "ITP coches" }, luz: { href: "luz/", label: "Luz" }, captions: { href: "subtitulos-animados/", label: "Subtítulos" }, transcribe: { href: "pasar-audio-a-texto/", label: "Audio a texto" } },
   en: { captions: { href: "en/animated-captions/", label: "Captions" }, transcribe: { href: "en/audio-to-text/", label: "Audio to text" } },
 };
 function sectionOf(page) {
   if (page.section !== undefined) return page.section;
   const dir = page.slug.includes("/") ? page.slug.replace(/^en\//, "").split("/")[0] : "";
+  if (dir === "guias") return "guias";
   if (dir === "luz") return "luz";
   if (dir === "calculadora-itp-coche") return "itp";
   if (dir === "calculadora-sueldo-neto") return "sueldo";
@@ -325,6 +337,17 @@ function sectionOf(page) {
   if (dir === "pasar-audio-a-texto" || dir === "audio-to-text") return "transcribe";
   if (toolOf(page) === "transcribe") return "transcribe";
   return null;
+}
+// Firma de los artículos: autor, fecha de publicación y, si cambia, de revisión.
+const fechaLarga = (iso) => new Date(iso + "T12:00:00Z").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+function byline(a, root) {
+  const rev = a.modified && a.modified !== a.published ? ` · Revisado el <time datetime="${a.modified}">${fechaLarga(a.modified)}</time>` : "";
+  return `<p class="byline">Por <a href="${root}sobre-nosotros.html" rel="author">${esc(site.author)}</a> · <time datetime="${a.published}">${fechaLarga(a.published)}</time>${rev}</p>`;
+}
+// Índice de la sección Guías: los artículos firmados, del más nuevo al más antiguo.
+function guiasLista(pagesBySlug, root) {
+  const arts = [...pagesBySlug.values()].filter((p) => p.article && p.lang === "es").sort((a, b) => b.article.published.localeCompare(a.article.published));
+  return `<ul class="guias-lista">${arts.map((p) => `<li><a href="${root}${p.slug}"><strong>${esc(navLabel(p))}</strong><span>${esc(p.description)}</span></a><small><time datetime="${p.article.published}">${fechaLarga(p.article.published)}</time></small></li>`).join("")}</ul>`;
 }
 const stripTags = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 // Nombre corto de una página para enlaces: "nav" en la cabecera JSON o, si no, su <h1>.
@@ -445,6 +468,16 @@ function layout(page, pagesBySlug) {
     schemas.push({ "@context": "https://schema.org", "@type": "Organization", name: site.siteName, url: `${siteUrl}/`, logo: `${siteUrl}/assets/img/icon-512.png`, ...((site.telegram || site.social?.length) ? { sameAs: [site.telegram, ...(site.social || [])].filter(Boolean) } : {}) });
   }
   if (page.dataset) schemas.push(datasetSchema(page, url));
+  // Artículos firmados (sección Guías): autor, fechas y editor en datos estructurados.
+  if (page.article) {
+    schemas.push({
+      "@context": "https://schema.org", "@type": "Article", headline: navLabel(page), description: page.description, inLanguage: lang,
+      datePublished: page.article.published, dateModified: page.article.modified || page.article.published,
+      author: { "@type": "Person", name: site.author, url: `${siteUrl}/sobre-nosotros.html` },
+      publisher: { "@type": "Organization", name: site.siteName, logo: { "@type": "ImageObject", url: `${siteUrl}/assets/img/icon-512.png` } },
+      mainEntityOfPage: url, image: `${siteUrl}/${ogImage(page)}`,
+    });
+  }
 
   // Migas de pan (visibles y en datos estructurados) para las páginas que cuelgan de una herramienta.
   const section = sectionOf(page);
@@ -480,6 +513,8 @@ function layout(page, pagesBySlug) {
     .replace("{{sueldoTabla}}", () => sueldoTabla(page.sueldo?.bruto ?? null, root))
     .replace("{{sueldoTablaMes}}", () => sueldoTablaMes())
     .replace("{{homeLuz}}", () => homeLuz(root))
+    .replace("{{byline}}", () => page.article ? byline(page.article, root) : "")
+    .replace("{{guiasLista}}", () => guiasLista(pagesBySlug, root))
     .replace("{{proPrice}}", () => esc(proOn && proCfg.price ? proCfg.price : "Pago único"))
     .replace("{{proBuy}}", () => proBuy())
     .replace(/\{\{siteUrl\}\}/g, siteUrl)
@@ -531,7 +566,7 @@ ${page.fonts ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossori
   <div class="wrap header-inner">
     <a class="brand" href="${href(L.home)}">${LOGO}<span>${esc(site.siteName)}</span></a>
     <nav aria-label="${lang === "es" ? "Principal" : "Main"}">
-      ${["transcribe", "captions", "luz", "sueldo"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
+      ${["transcribe", "captions", "luz", "sueldo", "guias"].filter((k) => L[k] && pagesBySlug.has(L[k] + "index.html")).map((k) => nav(k, ui[k], tool === k)).join("\n      ")}
     </nav>
     ${alt ? `<a href="${href(alt.slug.replace(/index\.html$/, ""))}" hreflang="${alt.lang}" lang="${alt.lang}" title="${ui.otherLangLabel}" class="lang">${ui.otherLang}</a>` : ""}
   </div>

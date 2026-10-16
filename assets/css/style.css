@@ -810,3 +810,15 @@ details[open]::details-content { block-size: auto; }
 @keyframes shine { to { background-position: -200% 0; } }
 @keyframes pop-in { from { opacity: 0; transform: scale(.85) translateY(4px); } }
 @keyframes rise { from { transform: translateY(26px) scale(.985); } }
+
+/* Guías firmadas */
+.byline { color: var(--muted); font-size: .92rem; margin: -4px 0 18px; }
+.byline a { color: inherit; font-weight: 600; }
+.article h1 { margin-top: 8px; }
+.guias-lista { list-style: none; padding: 0; margin: 16px 0 28px; display: grid; gap: 12px; }
+.guias-lista li { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--surface, transparent); min-width: 0; }
+.guias-lista a { display: grid; gap: 4px; text-decoration: none; color: inherit; }
+.guias-lista a strong { color: var(--accent); font-size: 1.05rem; }
+.guias-lista a span { color: var(--text, inherit); }
+.guias-lista small { color: var(--muted); display: block; margin-top: 6px; }
+.home-guias { margin: 40px 0 8px; }

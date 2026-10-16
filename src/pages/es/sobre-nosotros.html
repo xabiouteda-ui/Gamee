@@ -1,26 +1,35 @@
 <!--{
   "slug": "sobre-nosotros.html",
   "title": "Quién hace Herramientas Libres y cómo | Herramientas Libres",
-  "description": "Quién está detrás de Herramientas Libres, por qué las herramientas son gratis, de dónde salen los datos (Red Eléctrica, Hacienda) y cómo usamos la IA."
+  "description": "Quién está detrás de Herramientas Libres, por qué las herramientas son gratis, de dónde salen los datos (Hacienda, Seguridad Social, Red Eléctrica) y cómo se comprueban."
 }-->
 <article class="legal">
 <h1>Quién hace Herramientas Libres</h1>
-<p class="lead">Herramientas Libres es un proyecto personal de <strong>Xavier Outeda</strong>, desde Galicia. La idea es sencilla: hacer gratis, y en tu propio navegador, cosas por las que muchas webs te cobran o te piden registrarte.</p>
+<p class="lead">Soy <strong>Brais</strong> y hago esta web desde Galicia, en mis ratos libres y al margen de mi trabajo. Empezó porque me cansé de webs que te piden registrarte o pagar una suscripción para cosas sencillas, como pasar un audio a texto o saber cuánto me iba a quedar de un sueldo. Así que fui haciendo las herramientas que yo mismo necesitaba y las dejé gratis para quien le sirvan.</p>
 
-<h2>Por qué existe</h2>
-<p>Pasar un audio a texto, poner subtítulos a un vídeo o saber cuánto te cuesta poner la lavadora a cada hora no debería exigir una suscripción ni subir tus archivos a un servidor desconocido. Cada herramienta nace de una necesidad real y se mantiene con publicidad discreta (te lo contamos todo en <a href="{{root}}como-ganamos-dinero.html">cómo ganamos dinero</a>).</p>
-
-<h2>Cómo se hacen las herramientas</h2>
+<h2>Lo que hay aquí</h2>
 <ul>
-  <li><strong>Audio a texto y subtítulos:</strong> usan Whisper, un modelo de reconocimiento de voz de código abierto, que se descarga y funciona dentro de tu navegador. Tus audios y vídeos no salen de tu dispositivo.</li>
-  <li><strong>Precio de la luz:</strong> los precios horarios del PVPC salen de la API pública de Red Eléctrica de España y la web se vuelve a publicar cada tarde con los precios del día siguiente.</li>
-  <li><strong>Calculadora del ITP:</strong> usa los coeficientes de la Orden HAC/1501/2025 y los tipos de cada comunidad del informe «Tributación Autonómica. Medidas 2026» del Ministerio de Hacienda. Cuando una regla no se ha podido contrastar con la norma oficial, la calculadora lo avisa.</li>
-  <li><strong>¿Qué cocino con lo que tengo?:</strong> la foto de tu nevera la analiza la inteligencia artificial de Google (Gemini) para reconocer los ingredientes y proponer recetas. No guardamos la foto.</li>
+  <li><strong>Calculadoras de dinero y trámites:</strong> <a href="{{root}}calculadora-sueldo-neto/">sueldo neto</a> con el método oficial de retenciones, <a href="{{root}}calculadora-itp-coche/">ITP de coches</a> por comunidad y <a href="{{root}}luz/">precio de la luz</a> hora a hora.</li>
+  <li><strong>Herramientas de audio y vídeo:</strong> <a href="{{root}}pasar-audio-a-texto/">pasar audio a texto</a> y <a href="{{root}}subtitulos-animados/">subtítulos animados</a>, que funcionan dentro de tu navegador sin subir tus archivos.</li>
+  <li><strong><a href="{{root}}guias/">Guías</a>:</strong> lo que voy aprendiendo al hacer las calculadoras, explicado con ejemplos y números reales.</li>
 </ul>
 
-<h2>Cómo usamos la inteligencia artificial</h2>
-<p>Usamos inteligencia artificial como ayuda para programar y para redactar las explicaciones. Las cifras, los tipos de impuestos y los cálculos se comprueban contra las fuentes oficiales que citamos en cada página, y cada calculadora tiene pruebas automáticas que se ejecutan antes de publicar cualquier cambio.</p>
+<h2>De dónde salen los datos y cómo los compruebo</h2>
+<ul>
+  <li><strong>Sueldo neto:</strong> el «Algoritmo de cálculo del tipo de retención a cuenta del IRPF» de la Agencia Tributaria para 2026 y las bases y tipos de cotización de la Seguridad Social de 2026. Antes de publicarla comparé el resultado con una segunda implementación independiente en casi 1.900 casos distintos, y la retención del salario mínimo coincide con la que publicó la prensa.</li>
+  <li><strong>ITP de coches:</strong> los coeficientes de la Orden HAC/1501/2025 y los tipos de cada comunidad del informe «Tributación Autonómica. Medidas 2026» del Ministerio de Hacienda. Cuando una regla no la he podido contrastar con la norma oficial, la calculadora lo dice.</li>
+  <li><strong>Precio de la luz:</strong> los precios horarios del PVPC salen de la API pública de Red Eléctrica de España; la web se vuelve a publicar cada tarde con los precios del día siguiente.</li>
+  <li><strong>Audio a texto y subtítulos:</strong> usan Whisper, un modelo de reconocimiento de voz de código abierto que se descarga y funciona en tu navegador. Tus audios y vídeos no salen de tu dispositivo.</li>
+  <li><strong>¿Qué cocino con lo que tengo?:</strong> la foto de tu nevera la analiza la inteligencia artificial de Google (Gemini) para reconocer los ingredientes. No guardo la foto.</li>
+</ul>
+<p>Cada calculadora tiene pruebas automáticas con casos comprobados a mano, que se ejecutan antes de publicar cualquier cambio. Cuando cambia una norma (por ejemplo, las retenciones de enero), actualizo la calculadora y las guías que dependen de ella, y la fecha de revisión aparece en cada guía.</p>
+
+<h2>Cómo uso la inteligencia artificial</h2>
+<p>Uso inteligencia artificial como ayuda para programar y para redactar. Las cifras, los tipos de impuestos y los ejemplos los saco de las propias calculadoras y los compruebo contra las fuentes oficiales que cito en cada página.</p>
+
+<h2>Por qué es gratis</h2>
+<p>La web se mantiene con publicidad discreta. Te lo cuento con detalle en <a href="{{root}}como-ganamos-dinero.html">cómo se financia</a>. No vendo tus datos ni te pido registrarte.</p>
 
 <h2>Errores y sugerencias</h2>
-<p>Si ves un dato mal, una regla que ha cambiado o echas en falta una herramienta, escríbenos desde la página de <a href="{{root}}contacto.html">contacto</a>. Las correcciones se publican en cuanto se comprueban.</p>
+<p>Si ves un dato mal, una regla que ha cambiado o echas en falta una herramienta, escríbeme desde la página de <a href="{{root}}contacto.html">contacto</a>. Contesto a todos los correos y las correcciones se publican en cuanto las compruebo. El titular de la web a efectos legales figura en el <a href="{{root}}aviso-legal.html">aviso legal</a>.</p>
 </article>
